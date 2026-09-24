@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles } from 'lucide-react';
 import { api } from '../api';
 import { Category, Product } from '../types';
 
@@ -22,8 +22,35 @@ export const Products: React.FC = () => {
   const [image, setImage] = useState('');
   const [imageUrls, setImageUrls] = useState('');
   const [detail, setDetail] = useState('');
+  const [promoDescription, setPromoDescription] = useState('');
+  const [attributesText, setAttributesText] = useState('');
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [seoKeywords, setSeoKeywords] = useState('');
+  const [seoSlug, setSeoSlug] = useState('');
+  const [seoArticle, setSeoArticle] = useState('');
   const [isFlashSale, setIsFlashSale] = useState(false);
   const [isRecommended, setIsRecommended] = useState(false);
+
+  const parseAttributes = (value: string) =>
+    value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const separator = line.includes('|') ? '|' : ':';
+        const [rawName, ...rawValue] = line.split(separator);
+        return {
+          name: rawName.trim(),
+          value: rawValue.join(separator).trim(),
+        };
+      })
+      .filter((item) => item.name && item.value);
+
+  const serializeAttributes = (product: Product) =>
+    (product.attributes || [])
+      .map((item) => `${item.name}: ${item.value}`)
+      .join('\n');
 
   const loadProductsAndCategories = async () => {
     try {
@@ -54,6 +81,13 @@ export const Products: React.FC = () => {
     setImage('');
     setImageUrls('');
     setDetail('');
+    setPromoDescription('');
+    setAttributesText('');
+    setSeoTitle('');
+    setSeoDescription('');
+    setSeoKeywords('');
+    setSeoSlug('');
+    setSeoArticle('');
     setIsFlashSale(false);
     setIsRecommended(false);
     if (categories.length > 0) setCategoryId(categories[0].id);
@@ -69,6 +103,13 @@ export const Products: React.FC = () => {
     setImage(product.image);
     setImageUrls((product.images || []).map((item) => item.url).join('\n'));
     setDetail(product.detail || '');
+    setPromoDescription(product.promoDescription || '');
+    setAttributesText(serializeAttributes(product));
+    setSeoTitle(product.seo?.title || '');
+    setSeoDescription(product.seo?.description || '');
+    setSeoKeywords(product.seo?.keywords || '');
+    setSeoSlug(product.seo?.slug || '');
+    setSeoArticle(product.seo?.article || '');
     setIsFlashSale(!!product.isFlashSale);
     setIsRecommended(!!product.isRecommended);
     setIsModalOpen(true);
@@ -105,6 +146,15 @@ export const Products: React.FC = () => {
         sortOrder: index + 1,
       })),
       detail,
+      promoDescription: promoDescription.trim() || undefined,
+      attributes: parseAttributes(attributesText),
+      seo: {
+        title: seoTitle.trim() || undefined,
+        description: seoDescription.trim() || undefined,
+        keywords: seoKeywords.trim() || undefined,
+        slug: seoSlug.trim() || undefined,
+        article: seoArticle.trim() || undefined,
+      },
       isFlashSale,
       isRecommended,
     };
@@ -274,7 +324,7 @@ export const Products: React.FC = () => {
       {/* Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-6">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-5xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 shadow-2xl space-y-6">
             <div className="flex justify-between items-center border-b border-slate-800 pb-4">
               <h3 className="text-xl font-bold text-white">
                 {editingProduct ? 'Chỉnh Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'}
@@ -288,6 +338,11 @@ export const Products: React.FC = () => {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Sparkles className="w-4 h-4 text-blue-400" />
+                  Thông tin bán hàng
+                </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5">Tên sản phẩm *</label>
                 <input
@@ -338,44 +393,144 @@ export const Products: React.FC = () => {
                   ))}
                 </select>
               </div>
+              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">URL Hình Ảnh Chính</label>
-                <div className="relative">
-                  <ImageIcon className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="url"
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-11 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                    placeholder="https://..."
-                  />
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-white">
+                    <ImageIcon className="w-4 h-4 text-blue-400" />
+                    Album ảnh sản phẩm
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">URL Hình Ảnh Chính</label>
+                    <div className="relative">
+                      <ImageIcon className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="url"
+                        value={image}
+                        onChange={(e) => setImage(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-11 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Kho ảnh sản phẩm chuyên nghiệp</label>
+                    <textarea
+                      rows={6}
+                      value={imageUrls}
+                      onChange={(e) => setImageUrls(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      placeholder={'Mỗi dòng một URL ảnh\nhttps://...\nhttps://...'}
+                    />
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Website sẽ hiển thị album dạng slide trượt ngang theo đúng thứ tự ảnh.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-white">
+                    <Tags className="w-4 h-4 text-emerald-400" />
+                    Thuộc tính & khuyến mãi
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Mô tả ngắn chương trình khuyến mãi</label>
+                    <textarea
+                      rows={3}
+                      value={promoDescription}
+                      onChange={(e) => setPromoDescription(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      placeholder="Ví dụ: Mua hôm nay giảm 15%, tặng kèm freeship cho đơn từ 2 sản phẩm."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Thuộc tính sản phẩm</label>
+                    <textarea
+                      rows={6}
+                      value={attributesText}
+                      onChange={(e) => setAttributesText(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      placeholder={'Mỗi dòng một thuộc tính\nXuất xứ: Việt Nam\nKhối lượng: 500g\nHạn sử dụng: 12 tháng'}
+                    />
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Hỗ trợ định dạng “Tên: Giá trị” hoặc “Tên | Giá trị”.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Kho ảnh sản phẩm chuyên nghiệp</label>
-                <textarea
-                  rows={4}
-                  value={imageUrls}
-                  onChange={(e) => setImageUrls(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder={'Mỗi dòng một URL ảnh\nhttps://...\nhttps://...'}
-                />
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Backend sẽ lưu thành kho ảnh theo thứ tự: ảnh chính, cận cảnh, bộ sưu tập.
-                </p>
-              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <FileText className="w-4 h-4 text-amber-400" />
+                  Editor nội dung chuẩn SEO
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Mô tả sản phẩm</label>
-                <textarea
-                  rows={3}
-                  value={detail}
-                  onChange={(e) => setDetail(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="Nhập thông tin chi tiết..."
-                />
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">SEO title</label>
+                    <input
+                      value={seoTitle}
+                      onChange={(e) => setSeoTitle(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      placeholder="Tiêu đề SEO khoảng 50-60 ký tự"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Đường dẫn SEO</label>
+                    <input
+                      value={seoSlug}
+                      onChange={(e) => setSeoSlug(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      placeholder="san-pham-ban-chay"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Meta description</label>
+                  <textarea
+                    rows={2}
+                    value={seoDescription}
+                    onChange={(e) => setSeoDescription(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="Mô tả ngắn 140-160 ký tự để tối ưu hiển thị tìm kiếm."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Từ khóa SEO</label>
+                  <input
+                    value={seoKeywords}
+                    onChange={(e) => setSeoKeywords(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="saximi shop, sản phẩm khuyến mãi, hội viên"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Mô tả sản phẩm</label>
+                  <textarea
+                    rows={4}
+                    value={detail}
+                    onChange={(e) => setDetail(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="Nhập thông tin chi tiết..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Nội dung bài viết SEO</label>
+                  <textarea
+                    rows={8}
+                    value={seoArticle}
+                    onChange={(e) => setSeoArticle(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm leading-6 focus:outline-none focus:border-blue-500"
+                    placeholder={'Viết nội dung bán hàng chuẩn SEO...\n- Lợi ích nổi bật\n- Cách sử dụng\n- Vì sao nên mua tại Saximi shop'}
+                  />
+                </div>
               </div>
 
               <div className="flex gap-6 pt-2">

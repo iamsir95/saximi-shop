@@ -14,6 +14,19 @@ export interface ProductImage {
   sortOrder: number;
 }
 
+export interface ProductAttribute {
+  name: string;
+  value: string;
+}
+
+export interface ProductSeoContent {
+  title?: string;
+  description?: string;
+  keywords?: string;
+  slug?: string;
+  article?: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -23,6 +36,9 @@ export interface Product {
   images?: ProductImage[];
   categoryId: number;
   detail?: string;
+  promoDescription?: string;
+  attributes?: ProductAttribute[];
+  seo?: ProductSeoContent;
   sizes?: string[];
   colors?: string[];
   isFlashSale?: boolean;

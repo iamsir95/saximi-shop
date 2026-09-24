@@ -8,7 +8,7 @@ import RelatedProducts from "./related-products";
 import { useAddToCart } from "@/hooks";
 import { Button } from "zmp-ui";
 import Section from "@/components/section";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Product, ProductImage } from "@/types";
 import CommerceTrustStrip from "@/components/commerce-trust-strip";
 import {
@@ -91,6 +91,7 @@ export default function ProductDetailPage() {
   const product = useAtomValue(productState(Number(id)))!;
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
   const gallery = useMemo(() => buildImageLibrary(product), [product]);
   const selectedImage = gallery[selectedImageIndex] || gallery[0];
 
@@ -101,42 +102,103 @@ export default function ProductDetailPage() {
   const discountPercent = getDiscountPercent(product);
   const savedAmount = getSavedAmount(product);
   const lowStock = isLowStock(product);
+  const hasAttributes = Boolean(product.attributes?.length);
+  const seoArticle = product.seo?.article?.trim();
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    const seoTitle = product.seo?.title || product.name;
+    const seoDescription =
+      product.seo?.description ||
+      product.promoDescription ||
+      product.detail ||
+      "Saximi shop";
+    document.title = seoTitle;
+
+    let metaDescription = document.querySelector<HTMLMetaElement>(
+      'meta[name="description"]'
+    );
+    if (!metaDescription) {
+      metaDescription = document.createElement("meta");
+      metaDescription.name = "description";
+      document.head.appendChild(metaDescription);
+    }
+    const previousDescription = metaDescription.content;
+    metaDescription.content = seoDescription.slice(0, 170);
+
+    return () => {
+      document.title = previousTitle;
+      if (metaDescription) metaDescription.content = previousDescription;
+    };
+  }, [product]);
+
+  const scrollToImage = (index: number) => {
+    setSelectedImageIndex(index);
+    galleryRef.current?.children[index]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  };
+
+  const handleGalleryScroll = () => {
+    const el = galleryRef.current;
+    if (!el || !el.clientWidth) return;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    if (index !== selectedImageIndex && gallery[index]) {
+      setSelectedImageIndex(index);
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="w-full p-4 pb-2 space-y-4 bg-section lg:grid lg:grid-cols-[minmax(320px,430px)_minmax(0,1fr)] lg:items-start lg:gap-5 lg:space-y-0">
           <div className="liquid-card rounded-[28px] p-2 space-y-2">
-            <button
-              type="button"
-              className="relative block w-full overflow-hidden rounded-[24px] bg-skeleton text-left"
-              onClick={() => setIsGalleryOpen(true)}
+            <div
+              ref={galleryRef}
+              onScroll={handleGalleryScroll}
+              className="flex snap-x snap-mandatory overflow-x-auto rounded-[24px] bg-skeleton scroll-smooth"
             >
-              <img
-                key={`${product.id}-${selectedImage?.url}`}
-                src={selectedImage?.url}
-                alt={product.name}
-                className="w-full aspect-square object-cover"
-                style={{
-                  viewTransitionName: `product-image-${product.id}`,
-                }}
-              />
-              <div className="absolute left-3 top-3 rounded-full bg-white/72 px-3 py-1 text-3xs font-bold text-slate-800 backdrop-blur-xl">
-                Kho ảnh
-              </div>
-              <div className="absolute bottom-3 right-3 rounded-full bg-slate-950/55 px-3 py-1 text-3xs font-semibold text-white backdrop-blur-xl">
-                {selectedImageIndex + 1}/{gallery.length}
-              </div>
-            </button>
-
-            <div className="grid grid-cols-3 gap-2">
               {gallery.map((image, index) => (
                 <button
                   key={image.url}
                   type="button"
-                  onClick={() => setSelectedImageIndex(index)}
+                  className="relative block w-full flex-none snap-center overflow-hidden text-left"
+                  onClick={() => {
+                    setSelectedImageIndex(index);
+                    setIsGalleryOpen(true);
+                  }}
+                >
+                  <img
+                    src={image.url}
+                    alt={product.name}
+                    className="w-full aspect-square object-cover"
+                    style={{
+                      viewTransitionName:
+                        index === selectedImageIndex
+                          ? `product-image-${product.id}`
+                          : undefined,
+                    }}
+                  />
+                  <div className="absolute left-3 top-3 rounded-full bg-white/72 px-3 py-1 text-3xs font-bold text-slate-800 backdrop-blur-xl">
+                    Album ảnh
+                  </div>
+                  <div className="absolute bottom-3 right-3 rounded-full bg-slate-950/55 px-3 py-1 text-3xs font-semibold text-white backdrop-blur-xl">
+                    {index + 1}/{gallery.length}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {gallery.map((image, index) => (
+                <button
+                  key={image.url}
+                  type="button"
+                  onClick={() => scrollToImage(index)}
                   className={
-                    "overflow-hidden rounded-2xl border bg-white/58 p-1 text-left transition-all ".concat(
+                    "w-24 flex-none overflow-hidden rounded-2xl border bg-white/58 p-1 text-left transition-all ".concat(
                       selectedImageIndex === index
                         ? "border-primary shadow-[0_10px_24px_rgba(0,204,247,0.22)]"
                         : "border-white/70"
@@ -185,6 +247,11 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div className="text-sm mt-1">{product.name}</div>
+              {product.promoDescription && (
+                <div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50/72 px-3 py-2 text-xs font-semibold leading-5 text-primary">
+                  {product.promoDescription}
+                </div>
+              )}
               <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
                 <div className="rounded-2xl bg-white/62 p-3">
                   <div className="font-bold text-slate-800">Tiết kiệm</div>
@@ -209,6 +276,38 @@ export default function ProductDetailPage() {
               <div className="text-sm whitespace-pre-wrap text-subtitle p-4 pt-2">
                 {product.detail}
               </div>
+            </Section>
+          </>
+        )}
+        {hasAttributes && (
+          <>
+            <div className="bg-background h-2 w-full"></div>
+            <Section title="Thông số & thuộc tính">
+              <div className="grid grid-cols-1 gap-2 p-4 pt-2 sm:grid-cols-2">
+                {product.attributes!.map((attribute) => (
+                  <div
+                    key={`${attribute.name}-${attribute.value}`}
+                    className="rounded-2xl bg-white/62 px-3 py-2"
+                  >
+                    <div className="text-[11px] font-bold uppercase text-slate-400">
+                      {attribute.name}
+                    </div>
+                    <div className="mt-0.5 text-sm font-semibold text-slate-800">
+                      {attribute.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          </>
+        )}
+        {seoArticle && (
+          <>
+            <div className="bg-background h-2 w-full"></div>
+            <Section title={product.seo?.title || "Bài viết sản phẩm"}>
+              <article className="p-4 pt-2 text-sm leading-6 text-subtitle whitespace-pre-wrap">
+                {seoArticle}
+              </article>
             </Section>
           </>
         )}
@@ -273,14 +372,14 @@ export default function ProductDetailPage() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pb-sb">
+            <div className="flex gap-2 overflow-x-auto pb-sb">
               {gallery.map((image, index) => (
                 <button
                   key={image.url}
                   type="button"
                   onClick={() => setSelectedImageIndex(index)}
                   className={
-                    "rounded-2xl border p-1 ".concat(
+                    "w-24 flex-none rounded-2xl border p-1 ".concat(
                       selectedImageIndex === index
                         ? "border-white bg-white/30"
                         : "border-white/20 bg-white/10"

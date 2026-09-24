@@ -130,6 +130,7 @@ publicApi.get('/settings', (_req: Request, res: Response) => {
   const settings = Database.getSettings();
   res.json({
     shopName: settings.shopName,
+    logoUrl: settings.logoUrl,
     brandColor: settings.brandColor,
     hotline: settings.hotline,
     supportEmail: settings.supportEmail,

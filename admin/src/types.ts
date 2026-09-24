@@ -273,6 +273,7 @@ export interface OtpOutboxItem {
 
 export interface PlatformSettings {
   shopName: string;
+  logoUrl: string;
   brandColor: string;
   hotline: string;
   supportEmail: string;

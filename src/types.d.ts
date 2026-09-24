@@ -49,6 +49,19 @@ export interface FrontendNotification {
   actionPath?: string;
 }
 
+export interface PlatformSettings {
+  shopName: string;
+  logoUrl?: string;
+  brandColor: string;
+  hotline: string;
+  supportEmail: string;
+  businessAddress: string;
+  publicSiteUrl: string;
+  zaloOaUrl: string;
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+}
+
 export type ProductImageKind = "MAIN" | "DETAIL" | "COLLECTION";
 
 export interface ProductImage {

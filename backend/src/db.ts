@@ -102,6 +102,7 @@ export interface Coupon {
 
 export interface PlatformSettings {
   shopName: string;
+  logoUrl: string;
   brandColor: string;
   hotline: string;
   supportEmail: string;
@@ -499,6 +500,7 @@ export class Database {
   private static webPushSubscriptions: WebPushSubscriptionRecord[] = [];
   private static settings: PlatformSettings = {
     shopName: 'Saximi shop',
+    logoUrl: 'https://photo-logo-mapps.zadn.vn/284fadf20bb7e2e9bba6.jpg',
     brandColor: '#00ccf7',
     hotline: '0908889999',
     supportEmail: 'support@saximi.vn',
@@ -2436,6 +2438,7 @@ export class Database {
     const nextSettings: PlatformSettings = {
       ...this.settings,
       shopName: data.shopName?.trim() || this.settings.shopName,
+      logoUrl: data.logoUrl?.trim() || this.settings.logoUrl,
       brandColor: data.brandColor?.trim() || this.settings.brandColor,
       hotline: data.hotline?.trim() || this.settings.hotline,
       supportEmail: data.supportEmail?.trim() || this.settings.supportEmail,

@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   categoriesStateUpwrapped,
   loadableUserInfoState,
-  userInfoState,
+  platformSettingsState,
+  shippingAddressState,
 } from "@/state";
 import { useMemo } from "react";
 import { useRouteHandle } from "@/hooks";
@@ -20,6 +21,8 @@ export default function Header() {
   const location = useLocation();
   const [handle, match] = useRouteHandle();
   const userInfo = useAtomValue(loadableUserInfoState);
+  const platformSettings = useAtomValue(platformSettingsState);
+  const shippingAddress = useAtomValue(shippingAddressState);
 
   const title = useMemo(() => {
     if (handle) {
@@ -32,6 +35,14 @@ export default function Header() {
   }, [handle, categories]);
 
   const showBack = location.key !== "default" && !handle?.noBack;
+  const shopName =
+    platformSettings?.shopName || getConfig((c) => c.template.shopName);
+  const logoUrl =
+    platformSettings?.logoUrl || getConfig((c) => c.template.logoUrl);
+  const currentShippingAddress =
+    shippingAddress?.address ||
+    (userInfo.state === "hasData" ? userInfo.data?.address : "") ||
+    "Chọn địa chỉ giao hàng";
 
   return (
     <header className="app-header w-full flex flex-col px-4 pt-st text-slate-900">
@@ -39,14 +50,14 @@ export default function Header() {
         {handle?.logo ? (
           <>
             <img
-              src={getConfig((c) => c.template.logoUrl)}
+              src={logoUrl}
               className="flex-none w-10 h-10 rounded-2xl object-cover bg-white shadow-sm"
-              alt={getConfig((c) => c.template.shopName)}
+              alt={shopName}
             />
-            <TransitionLink to="/stations" className="min-w-0 flex-1 overflow-hidden">
+            <TransitionLink to="/shipping-address" className="min-w-0 flex-1 overflow-hidden">
               <div className="flex items-center gap-1.5 min-w-0">
                 <h1 className="commerce-title truncate">
-                  {getConfig((c) => c.template.shopName)}
+                  {shopName}
                 </h1>
                 <CommerceIcon
                   name="chevron-right"
@@ -55,7 +66,7 @@ export default function Header() {
                 />
               </div>
               <p className="truncate commerce-caption text-slate-500">
-                {getConfig((c) => c.template.shopAddress)}
+                {currentShippingAddress}
               </p>
             </TransitionLink>
             <NotificationCenter />

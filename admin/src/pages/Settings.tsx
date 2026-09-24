@@ -5,6 +5,7 @@ import { PlatformSettings } from '../types';
 
 const emptySettings: PlatformSettings = {
   shopName: 'Saximi shop',
+  logoUrl: 'https://photo-logo-mapps.zadn.vn/284fadf20bb7e2e9bba6.jpg',
   brandColor: '#00ccf7',
   hotline: '',
   supportEmail: '',
@@ -145,6 +146,14 @@ export function SettingsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Tên shop" icon={<Store className="h-4 w-4" />}>
                 <input className={inputClass} value={settings.shopName} onChange={(e) => update('shopName', e.target.value)} />
+              </Field>
+              <Field label="URL logo shop" icon={<Store className="h-4 w-4" />}>
+                <input
+                  className={inputClass}
+                  value={settings.logoUrl}
+                  onChange={(e) => update('logoUrl', e.target.value)}
+                  placeholder="https://..."
+                />
               </Field>
               <Field label="Màu thương hiệu" icon={<Palette className="h-4 w-4" />}>
                 <div className="flex gap-2">
@@ -342,7 +351,16 @@ export function SettingsPage() {
             <div className="text-sm font-bold text-white">Xem trước</div>
             <div className="mt-4 rounded-2xl bg-slate-950/70 p-4 ring-1 ring-white/10">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl" style={{ backgroundColor: settings.brandColor }} />
+                {settings.logoUrl ? (
+                  <img
+                    src={settings.logoUrl}
+                    alt={settings.shopName}
+                    className="h-10 w-10 rounded-xl object-cover"
+                    style={{ backgroundColor: settings.brandColor }}
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-xl" style={{ backgroundColor: settings.brandColor }} />
+                )}
                 <div>
                   <div className="font-black text-white">{settings.shopName}</div>
                   <div className="text-xs text-slate-400">{settings.publicSiteUrl}</div>

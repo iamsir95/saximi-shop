@@ -18,6 +18,7 @@ import {
   Order,
   OrderTracking,
   OrderStatus,
+  PlatformSettings,
   Product,
   ShippingAddress,
   Station,
@@ -274,6 +275,10 @@ export const affiliatePortalState = atom(() =>
     "/affiliate/portal",
     undefined
   )
+);
+
+export const platformSettingsState = atom(() =>
+  requestWithFallback<PlatformSettings | undefined>("/settings", undefined)
 );
 
 export const affiliateReferrerIdState = atomWithStorage<string | undefined>(

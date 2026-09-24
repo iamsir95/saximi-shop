@@ -15,6 +15,7 @@ export default function ApplyVoucher() {
   const [visible, setVisible] = useState(false);
   const coupons =
     couponsLoadable.state === "hasData" ? couponsLoadable.data : [];
+  const availableCoupons = coupons.filter((coupon) => coupon.isActive);
 
   return (
     <Section title="Ưu đãi đơn hàng">
@@ -38,61 +39,91 @@ export default function ApplyVoucher() {
       <Sheet
         visible={visible}
         onClose={() => setVisible(false)}
-        autoHeight
+        height="min(74vh, 620px)"
         handler
         swipeToClose
         unmountOnClose
+        modalClassName="voucher-sheet"
+        zIndex={1200}
       >
-        <div className="px-4 pb-8 pt-2 space-y-3">
-          <div className="text-center pb-2">
-            <div className="text-base font-black text-slate-900">Ưu đãi đơn hàng</div>
-            <div className="text-xs text-inactive">
+        <div className="flex h-full min-h-0 flex-col px-4 pb-[calc(20px+var(--safe-bottom))] pt-2">
+          <div className="shrink-0 border-b border-white/60 pb-3 text-center">
+            <div className="text-base font-black text-slate-900">
+              Ưu đãi đơn hàng
+            </div>
+            <div className="mt-1 text-xs font-semibold text-slate-500">
               Chọn voucher đang còn hiệu lực cho đơn hàng
             </div>
           </div>
 
-          {couponsLoadable.state === "loading" ? (
-            <div className="py-8 text-center text-sm text-inactive">
-              Đang tải voucher...
-            </div>
-          ) : coupons.length === 0 ? (
-            <div className="py-8 text-center text-sm text-inactive">
-              Hiện chưa có voucher khả dụng
-            </div>
-          ) : (
-            coupons.map((coupon) => (
+          <div className="min-h-0 flex-1 overflow-y-auto py-3 pr-1">
+            {couponsLoadable.state === "loading" ? (
+              <div className="rounded-[22px] bg-white/70 px-4 py-8 text-center text-sm font-semibold text-slate-500 ring-1 ring-white/80">
+                Đang tải voucher...
+              </div>
+            ) : availableCoupons.length === 0 ? (
+              <div className="rounded-[22px] bg-white/70 px-4 py-8 text-center text-sm font-semibold text-slate-500 ring-1 ring-white/80">
+                Hiện chưa có voucher khả dụng
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableCoupons.map((coupon) => {
+                  const isSelected = selectedCoupon?.id === coupon.id;
+
+                  return (
+                    <button
+                      key={coupon.id}
+                      className={[
+                        "w-full rounded-[20px] border p-4 text-left transition active:scale-[0.99]",
+                        isSelected
+                          ? "border-primary/70 bg-cyan-50/90 shadow-lg shadow-cyan-500/10"
+                          : "border-white/80 bg-white/[0.78] shadow-sm shadow-slate-200/60",
+                      ].join(" ")}
+                      onClick={() => {
+                        setSelectedCoupon(coupon);
+                        setVisible(false);
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <CommerceIcon name="ticket" size={20} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <span className="break-words text-sm font-black text-slate-900">
+                              {coupon.code}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-primary px-3 py-1 text-xs font-black text-primaryForeground">
+                              -{coupon.discountPercent}%
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+                            Đơn tối thiểu {formatPrice(coupon.minOrderAmount)}
+                          </div>
+                          <div className="text-xs font-semibold leading-5 text-slate-500">
+                            Hạn sử dụng: {coupon.expiryDate}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {selectedCoupon && (
+            <div className="shrink-0 border-t border-white/60 pt-3">
               <button
-                key={coupon.id}
-                className="w-full rounded-[20px] border border-white/80 bg-white/76 p-4 text-left active:scale-[0.99]"
+                className="w-full rounded-[18px] bg-white/[0.76] py-3 text-sm font-black text-slate-700 ring-1 ring-white/80 active:scale-[0.99]"
                 onClick={() => {
-                  setSelectedCoupon(coupon);
+                  setSelectedCoupon(undefined);
                   setVisible(false);
                 }}
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">{coupon.code}</span>
-                  <span className="text-sm font-semibold">
-                    Giảm {coupon.discountPercent}%
-                  </span>
-                </div>
-                <div className="mt-1 text-xs leading-4 text-inactive">
-                  Đơn tối thiểu {formatPrice(coupon.minOrderAmount)} · HSD{" "}
-                  {coupon.expiryDate}
-                </div>
+                Bỏ áp dụng voucher
               </button>
-            ))
-          )}
-
-          {selectedCoupon && (
-            <button
-              className="w-full rounded-[18px] bg-skeleton py-3 text-sm font-bold"
-              onClick={() => {
-                setSelectedCoupon(undefined);
-                setVisible(false);
-              }}
-            >
-              Bỏ áp dụng voucher
-            </button>
+            </div>
           )}
         </div>
       </Sheet>

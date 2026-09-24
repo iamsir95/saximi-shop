@@ -1,0 +1,25 @@
+FROM node:20-alpine AS frontend
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY app-config.json index.html postcss.config.js tailwind.config.js tsconfig.json vite.config.mts zmp-cli.json ./
+COPY public ./public
+COPY src ./src
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=${VITE_API_URL}
+RUN npm run build:css && npx vite build
+
+FROM node:20-alpine AS admin
+WORKDIR /app
+COPY admin/package*.json ./
+RUN npm ci
+COPY admin ./
+ARG VITE_ADMIN_API_URL=/api/admin
+ENV VITE_ADMIN_API_URL=${VITE_ADMIN_API_URL}
+RUN npm run build
+
+FROM nginx:1.27-alpine
+COPY deploy/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=frontend /app/www /usr/share/nginx/html
+COPY --from=admin /app/dist /usr/share/nginx/html/admin
+EXPOSE 80

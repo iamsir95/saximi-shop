@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background:
+      radial-gradient(circle at 18% 8%, rgba(0, 204, 247, 0.1), transparent 28%),
+      radial-gradient(circle at 88% 0%, rgba(20, 184, 166, 0.08), transparent 30%),
+      #0f172a;
+    color: #f8fafc;
+  }
+}
+
+.admin-shell {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(0, 204, 247, 0.11), transparent 26%),
+    linear-gradient(180deg, #111827 0%, #0f172a 48%, #0b1120 100%);
+}
+
+.admin-content > div {
+  padding: 1rem;
+}
+
+.admin-content > div.p-8 {
+  padding: 1rem;
+}
+
+.admin-content .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem;
+}
+
+.admin-content .gap-6 {
+  gap: 1rem;
+}
+
+.admin-content .p-6 {
+  padding: 1rem;
+}
+
+.admin-content .rounded-2xl {
+  border-radius: 1rem;
+}
+
+.admin-content .text-2xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.admin-content .w-14.h-14 {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.admin-content .w-12.h-12 {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.admin-content table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-content th {
+  white-space: nowrap;
+}
+
+.admin-content td,
+.admin-content th {
+  vertical-align: middle;
+}
+
+.admin-content td {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.admin-content th {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.admin-content input,
+.admin-content select,
+.admin-content textarea {
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .admin-content > div {
+    max-width: 1480px;
+    margin-inline: auto;
+    padding: 1.25rem;
+  }
+
+  .admin-content > div.p-8 {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 1180px) {
+  .admin-sidebar {
+    width: 4.75rem;
+  }
+
+  .admin-brand {
+    justify-content: center;
+    padding: 0.875rem;
+  }
+
+  .admin-brand-text,
+  .admin-nav-label,
+  .admin-nav-group-title {
+    display: none;
+  }
+
+  .admin-sidebar nav {
+    padding-inline: 0.625rem;
+    gap: 0.5rem;
+  }
+
+  .admin-nav-item {
+    justify-content: center;
+    padding-inline: 0.625rem;
+  }
+
+  .admin-header {
+    min-height: 4rem;
+    height: auto;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .admin-title {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+
+  .admin-search input {
+    width: 12rem;
+  }
+
+  .admin-content > div {
+    padding: 0.875rem;
+  }
+
+  .admin-content > div.p-8 {
+    padding: 0.875rem;
+  }
+}
+
+@media (max-width: 920px) {
+  .admin-header-actions {
+    gap: 0.75rem;
+  }
+
+  .admin-search {
+    display: none;
+  }
+
+  .admin-subtitle,
+  .admin-user-text {
+    display: none;
+  }
+
+  .admin-header [class*="border-l"] {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .admin-content table {
+    min-width: 760px;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}

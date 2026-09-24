@@ -1,0 +1,51 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before starting production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env before starting production}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://hpn.saximi.com.vn}
+      VIETQR_BANK_ID: ${VIETQR_BANK_ID:-MB}
+      VIETQR_ACCOUNT_NO: ${VIETQR_ACCOUNT_NO:-0908889999}
+      VIETQR_ACCOUNT_NAME: ${VIETQR_ACCOUNT_NAME:-SAXIMI SHOP}
+      SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY:-}
+      WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
+      WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
+      OTP_SECRET: ${OTP_SECRET:-}
+      OTP_TTL_SECONDS: ${OTP_TTL_SECONDS:-300}
+      OTP_RESEND_COOLDOWN_SECONDS: ${OTP_RESEND_COOLDOWN_SECONDS:-60}
+      OTP_MAX_SENDS_PER_HOUR: ${OTP_MAX_SENDS_PER_HOUR:-5}
+      OTP_MAX_VERIFY_ATTEMPTS: ${OTP_MAX_VERIFY_ATTEMPTS:-5}
+      ZALO_OA_DASHBOARD_URL: ${ZALO_OA_DASHBOARD_URL:-https://oa.zalo.me/manage/dashboard#}
+    volumes:
+      - saximi_backend_data:/app/data
+    networks:
+      - saximi
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        VITE_API_URL: /api
+        VITE_ADMIN_API_URL: /api/admin
+    restart: unless-stopped
+    environment:
+      SAXIMI_DOMAIN: ${SAXIMI_DOMAIN:-_}
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8080:80"
+    networks:
+      - saximi
+
+networks:
+  saximi:
+
+volumes:
+  saximi_backend_data:

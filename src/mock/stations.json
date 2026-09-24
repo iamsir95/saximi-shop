@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "Saximi shop - Điểm nhận 1",
+    "image": "https://zalo-miniapp.github.io/zaui-market/dummy/product/apples.png",
+    "address": "Số 13 Tân Thuận Đông, Phường Tân Thuận, Hồ Chí Minh",
+    "location": {
+      "lat": 10.768746,
+      "lng": 106.728228
+    }
+  },
+  {
+    "id": 2,
+    "name": "Saximi shop - Điểm nhận 2",
+    "image": "https://zalo-miniapp.github.io/zaui-market/dummy/product/apples.png",
+    "address": "Số 13 Tân Thuận Đông, Phường Tân Thuận, Hồ Chí Minh",
+    "location": {
+      "lat": 10.768746,
+      "lng": 106.728228
+    }
+  }
+]

@@ -131,6 +131,7 @@ publicApi.get('/settings', (_req: Request, res: Response) => {
   res.json({
     shopName: settings.shopName,
     logoUrl: settings.logoUrl,
+    faviconUrl: settings.faviconUrl,
     brandColor: settings.brandColor,
     hotline: settings.hotline,
     supportEmail: settings.supportEmail,

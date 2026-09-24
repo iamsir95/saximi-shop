@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, KeyRound, Link2, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
+import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Link2, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
 import { api } from '../api';
 import { PlatformSettings } from '../types';
 
 const emptySettings: PlatformSettings = {
   shopName: 'Saximi shop',
   logoUrl: 'https://photo-logo-mapps.zadn.vn/284fadf20bb7e2e9bba6.jpg',
+  faviconUrl: '/favicon.svg',
   brandColor: '#00ccf7',
   hotline: '',
   supportEmail: '',
@@ -153,6 +154,14 @@ export function SettingsPage() {
                   value={settings.logoUrl}
                   onChange={(e) => update('logoUrl', e.target.value)}
                   placeholder="https://..."
+                />
+              </Field>
+              <Field label="URL favicon" icon={<ImageIcon className="h-4 w-4" />}>
+                <input
+                  className={inputClass}
+                  value={settings.faviconUrl}
+                  onChange={(e) => update('faviconUrl', e.target.value)}
+                  placeholder="/favicon.svg hoặc https://..."
                 />
               </Field>
               <Field label="Màu thương hiệu" icon={<Palette className="h-4 w-4" />}>
@@ -369,6 +378,18 @@ export function SettingsPage() {
               <div className="mt-4 space-y-2 text-xs text-slate-400">
                 <div>Hotline: <span className="text-slate-200">{settings.hotline}</span></div>
                 <div>Email: <span className="text-slate-200">{settings.supportEmail}</span></div>
+                <div className="flex items-center gap-2">
+                  Favicon:
+                  {settings.faviconUrl ? (
+                    <img
+                      src={settings.faviconUrl}
+                      alt="Favicon"
+                      className="h-6 w-6 rounded-md bg-white object-contain p-1"
+                    />
+                  ) : (
+                    <span className="text-slate-200">Chưa thiết lập</span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="mt-3 text-xs text-slate-500">

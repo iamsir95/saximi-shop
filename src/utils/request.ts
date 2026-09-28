@@ -4,7 +4,17 @@ const CONFIG_API_URL = getConfig((config) => config.template.apiUrl);
 const ENV_API_URL = (import.meta as any).env?.VITE_API_URL;
 
 function getConfiguredApiUrl() {
-  return (ENV_API_URL || CONFIG_API_URL || "http://localhost:5001").replace(/\/$/, "");
+  const configuredUrl = (ENV_API_URL || CONFIG_API_URL || "/api").trim();
+
+  if (
+    typeof window !== "undefined" &&
+    window.location.protocol.startsWith("http") &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredUrl)
+  ) {
+    return "/api";
+  }
+
+  return configuredUrl.replace(/\/$/, "");
 }
 
 export function getApiBaseUrl() {

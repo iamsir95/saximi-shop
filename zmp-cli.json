@@ -10,7 +10,7 @@
   "template": "single-view",
   "theming": {
     "customColor": false,
-    "color": "#007aff",
+    "color": "#00ccf7",
     "darkTheme": false,
     "iconFonts": true,
     "fillBars": false,

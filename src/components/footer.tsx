@@ -35,12 +35,7 @@ const NAV_ITEMS: { name: string; path: string; icon: CommerceIconName }[] = [
     icon: "grid",
   },
   {
-    name: "Đơn hàng",
-    path: "/orders",
-    icon: "package",
-  },
-  {
-    name: "Hội viên",
+    name: "Tài khoản",
     path: "/member",
     icon: "user",
   },

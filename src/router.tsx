@@ -92,7 +92,7 @@ const router = createBrowserRouter(
           path: "/member",
           element: <MemberPage />,
           handle: {
-            title: "Khu hội viên",
+            title: "Tài khoản",
           },
         },
         {

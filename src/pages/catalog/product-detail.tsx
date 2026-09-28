@@ -246,9 +246,6 @@ export default function ProductDetailPage() {
                     alt={image.label}
                     className="aspect-square w-full rounded-xl object-cover"
                   />
-                  <div className="px-1 pt-1 text-[10px] font-medium text-slate-600 truncate">
-                    {image.label}
-                  </div>
                 </button>
               ))}
             </div>
@@ -272,10 +269,10 @@ export default function ProductDetailPage() {
                 </div>
                 <div
                   className={
-                    "rounded-2xl px-3 py-2 text-right text-[11px] font-bold ".concat(
+                    "commerce-tag self-start ".concat(
                       lowStock
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-emerald-50 text-emerald-700"
+                        ? "commerce-tag--warning"
+                        : "commerce-tag--success"
                     )
                   }
                 >
@@ -301,8 +298,12 @@ export default function ProductDetailPage() {
                 </div>
               )}
               {giftPrograms.length > 0 && (
-                <div className="mt-3 space-y-2 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-3 py-3 text-xs text-emerald-800">
-                  <div className="font-black">Quà tặng kèm</div>
+                <div className="mt-3 space-y-2 rounded-[22px] border border-emerald-200/70 bg-emerald-50/80 px-3.5 py-3 text-xs text-emerald-800 shadow-[0_12px_28px_rgba(16,185,129,0.1)]">
+                  <div className="flex items-center gap-2 font-black">
+                    <span className="commerce-tag commerce-tag--success">
+                      Quà tặng kèm
+                    </span>
+                  </div>
                   {giftPrograms.map((program) => (
                     <div key={program.id} className="font-semibold leading-5">
                       {program.title}: mua {program.minQuantity} tặng{" "}

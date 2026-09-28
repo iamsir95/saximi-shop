@@ -65,21 +65,21 @@ export default function ProductItem(props: ProductItemProps) {
             />
             <div className="absolute left-3 top-3 flex max-w-[calc(100%-24px)] flex-wrap gap-1">
               {hasDiscount && (
-                <span className="rounded-full bg-danger px-2 py-1 text-[11px] leading-4 font-bold text-white shadow-sm">
+                <span className="commerce-tag commerce-tag--danger">
                   -{discountPercent}%
                 </span>
               )}
               {hasGiftProgram && (
-                <span className="rounded-full bg-emerald-500 px-2 py-1 text-[11px] leading-4 font-bold text-white shadow-sm">
+                <span className="commerce-tag commerce-tag--success">
                   Quà tặng
                 </span>
               )}
               <span
                 className={
-                  "rounded-full px-2 py-1 text-[11px] leading-4 font-bold shadow-sm ".concat(
+                  "commerce-tag ".concat(
                     lowStock
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-white/80 text-slate-700"
+                      ? "commerce-tag--warning"
+                      : "commerce-tag--muted"
                   )
                 }
               >

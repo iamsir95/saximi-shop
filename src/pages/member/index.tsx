@@ -26,6 +26,13 @@ const STATUS_LABELS: Record<Order["status"], string> = {
   cancelled: "Đã hủy",
 };
 
+const STATUS_TAG_CLASS: Record<Order["status"], string> = {
+  pending: "commerce-tag commerce-tag--warning",
+  shipping: "commerce-tag commerce-tag--info",
+  completed: "commerce-tag commerce-tag--success",
+  cancelled: "commerce-tag commerce-tag--muted",
+};
+
 function getDeliveryPhone(order: Order) {
   return "phone" in order.delivery ? order.delivery.phone : "";
 }
@@ -156,6 +163,31 @@ export default function MemberPage() {
           </Box>
 
           <Box className="liquid-card commerce-card p-4 space-y-3">
+            <button
+              type="button"
+              onClick={() =>
+                isLoggedIn
+                  ? navigate("/orders")
+                  : navigate("/login", { viewTransition: true })
+              }
+              className="w-full rounded-[22px] bg-white/62 border border-white/70 p-3 text-left transition active:scale-[0.99]"
+            >
+              <Box className="flex items-center gap-3">
+                <Box className="w-10 h-10 rounded-2xl bg-primary/12 text-primary flex items-center justify-center shrink-0">
+                  <CommerceIcon name="package" size={20} />
+                </Box>
+                <Box className="min-w-0 flex-1">
+                  <Text className="font-black text-slate-900">
+                    Đơn hàng của tôi
+                  </Text>
+                  <Text className="text-xs text-slate-500 mt-0.5 leading-5">
+                    Theo dõi trạng thái mua hàng, vận chuyển và thanh toán.
+                  </Text>
+                </Box>
+                <CommerceIcon name="chevron-right" size={14} className="text-slate-400" />
+              </Box>
+            </button>
+
             <Text className="font-bold text-slate-900">
               Quyền lợi đại lý
             </Text>
@@ -212,7 +244,7 @@ export default function MemberPage() {
           }}
         >
           <Text className="text-xs uppercase tracking-wide font-bold text-slate-700/72">
-            Khu hội viên
+            Tài khoản
           </Text>
           <Text className="mt-2 text-2xl font-black text-primaryForeground">
             Hội Liên hiệp Phụ nữ Việt Nam
@@ -230,7 +262,7 @@ export default function MemberPage() {
                   </Text>
                 <Text className="text-lg font-black text-primaryForeground">{memberCode}</Text>
               </Box>
-              <Box className="rounded-full bg-white text-primary px-3 py-1 text-xs font-black">
+              <Box className="commerce-tag commerce-tag--info">
                 {isOfficer ? "Cán bộ Hội" : "Hội viên"}
               </Box>
             </Box>
@@ -307,10 +339,10 @@ export default function MemberPage() {
 
         <Box className="grid grid-cols-2 gap-3">
           <Button
-            onClick={() => navigate("/orders/pending")}
+            onClick={() => navigate("/orders")}
             className="rounded-2xl bg-primary text-primaryForeground font-bold"
           >
-            Theo dõi đơn
+            Đơn hàng
           </Button>
           <Button
             onClick={() => navigate("/stations")}
@@ -357,7 +389,7 @@ export default function MemberPage() {
                     <Text className="font-bold text-sm text-slate-900">
                       Đơn #{order.id}
                     </Text>
-                    <Text className="text-xs font-bold text-primary">
+                    <Text className={STATUS_TAG_CLASS[order.status]}>
                       {STATUS_LABELS[order.status]}
                     </Text>
                   </Box>

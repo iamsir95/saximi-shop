@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles, Gift } from 'lucide-react';
 import { api } from '../api';
 import { Category, Product } from '../types';
+import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 
 export const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -197,7 +198,7 @@ export const Products: React.FC = () => {
         kind: index === 0 ? 'MAIN' : index === 1 ? 'DETAIL' : 'COLLECTION',
         sortOrder: index + 1,
       })),
-      detail,
+      detail: cleanRichText(detail),
       promoDescription: promoDescription.trim() || undefined,
       giftPrograms: parseGiftPrograms(giftProgramsText),
       attributes: parseAttributes(attributesText),
@@ -206,7 +207,7 @@ export const Products: React.FC = () => {
         description: seoDescription.trim() || undefined,
         keywords: seoKeywords.trim() || undefined,
         slug: seoSlug.trim() || undefined,
-        article: seoArticle.trim() || undefined,
+        article: cleanRichText(seoArticle) || undefined,
       },
       isFlashSale,
       isRecommended,
@@ -588,27 +589,21 @@ export const Products: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Mô tả sản phẩm</label>
-                  <textarea
-                    rows={4}
-                    value={detail}
-                    onChange={(e) => setDetail(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                    placeholder="Nhập thông tin chi tiết..."
-                  />
-                </div>
+                <RichTextEditor
+                  label="Mô tả sản phẩm"
+                  value={detail}
+                  onChange={setDetail}
+                  minHeight={220}
+                  placeholder="Nhập thông tin chi tiết, lợi ích nổi bật, cách dùng..."
+                />
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Nội dung bài viết SEO</label>
-                  <textarea
-                    rows={8}
-                    value={seoArticle}
-                    onChange={(e) => setSeoArticle(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm leading-6 focus:outline-none focus:border-blue-500"
-                    placeholder={'Viết nội dung bán hàng chuẩn SEO...\n- Lợi ích nổi bật\n- Cách sử dụng\n- Vì sao nên mua tại Saximi shop'}
-                  />
-                </div>
+                <RichTextEditor
+                  label="Nội dung bài viết SEO"
+                  value={seoArticle}
+                  onChange={setSeoArticle}
+                  minHeight={320}
+                  placeholder="Viết nội dung bán hàng chuẩn SEO, có heading, danh sách, hình ảnh và bảng thông số..."
+                />
               </div>
 
               <div className="flex gap-6 pt-2">

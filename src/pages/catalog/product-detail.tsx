@@ -20,6 +20,7 @@ import {
   isGiftProgramActive,
   isLowStock,
 } from "@/utils/commerce";
+import { hasHtmlContent, sanitizeRichText } from "@/utils/rich-text";
 
 function withImageParams(url: string, params: Record<string, string>) {
   try {
@@ -87,6 +88,23 @@ function buildImageLibrary(product: Product): ProductImage[] {
     seen.add(image.url);
     return true;
   });
+}
+
+function RichProductContent({ content }: { content: string }) {
+  if (hasHtmlContent(content)) {
+    return (
+      <div
+        className="rich-product-content p-4 pt-2 text-sm leading-6 text-subtitle"
+        dangerouslySetInnerHTML={{ __html: sanitizeRichText(content) }}
+      />
+    );
+  }
+
+  return (
+    <div className="p-4 pt-2 text-sm whitespace-pre-wrap text-subtitle">
+      {content}
+    </div>
+  );
 }
 
 export default function ProductDetailPage() {
@@ -304,9 +322,7 @@ export default function ProductDetailPage() {
           <>
             <div className="bg-background h-2 w-full"></div>
             <Section title="Mô tả sản phẩm">
-              <div className="text-sm whitespace-pre-wrap text-subtitle p-4 pt-2">
-                {product.detail}
-              </div>
+              <RichProductContent content={product.detail} />
             </Section>
           </>
         )}
@@ -336,8 +352,8 @@ export default function ProductDetailPage() {
           <>
             <div className="bg-background h-2 w-full"></div>
             <Section title={product.seo?.title || "Bài viết sản phẩm"}>
-              <article className="p-4 pt-2 text-sm leading-6 text-subtitle whitespace-pre-wrap">
-                {seoArticle}
+              <article>
+                <RichProductContent content={seoArticle} />
               </article>
             </Section>
           </>

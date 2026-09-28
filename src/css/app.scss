@@ -186,6 +186,88 @@ html[data-platform="website"] {
   text-transform: uppercase;
 }
 
+.rich-product-content {
+  word-break: break-word;
+
+  h2 {
+    margin: 0.75rem 0 0.35rem;
+    font-size: 18px;
+    line-height: 25px;
+    font-weight: 800;
+    color: #102033;
+  }
+
+  h3 {
+    margin: 0.65rem 0 0.3rem;
+    font-size: 16px;
+    line-height: 23px;
+    font-weight: 800;
+    color: #182c43;
+  }
+
+  p {
+    margin: 0.45rem 0;
+  }
+
+  ul,
+  ol {
+    margin: 0.55rem 0;
+    padding-left: 1.2rem;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  li + li {
+    margin-top: 0.25rem;
+  }
+
+  blockquote {
+    margin: 0.75rem 0;
+    border-left: 3px solid var(--primary);
+    border-radius: 14px;
+    background: rgba(var(--primary-rgb), 0.08);
+    padding: 0.75rem 0.9rem;
+    color: #475569;
+  }
+
+  a {
+    color: var(--primary-dark);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.75rem 0;
+    border-radius: 18px;
+  }
+
+  table {
+    width: 100%;
+    margin: 0.75rem 0;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.62);
+  }
+
+  td,
+  th {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    padding: 0.55rem 0.65rem;
+    vertical-align: top;
+  }
+}
+
 .app-scroll {
   min-height: 0;
   min-width: 0;

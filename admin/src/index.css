@@ -87,6 +87,82 @@
   min-width: 0;
 }
 
+.rich-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #64748b;
+  pointer-events: none;
+}
+
+.rich-text-editor h2 {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 1.25rem;
+  line-height: 1.65rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.rich-text-editor h3 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1.5rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.rich-text-editor p {
+  margin: 0.45rem 0;
+}
+
+.rich-text-editor ul,
+.rich-text-editor ol {
+  margin: 0.6rem 0;
+  padding-left: 1.35rem;
+}
+
+.rich-text-editor ul {
+  list-style: disc;
+}
+
+.rich-text-editor ol {
+  list-style: decimal;
+}
+
+.rich-text-editor blockquote {
+  margin: 0.75rem 0;
+  border-left: 3px solid #00ccf7;
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 0.75rem 1rem;
+  color: #cbd5e1;
+}
+
+.rich-text-editor a {
+  color: #67e8f9;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rich-text-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.rich-text-editor table {
+  width: 100%;
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 0.9rem;
+}
+
+.rich-text-editor td,
+.rich-text-editor th {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  padding: 0.6rem 0.75rem;
+}
+
 @media (min-width: 1280px) {
   .admin-content > div {
     max-width: 1480px;

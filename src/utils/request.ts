@@ -5,8 +5,10 @@ const ENV_API_URL = (import.meta as any).env?.VITE_API_URL;
 
 function getConfiguredApiUrl() {
   const configuredUrl = (ENV_API_URL || CONFIG_API_URL || "/api").trim();
+  const isProductionBuild = Boolean((import.meta as any).env?.PROD);
 
   if (
+    isProductionBuild &&
     typeof window !== "undefined" &&
     window.location.protocol.startsWith("http") &&
     /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredUrl)

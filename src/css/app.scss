@@ -268,6 +268,37 @@ html[data-platform="website"] {
   }
 }
 
+.promo-badge,
+.promo-spotlight {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(var(--primary-rgb), 0.26);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(var(--primary-rgb), 0.13)),
+    rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 12px 28px rgba(0, 204, 247, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(18px) saturate(1.18);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+.promo-badge::before,
+.promo-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.76), transparent 34%);
+  opacity: 0.58;
+}
+
+.promo-badge > *,
+.promo-spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
 .app-scroll {
   min-height: 0;
   min-width: 0;

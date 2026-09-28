@@ -284,8 +284,20 @@ export default function ProductDetailPage() {
               </div>
               <div className="text-sm mt-1">{product.name}</div>
               {product.promoDescription && (
-                <div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50/72 px-3 py-2 text-xs font-semibold leading-5 text-primary">
-                  {product.promoDescription}
+                <div className="promo-spotlight mt-3 rounded-[22px] px-3.5 py-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_24px_rgba(0,204,247,0.28)]">
+                      <CommerceIcon name="ticket" size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="commerce-eyebrow text-primary">
+                        Chương trình ưu đãi
+                      </div>
+                      <div className="mt-1 text-sm font-extrabold leading-5 text-slate-800">
+                        {product.promoDescription}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
               {giftPrograms.length > 0 && (

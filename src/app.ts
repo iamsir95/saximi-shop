@@ -17,6 +17,14 @@ import "@/css/app.scss";
 import appConfig from "../app-config.json";
 import { getRuntimePlatform } from "./utils/platform";
 
+if (
+  import.meta.env.DEV &&
+  window.location.pathname.startsWith("/admin") &&
+  window.location.port === "5173"
+) {
+  window.location.replace("http://localhost:5174/");
+}
+
 if (!window.APP_CONFIG) {
   window.APP_CONFIG = appConfig;
 }

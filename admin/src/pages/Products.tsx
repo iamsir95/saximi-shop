@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles, Gift } from 'lucide-react';
 import { api } from '../api';
 import { Category, Product } from '../types';
 
@@ -23,6 +23,7 @@ export const Products: React.FC = () => {
   const [imageUrls, setImageUrls] = useState('');
   const [detail, setDetail] = useState('');
   const [promoDescription, setPromoDescription] = useState('');
+  const [giftProgramsText, setGiftProgramsText] = useState('');
   const [attributesText, setAttributesText] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
@@ -50,6 +51,55 @@ export const Products: React.FC = () => {
   const serializeAttributes = (product: Product) =>
     (product.attributes || [])
       .map((item) => `${item.name}: ${item.value}`)
+      .join('\n');
+
+  const parseGiftPrograms = (value: string) =>
+    value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [
+          title,
+          giftProductId,
+          minQuantity = '1',
+          giftQuantity = '1',
+          active = 'true',
+          startsAt,
+          endsAt,
+        ] = line.split('|').map((part) => part.trim());
+        const giftId = Number(giftProductId);
+
+        if (!title || !giftId) return null;
+
+        return {
+          id: editingProduct
+            ? `${editingProduct.id}-gift-${index + 1}`
+            : `new-gift-${index + 1}`,
+          title,
+          giftProductId: giftId,
+          minQuantity: Math.max(1, Number(minQuantity || 1)),
+          giftQuantity: Math.max(1, Number(giftQuantity || 1)),
+          isActive: !['false', '0', 'off', 'inactive', 'tắt'].includes(active.toLowerCase()),
+          startsAt: startsAt || undefined,
+          endsAt: endsAt || undefined,
+        };
+      })
+      .filter(Boolean);
+
+  const serializeGiftPrograms = (product: Product) =>
+    (product.giftPrograms || [])
+      .map((program) =>
+        [
+          program.title,
+          program.giftProductId,
+          program.minQuantity,
+          program.giftQuantity,
+          program.isActive ? 'true' : 'false',
+          program.startsAt || '',
+          program.endsAt || '',
+        ].join(' | ')
+      )
       .join('\n');
 
   const loadProductsAndCategories = async () => {
@@ -82,6 +132,7 @@ export const Products: React.FC = () => {
     setImageUrls('');
     setDetail('');
     setPromoDescription('');
+    setGiftProgramsText('');
     setAttributesText('');
     setSeoTitle('');
     setSeoDescription('');
@@ -104,6 +155,7 @@ export const Products: React.FC = () => {
     setImageUrls((product.images || []).map((item) => item.url).join('\n'));
     setDetail(product.detail || '');
     setPromoDescription(product.promoDescription || '');
+    setGiftProgramsText(serializeGiftPrograms(product));
     setAttributesText(serializeAttributes(product));
     setSeoTitle(product.seo?.title || '');
     setSeoDescription(product.seo?.description || '');
@@ -147,6 +199,7 @@ export const Products: React.FC = () => {
       })),
       detail,
       promoDescription: promoDescription.trim() || undefined,
+      giftPrograms: parseGiftPrograms(giftProgramsText),
       attributes: parseAttributes(attributesText),
       seo: {
         title: seoTitle.trim() || undefined,
@@ -268,7 +321,10 @@ export const Products: React.FC = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-white">{product.name}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-white">{product.name}</div>
+                        <div className="mt-0.5 text-[11px] font-mono text-slate-500">ID: {product.id}</div>
+                      </td>
                       <td className="py-3 px-4 text-slate-400">
                         <span className="px-2.5 py-1 bg-slate-900 rounded-lg text-xs font-medium border border-slate-700">
                           {cat?.name || 'Khác'}
@@ -292,6 +348,11 @@ export const Products: React.FC = () => {
                           {product.isRecommended && (
                             <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded border border-amber-500/30 font-medium">
                               Gợi ý
+                            </span>
+                          )}
+                          {Boolean(product.giftPrograms?.length) && (
+                            <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs rounded border border-emerald-500/30 font-medium">
+                              Quà tặng
                             </span>
                           )}
                         </div>
@@ -444,6 +505,23 @@ export const Products: React.FC = () => {
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
                       placeholder="Ví dụ: Mua hôm nay giảm 15%, tặng kèm freeship cho đơn từ 2 sản phẩm."
                     />
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1.5">
+                      <Gift className="w-4 h-4 text-emerald-400" />
+                      Mua tặng kèm sản phẩm
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={giftProgramsText}
+                      onChange={(e) => setGiftProgramsText(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                      placeholder={'Mỗi dòng một chương trình\nTên chương trình | ID sản phẩm tặng | SL mua tối thiểu | SL tặng | true | Ngày bắt đầu | Ngày kết thúc\nVí dụ: Mua 2 tặng 1 nước rửa | 8 | 2 | 1 | true | 2026-09-28 | 2026-12-31'}
+                    />
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Dùng ID sản phẩm tặng trong danh sách sản phẩm. Bỏ trống ngày nếu chương trình luôn hiệu lực.
+                    </p>
                   </div>
 
                   <div>

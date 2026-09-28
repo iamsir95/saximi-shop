@@ -1,4 +1,4 @@
-import type { Product } from "@/types";
+import type { CartItem, Product, ProductGiftProgram } from "@/types";
 
 export type ProductFilterKey = "all" | "discount" | "low-stock";
 export type ProductSortKey = "featured" | "price-asc" | "price-desc" | "discount";
@@ -30,6 +30,58 @@ export function getPurchasableProduct(
     price: getRegularPrice(product),
     originalPrice: undefined,
   };
+}
+
+export function isGiftProgramActive(program: ProductGiftProgram, now = new Date()) {
+  if (!program.isActive) return false;
+  if (program.startsAt && new Date(program.startsAt) > now) return false;
+  if (program.endsAt && new Date(program.endsAt) < now) return false;
+  return true;
+}
+
+export function getEligibleGiftItems(
+  cart: CartItem[],
+  products: Product[]
+): CartItem[] {
+  const now = new Date();
+
+  return cart.reduce<CartItem[]>((giftItems, item) => {
+    if (item.isGift || !item.product.giftPrograms?.length) {
+      return giftItems;
+    }
+
+    const quantity = Math.max(1, Number(item.quantity || 1));
+    item.product.giftPrograms
+      .filter((program) => isGiftProgramActive(program, now))
+      .forEach((program) => {
+        const minQuantity = Math.max(1, Number(program.minQuantity || 1));
+        const giftQuantity = Math.max(1, Number(program.giftQuantity || 1));
+        const multiplier = Math.floor(quantity / minQuantity);
+
+        if (multiplier <= 0) return;
+
+        const giftProduct = products.find(
+          (product) => product.id === Number(program.giftProductId)
+        );
+        if (!giftProduct) return;
+
+        giftItems.push({
+          product: {
+            ...giftProduct,
+            name: `${giftProduct.name} (Quà tặng)`,
+            price: 0,
+            originalPrice: giftProduct.originalPrice || giftProduct.price,
+          },
+          quantity: multiplier * giftQuantity,
+          isGift: true,
+          giftProgramId: program.id,
+          giftForProductId: item.product.id,
+          giftProgramTitle: program.title,
+        });
+      });
+
+    return giftItems;
+  }, []);
 }
 
 export function getDiscountPercent(

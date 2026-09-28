@@ -27,6 +27,17 @@ export interface ProductSeoContent {
   article?: string;
 }
 
+export interface ProductGiftProgram {
+  id: string;
+  title: string;
+  giftProductId: number;
+  minQuantity: number;
+  giftQuantity: number;
+  isActive: boolean;
+  startsAt?: string;
+  endsAt?: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -37,6 +48,7 @@ export interface Product {
   categoryId: number;
   detail?: string;
   promoDescription?: string;
+  giftPrograms?: ProductGiftProgram[];
   attributes?: ProductAttribute[];
   seo?: ProductSeoContent;
   sizes?: string[];
@@ -201,6 +213,10 @@ export interface CommissionRecord {
 export interface OrderItem {
   product: Product;
   quantity: number;
+  isGift?: boolean;
+  giftProgramId?: string;
+  giftForProductId?: number;
+  giftProgramTitle?: string;
 }
 
 export interface Order {

@@ -30,6 +30,17 @@ export interface ProductSeoContent {
   article?: string;
 }
 
+export interface ProductGiftProgram {
+  id: string;
+  title: string;
+  giftProductId: number;
+  minQuantity: number;
+  giftQuantity: number;
+  isActive: boolean;
+  startsAt?: string;
+  endsAt?: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -40,6 +51,7 @@ export interface Product {
   categoryId: number;
   detail?: string;
   promoDescription?: string;
+  giftPrograms?: ProductGiftProgram[];
   attributes?: ProductAttribute[];
   seo?: ProductSeoContent;
   sizes?: string[];
@@ -244,6 +256,10 @@ export interface InHouseDelivery {
 export interface OrderItem {
   product: Product;
   quantity: number;
+  isGift?: boolean;
+  giftProgramId?: string;
+  giftForProductId?: number;
+  giftProgramTitle?: string;
 }
 
 export interface Order {
@@ -613,11 +629,59 @@ export class Database {
     };
   }
 
+  private static isGiftProgramActive(program: ProductGiftProgram, now = new Date()): boolean {
+    if (!program.isActive) return false;
+    if (program.startsAt && new Date(program.startsAt) > now) return false;
+    if (program.endsAt && new Date(program.endsAt) < now) return false;
+    return true;
+  }
+
+  private static buildGiftOrderItems(items: OrderItem[]): OrderItem[] {
+    const now = new Date();
+
+    return items.reduce<OrderItem[]>((giftItems, item) => {
+      if (item.isGift || !item.product.giftPrograms?.length) {
+        return giftItems;
+      }
+
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      item.product.giftPrograms
+        .filter((program) => this.isGiftProgramActive(program, now))
+        .forEach((program) => {
+          const minQuantity = Math.max(1, Number(program.minQuantity || 1));
+          const giftQuantity = Math.max(1, Number(program.giftQuantity || 1));
+          const multiplier = Math.floor(quantity / minQuantity);
+
+          if (multiplier <= 0) return;
+
+          const giftProduct = this.products.find((product) => product.id === Number(program.giftProductId));
+          if (!giftProduct) return;
+
+          giftItems.push({
+            product: {
+              ...giftProduct,
+              name: `${giftProduct.name} (Quà tặng)`,
+              price: 0,
+              originalPrice: giftProduct.originalPrice || giftProduct.price,
+              images: giftProduct.images || this.buildProductImageLibrary(giftProduct),
+            },
+            quantity: multiplier * giftQuantity,
+            isGift: true,
+            giftProgramId: program.id,
+            giftForProductId: item.product.id,
+            giftProgramTitle: program.title,
+          });
+        });
+
+      return giftItems;
+    }, []);
+  }
+
   private static normalizeOrderItems(
     items: Array<OrderItem | any> = [],
     canUseMemberPricing = false
   ): OrderItem[] {
-    return items.reduce<OrderItem[]>((normalizedItems, item: any) => {
+    const purchasableItems = items.reduce<OrderItem[]>((normalizedItems, item: any) => {
       const itemProduct = item.product || item;
       const productId = Number(itemProduct.id || item.id || 0);
       const product = this.products.find((p) => p.id === productId);
@@ -634,6 +698,8 @@ export class Database {
       });
       return normalizedItems;
     }, []);
+
+    return [...purchasableItems, ...this.buildGiftOrderItems(purchasableItems)];
   }
 
   private static normalizeOrderDelivery(order: Partial<Order>, customer: User): Order['delivery'] {

@@ -86,6 +86,17 @@ export interface ProductSeoContent {
   article?: string;
 }
 
+export interface ProductGiftProgram {
+  id: string;
+  title: string;
+  giftProductId: number;
+  minQuantity: number;
+  giftQuantity: number;
+  isActive: boolean;
+  startsAt?: string;
+  endsAt?: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -97,6 +108,7 @@ export interface Product {
   category: Category;
   detail?: string;
   promoDescription?: string;
+  giftPrograms?: ProductGiftProgram[];
   attributes?: ProductAttribute[];
   seo?: ProductSeoContent;
   sizes?: Size[];
@@ -123,6 +135,10 @@ export interface Coupon {
 export interface CartItem {
   product: Product;
   quantity: number;
+  isGift?: boolean;
+  giftProgramId?: string;
+  giftForProductId?: number;
+  giftProgramTitle?: string;
 }
 
 export type Cart = CartItem[];

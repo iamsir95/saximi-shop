@@ -280,14 +280,21 @@ export const Orders: React.FC = () => {
                         className="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-slate-700"
                       />
                       <div>
-                        <div className="text-sm font-semibold text-white">{item.product?.name}</div>
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white">
+                          {item.product?.name}
+                          {item.isGift && (
+                            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-500/20">
+                              Quà tặng
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-slate-400">
-                          {formatMoney(item.product?.price || 0)} x {item.quantity}
+                          {item.isGift ? '0 VND' : formatMoney(item.product?.price || 0)} x {item.quantity}
                         </div>
                       </div>
                     </div>
                     <div className="text-sm font-bold text-emerald-400">
-                      {formatMoney((item.product?.price || 0) * item.quantity)}
+                      {item.isGift ? '0 VND' : formatMoney((item.product?.price || 0) * item.quantity)}
                     </div>
                   </div>
                 ))}

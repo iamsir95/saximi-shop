@@ -1,7 +1,7 @@
 import HorizontalDivider from "@/components/horizontal-divider";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router-dom";
-import { productState } from "@/state";
+import { productsState, productState } from "@/state";
 import { formatPrice } from "@/utils/format";
 import ShareButton from "./share-buttont";
 import RelatedProducts from "./related-products";
@@ -17,6 +17,7 @@ import {
   getSavedAmount,
   getStockLabel,
   hasMemberPrice,
+  isGiftProgramActive,
   isLowStock,
 } from "@/utils/commerce";
 
@@ -91,6 +92,7 @@ function buildImageLibrary(product: Product): ProductImage[] {
 export default function ProductDetailPage() {
   const { id } = useParams();
   const product = useAtomValue(productState(Number(id)))!;
+  const products = useAtomValue(productsState);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -107,6 +109,19 @@ export default function ProductDetailPage() {
   const lowStock = isLowStock(product);
   const hasAttributes = Boolean(product.attributes?.length);
   const seoArticle = product.seo?.article?.trim();
+  const giftPrograms = useMemo(
+    () =>
+      (product.giftPrograms || [])
+        .filter((program) => isGiftProgramActive(program))
+        .map((program) => ({
+          ...program,
+          giftProduct: products.find(
+            (item) => item.id === Number(program.giftProductId)
+          ),
+        }))
+        .filter((program) => program.giftProduct),
+    [product.giftPrograms, products]
+  );
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -253,6 +268,17 @@ export default function ProductDetailPage() {
               {product.promoDescription && (
                 <div className="mt-3 rounded-2xl border border-cyan-100 bg-cyan-50/72 px-3 py-2 text-xs font-semibold leading-5 text-primary">
                   {product.promoDescription}
+                </div>
+              )}
+              {giftPrograms.length > 0 && (
+                <div className="mt-3 space-y-2 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-3 py-3 text-xs text-emerald-800">
+                  <div className="font-black">Quà tặng kèm</div>
+                  {giftPrograms.map((program) => (
+                    <div key={program.id} className="font-semibold leading-5">
+                      {program.title}: mua {program.minQuantity} tặng{" "}
+                      {program.giftQuantity} {program.giftProduct?.name}
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">

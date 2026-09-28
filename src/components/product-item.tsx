@@ -10,6 +10,7 @@ import {
   getDisplayPrice,
   getStockLabel,
   hasMemberPrice,
+  isGiftProgramActive,
   isLowStock,
 } from "@/utils/commerce";
 import CommerceIcon from "./commerce-icon";
@@ -35,6 +36,9 @@ export default function ProductItem(props: ProductItemProps) {
   const displayPrice = getDisplayPrice(props.product, canUseMemberPricing);
   const lowStock = isLowStock(props.product);
   const stockLabel = getStockLabel(props.product);
+  const hasGiftProgram = Boolean(
+    props.product.giftPrograms?.some((program) => isGiftProgramActive(program))
+  );
 
   return (
     <div
@@ -63,6 +67,11 @@ export default function ProductItem(props: ProductItemProps) {
               {hasDiscount && (
                 <span className="rounded-full bg-danger px-2 py-1 text-[11px] leading-4 font-bold text-white shadow-sm">
                   -{discountPercent}%
+                </span>
+              )}
+              {hasGiftProgram && (
+                <span className="rounded-full bg-emerald-500 px-2 py-1 text-[11px] leading-4 font-bold text-white shadow-sm">
+                  Quà tặng
                 </span>
               )}
               <span

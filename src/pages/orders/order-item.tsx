@@ -4,6 +4,7 @@ import { List } from "zmp-ui";
 
 function OrderItem(props: CartItem) {
   const hasDiscount =
+    !props.isGift &&
     Boolean(props.product.originalPrice) &&
     props.product.originalPrice! > props.product.price;
 
@@ -19,8 +20,13 @@ function OrderItem(props: CartItem) {
       }
     >
       <div className="text-sm">{props.product.name}</div>
+      {props.isGift && (
+        <div className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+          Quà tặng kèm
+        </div>
+      )}
       <div className="text-sm font-bold mt-1">
-        {formatPrice(props.product.price)}
+        {props.isGift ? "0 VND" : formatPrice(props.product.price)}
       </div>
       {hasDiscount && (
         <div className="line-through text-subtitle text-4xs">

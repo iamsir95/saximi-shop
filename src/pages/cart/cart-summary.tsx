@@ -1,10 +1,10 @@
 import { useAtomValue } from "jotai";
-import { cartTotalState } from "@/state";
+import { cartTotalState, productsState } from "@/state";
 import { formatPrice } from "@/utils/format";
 import Section from "@/components/section";
 import HorizontalDivider from "@/components/horizontal-divider";
 import { cartState } from "@/state";
-import { getSavedAmount } from "@/utils/commerce";
+import { getEligibleGiftItems, getSavedAmount } from "@/utils/commerce";
 
 export default function CartSummary() {
   const {
@@ -15,6 +15,8 @@ export default function CartSummary() {
     totalAmount,
   } = useAtomValue(cartTotalState);
   const cart = useAtomValue(cartState);
+  const products = useAtomValue(productsState);
+  const giftItems = getEligibleGiftItems(cart, products);
   const productSavings = cart.reduce(
     (total, item) => total + getSavedAmount(item.product) * item.quantity,
     0
@@ -56,6 +58,22 @@ export default function CartSummary() {
             )}
           </tbody>
         </table>
+        {giftItems.length > 0 && (
+          <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+            <div className="font-black">Quà tặng kèm</div>
+            <div className="mt-1 space-y-1">
+              {giftItems.map((item) => (
+                <div
+                  key={`${item.giftProgramId}-${item.product.id}`}
+                  className="flex items-center justify-between gap-2 font-semibold"
+                >
+                  <span className="min-w-0 truncate">{item.product.name}</span>
+                  <span className="shrink-0">x{item.quantity}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <HorizontalDivider />
         {totalSavings > 0 && (
           <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">

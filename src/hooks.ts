@@ -3,12 +3,14 @@ import { MutableRefObject, useLayoutEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { UIMatch, useMatches, useNavigate } from "react-router-dom";
 import {
+  affiliatePortalState,
   appNotificationsState,
   cartState,
   cartTotalState,
   cartNoteState,
   deliveryModeState,
   affiliateReferrerIdState,
+  loadableUserInfoState,
   ordersState,
   selectedCouponState,
   selectedStationState,
@@ -20,8 +22,10 @@ import { FrontendNotification, Product } from "@/types";
 import { getConfig } from "@/utils/template";
 import { getApiBaseUrl } from "@/utils/request";
 import { authorize, createOrder, openChat } from "zmp-sdk/apis";
-import { useAtomCallback } from "jotai/utils";
+import { loadable, useAtomCallback } from "jotai/utils";
 import { isZaloMiniAppRuntime } from "@/utils/platform";
+import { findAffiliateForUser } from "@/utils/affiliate";
+import { getPurchasableProduct } from "@/utils/commerce";
 
 type NotifyInput = Omit<FrontendNotification, "id" | "createdAt" | "read"> & {
   id?: string;
@@ -123,6 +127,11 @@ export function useRequestInformation() {
 export function useAddToCart(product: Product) {
   const [cart, setCart] = useAtom(cartState);
   const notify = useFrontendNotification();
+  const canUseMemberPricing = useMemberPricingEligible();
+  const purchasableProduct = useMemo(
+    () => getPurchasableProduct(product, canUseMemberPricing),
+    [canUseMemberPricing, product]
+  );
 
   const currentCartItem = useMemo(
     () => cart.find((item) => item.product.id === product.id),
@@ -147,9 +156,10 @@ export function useAddToCart(product: Product) {
       } else {
         if (itemInCart) {
           itemInCart.quantity = newQuantity;
+          itemInCart.product = purchasableProduct;
         } else {
           cart.push({
-            product,
+            product: purchasableProduct,
             quantity: newQuantity,
           });
         }
@@ -159,7 +169,7 @@ export function useAddToCart(product: Product) {
     if (options?.toast) {
       notify({
         title: "Giỏ hàng",
-        message: `Đã thêm ${product.name}`,
+        message: `Đã thêm ${purchasableProduct.name}`,
         kind: "success",
         topic: "cart",
         actionPath: "/cart",
@@ -168,6 +178,24 @@ export function useAddToCart(product: Product) {
   };
 
   return { addToCart, cartQuantity: currentCartItem?.quantity ?? 0 };
+}
+
+export function useMemberPricingEligible() {
+  const userInfo = useAtomValue(loadableUserInfoState);
+  const affiliatePortal = useAtomValue(
+    useMemo(() => loadable(affiliatePortalState), [])
+  );
+
+  if (userInfo.state !== "hasData" || affiliatePortal.state !== "hasData") {
+    return false;
+  }
+
+  return Boolean(
+    findAffiliateForUser(
+      affiliatePortal.data?.affiliates || [],
+      userInfo.data
+    )
+  );
 }
 
 export function useCustomerSupport() {

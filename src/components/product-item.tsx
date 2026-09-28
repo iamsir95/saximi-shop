@@ -3,9 +3,15 @@ import { formatPrice } from "@/utils/format";
 import TransitionLink from "./transition-link";
 import { useState } from "react";
 import { Button } from "zmp-ui";
-import { useAddToCart } from "@/hooks";
+import { useAddToCart, useMemberPricingEligible } from "@/hooks";
 import QuantityInput from "./quantity-input";
-import { getDiscountPercent, getStockLabel, isLowStock } from "@/utils/commerce";
+import {
+  getDiscountPercent,
+  getDisplayPrice,
+  getStockLabel,
+  hasMemberPrice,
+  isLowStock,
+} from "@/utils/commerce";
 import CommerceIcon from "./commerce-icon";
 
 export interface ProductItemProps {
@@ -20,10 +26,13 @@ export interface ProductItemProps {
 export default function ProductItem(props: ProductItemProps) {
   const [selected, setSelected] = useState(false);
   const { addToCart, cartQuantity } = useAddToCart(props.product);
-  const hasDiscount =
-    Boolean(props.product.originalPrice) &&
-    props.product.originalPrice! > props.product.price;
-  const discountPercent = getDiscountPercent(props.product);
+  const canUseMemberPricing = useMemberPricingEligible();
+  const hasDiscount = canUseMemberPricing && hasMemberPrice(props.product);
+  const discountPercent = getDiscountPercent(
+    props.product,
+    canUseMemberPricing
+  );
+  const displayPrice = getDisplayPrice(props.product, canUseMemberPricing);
   const lowStock = isLowStock(props.product);
   const stockLabel = getStockLabel(props.product);
 
@@ -75,7 +84,7 @@ export default function ProductItem(props: ProductItemProps) {
                 </div>
               </div>
               <div className="mt-1 text-base font-black text-primary truncate">
-                {formatPrice(props.product.price)}
+                {formatPrice(displayPrice)}
               </div>
               {hasDiscount && (
                 <div className="commerce-caption space-x-1 truncate">

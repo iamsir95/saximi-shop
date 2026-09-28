@@ -1,4 +1,5 @@
 import CommerceTrustStrip from "@/components/commerce-trust-strip";
+import { useMemberPricingEligible } from "@/hooks";
 import { couponsState, productsState } from "@/state";
 import { getCommerceSummary } from "@/utils/commerce";
 import { useAtomValue } from "jotai";
@@ -6,7 +7,8 @@ import { useAtomValue } from "jotai";
 export default function CommerceHighlights() {
   const products = useAtomValue(productsState);
   const coupons = useAtomValue(couponsState);
-  const summary = getCommerceSummary(products);
+  const canUseMemberPricing = useMemberPricingEligible();
+  const summary = getCommerceSummary(products, canUseMemberPricing);
   const bestCoupon = coupons
     .filter((coupon) => coupon.isActive)
     .sort((a, b) => b.discountPercent - a.discountPercent)[0];
@@ -23,15 +25,19 @@ export default function CommerceHighlights() {
         <div className="mt-3 grid grid-cols-3 gap-2">
           <div className="rounded-2xl bg-white/62 p-2">
             <div className="text-lg font-black text-slate-900">
-              {summary.discountedCount}
+              {canUseMemberPricing ? summary.discountedCount : summary.totalProducts}
             </div>
-            <div className="text-[10px] text-subtitle">đang giảm</div>
+            <div className="text-[10px] text-subtitle">
+              {canUseMemberPricing ? "đang giảm" : "sản phẩm"}
+            </div>
           </div>
           <div className="rounded-2xl bg-white/62 p-2">
             <div className="text-lg font-black text-danger">
-              -{summary.biggestDealPercent}%
+              {canUseMemberPricing ? `-${summary.biggestDealPercent}%` : "Giá"}
             </div>
-            <div className="text-[10px] text-subtitle">giảm mạnh</div>
+            <div className="text-[10px] text-subtitle">
+              {canUseMemberPricing ? "giảm mạnh" : "niêm yết"}
+            </div>
           </div>
           <div className="rounded-2xl bg-white/62 p-2">
             <div className="text-lg font-black text-slate-900">

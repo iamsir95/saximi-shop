@@ -588,17 +588,46 @@ export class Database {
     return Math.max(0, subtotal - this.getCouponDiscountAmount(subtotal, couponCode));
   }
 
-  private static normalizeOrderItems(items: Array<OrderItem | any> = []): OrderItem[] {
+  private static isMemberBuyerPhone(phone?: string): boolean {
+    const normalizedPhone = normalizeVietnamPhone(phone);
+    if (!normalizedPhone) return false;
+
+    return this.affiliates.some(
+      (affiliate) => normalizeVietnamPhone(affiliate.phone) === normalizedPhone
+    );
+  }
+
+  private static normalizeOrderProductPrice(product: Product, canUseMemberPricing: boolean): Product {
+    if (
+      canUseMemberPricing ||
+      !product.originalPrice ||
+      product.originalPrice <= product.price
+    ) {
+      return product;
+    }
+
+    return {
+      ...product,
+      price: product.originalPrice,
+      originalPrice: undefined,
+    };
+  }
+
+  private static normalizeOrderItems(
+    items: Array<OrderItem | any> = [],
+    canUseMemberPricing = false
+  ): OrderItem[] {
     return items.reduce<OrderItem[]>((normalizedItems, item: any) => {
       const itemProduct = item.product || item;
       const productId = Number(itemProduct.id || item.id || 0);
       const product = this.products.find((p) => p.id === productId);
       if (!product) return normalizedItems;
+      const pricedProduct = this.normalizeOrderProductPrice(product, canUseMemberPricing);
 
       const quantity = Math.max(1, Number(item.quantity || 1));
       normalizedItems.push({
         product: {
-          ...product,
+          ...pricedProduct,
           images: product.images || this.buildProductImageLibrary(product),
         },
         quantity,
@@ -2074,11 +2103,6 @@ export class Database {
   }
 
   public static createOrder(orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'paymentStatus'>): Order {
-    const normalizedItems = this.normalizeOrderItems(orderData.items);
-    if (normalizedItems.length === 0) {
-      throw new Error('Đơn hàng cần có ít nhất một sản phẩm hợp lệ');
-    }
-
     const fallbackCustomer: User = {
       id: 'order-customer',
       name: orderData.delivery?.name || 'Khách hàng',
@@ -2087,6 +2111,12 @@ export class Database {
       address: orderData.delivery?.address || 'Địa chỉ giao hàng',
     };
     const delivery = this.normalizeOrderDelivery(orderData, fallbackCustomer);
+    const buyerCanUseMemberPricing = this.isMemberBuyerPhone(delivery.phone);
+    const normalizedItems = this.normalizeOrderItems(orderData.items, buyerCanUseMemberPricing);
+    if (normalizedItems.length === 0) {
+      throw new Error('Đơn hàng cần có ít nhất một sản phẩm hợp lệ');
+    }
+
     const paymentMethod = normalizePaymentMethod(orderData.paymentMethod);
     const subtotalAfterCoupon = this.calculateOrderTotal(normalizedItems, orderData.couponCode);
     const referrer = orderData.referrerId
@@ -2095,7 +2125,7 @@ export class Database {
     const commissionSettlementMode = this.settings.commissionSettlementMode || 'ORDER_DISCOUNT';
     const referrerRate = referrer ? getAffiliateCommissionRate(referrer) : 0;
     const commissionDiscountAmount =
-      referrer && commissionSettlementMode === 'ORDER_DISCOUNT'
+      referrer && buyerCanUseMemberPricing && commissionSettlementMode === 'ORDER_DISCOUNT'
         ? Math.round((subtotalAfterCoupon * referrerRate) / 100)
         : 0;
     const total = Math.max(0, subtotalAfterCoupon - commissionDiscountAmount);

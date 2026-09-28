@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Product } from "@/types";
 import Section from "./section";
 import ProductGrid from "./product-grid";
@@ -9,6 +9,7 @@ import {
   sortProducts,
 } from "@/utils/commerce";
 import { EmptySearchResult } from "./empty";
+import { useMemberPricingEligible } from "@/hooks";
 
 interface ProductDiscoveryProps {
   title: string;
@@ -40,9 +41,40 @@ export default function ProductDiscovery({
 }: ProductDiscoveryProps) {
   const [filter, setFilter] = useState<ProductFilterKey>("all");
   const [sort, setSort] = useState<ProductSortKey>("featured");
+  const canUseMemberPricing = useMemberPricingEligible();
+  const filters = useMemo(
+    () =>
+      canUseMemberPricing
+        ? FILTERS
+        : FILTERS.filter((item) => item.key !== "discount"),
+    [canUseMemberPricing]
+  );
+  const sorts = useMemo(
+    () =>
+      canUseMemberPricing
+        ? SORTS
+        : SORTS.filter((item) => item.key !== "discount"),
+    [canUseMemberPricing]
+  );
+
+  useEffect(() => {
+    if (!canUseMemberPricing && filter === "discount") {
+      setFilter("all");
+    }
+
+    if (!canUseMemberPricing && sort === "discount") {
+      setSort("featured");
+    }
+  }, [canUseMemberPricing, filter, sort]);
+
   const visibleProducts = useMemo(
-    () => sortProducts(filterProducts(products, filter), sort),
-    [filter, products, sort]
+    () =>
+      sortProducts(
+        filterProducts(products, filter, canUseMemberPricing),
+        sort,
+        canUseMemberPricing
+      ),
+    [canUseMemberPricing, filter, products, sort]
   );
 
   return (
@@ -59,7 +91,7 @@ export default function ProductDiscovery({
     >
       <div className="space-y-2 px-4 pb-1">
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {FILTERS.map((item) => (
+          {filters.map((item) => (
             <button
               key={item.key}
               type="button"
@@ -81,7 +113,7 @@ export default function ProductDiscovery({
           <span className="flex-none text-[10px] font-semibold uppercase text-subtitle">
             Sắp xếp
           </span>
-          {SORTS.map((item) => (
+          {sorts.map((item) => (
             <button
               key={item.key}
               type="button"

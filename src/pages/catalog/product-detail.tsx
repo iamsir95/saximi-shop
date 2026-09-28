@@ -5,7 +5,7 @@ import { productState } from "@/state";
 import { formatPrice } from "@/utils/format";
 import ShareButton from "./share-buttont";
 import RelatedProducts from "./related-products";
-import { useAddToCart } from "@/hooks";
+import { useAddToCart, useMemberPricingEligible } from "@/hooks";
 import { Button } from "zmp-ui";
 import Section from "@/components/section";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -13,8 +13,10 @@ import type { Product, ProductImage } from "@/types";
 import CommerceTrustStrip from "@/components/commerce-trust-strip";
 import {
   getDiscountPercent,
+  getDisplayPrice,
   getSavedAmount,
   getStockLabel,
+  hasMemberPrice,
   isLowStock,
 } from "@/utils/commerce";
 
@@ -97,10 +99,11 @@ export default function ProductDetailPage() {
 
   const navigate = useNavigate();
   const { addToCart } = useAddToCart(product);
-  const hasDiscount =
-    Boolean(product.originalPrice) && product.originalPrice! > product.price;
-  const discountPercent = getDiscountPercent(product);
-  const savedAmount = getSavedAmount(product);
+  const canUseMemberPricing = useMemberPricingEligible();
+  const hasDiscount = canUseMemberPricing && hasMemberPrice(product);
+  const discountPercent = getDiscountPercent(product, canUseMemberPricing);
+  const savedAmount = getSavedAmount(product, canUseMemberPricing);
+  const displayPrice = getDisplayPrice(product, canUseMemberPricing);
   const lowStock = isLowStock(product);
   const hasAttributes = Boolean(product.attributes?.length);
   const seoArticle = product.seo?.article?.trim();
@@ -223,7 +226,7 @@ export default function ProductDetailPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xl font-bold text-primary">
-                    {formatPrice(product.price)}
+                    {formatPrice(displayPrice)}
                   </div>
                   {hasDiscount && (
                     <div className="text-2xs space-x-0.5">
@@ -256,7 +259,9 @@ export default function ProductDetailPage() {
                 <div className="rounded-2xl bg-white/62 p-3">
                   <div className="font-bold text-slate-800">Tiết kiệm</div>
                   <div className="mt-1 text-primary">
-                    {savedAmount ? formatPrice(savedAmount) : "Giá tốt mỗi ngày"}
+                    {canUseMemberPricing && savedAmount
+                      ? formatPrice(savedAmount)
+                      : "Giá niêm yết"}
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/62 p-3">

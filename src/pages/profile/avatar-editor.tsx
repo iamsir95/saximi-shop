@@ -11,11 +11,19 @@ async function prepareAvatar(file: File): Promise<string> {
     throw new Error("Vui lòng chọn ảnh JPG, PNG hoặc WebP.");
   }
   if (file.size > 10 * 1024 * 1024) throw new Error("Vui lòng chọn ảnh dưới 10 MB.");
-  const url = URL.createObjectURL(file);
-  try {
+  const url = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string"
+      ? resolve(reader.result)
+      : reject(new Error("Không đọc được ảnh. Vui lòng chọn lại."));
+    reader.onerror = () => reject(new Error("Không đọc được ảnh. Vui lòng chọn lại."));
+    reader.onabort = () => reject(new Error("Đã hủy đọc ảnh."));
+    reader.readAsDataURL(file);
+  });
     const image = new Image();
     image.src = url;
-    await image.decode();
+    try { await image.decode(); }
+    catch { throw new Error("Ảnh bị lỗi hoặc không được hỗ trợ. Vui lòng chọn ảnh JPG, PNG hoặc WebP khác."); }
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 512;
     const context = canvas.getContext("2d");
@@ -24,12 +32,11 @@ async function prepareAvatar(file: File): Promise<string> {
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, 512, 512);
     context.drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, 512, 512);
-    const result = canvas.toDataURL("image/jpeg", 0.8);
-    if (result.length > 240 * 1024) throw new Error("Ảnh quá chi tiết. Vui lòng chọn ảnh khác.");
-    return result;
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+    for (const quality of [0.8, 0.65, 0.5, 0.35]) {
+      const result = canvas.toDataURL("image/jpeg", quality);
+      if (result.length <= 240 * 1024) return result;
+    }
+    throw new Error("Ảnh quá lớn sau khi nén. Vui lòng chọn ảnh khác.");
 }
 
 export default function AvatarEditor() {
@@ -39,18 +46,27 @@ export default function AvatarEditor() {
   const [busy, setBusy] = useState(false);
 
   async function save() {
+    if (busy || !preview) return;
+    const token = localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để lưu ảnh đại diện.");
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch(`${getApiBaseUrl()}/user/avatar`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN) || ""}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ avatar: preview }),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Chưa lưu được ảnh đại diện.");
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.message || (response.status === 413
+        ? "Ảnh vượt quá dung lượng cho phép. Vui lòng chọn ảnh nhỏ hơn."
+        : "Chưa lưu được ảnh đại diện. Vui lòng thử lại."));
+      if (!result?.avatar) throw new Error("Máy chủ chưa trả về ảnh đã lưu. Vui lòng thử lại.");
       localStorage.setItem(CONFIG.STORAGE_KEYS.USER_INFO, JSON.stringify({ ...user, avatar: result.avatar }));
       refresh((key) => key + 1);
       setPreview("");

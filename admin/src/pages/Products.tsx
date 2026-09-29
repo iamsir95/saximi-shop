@@ -255,6 +255,20 @@ export const Products: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const formatCompactQuantity = (value?: number) => {
+    const quantity = Math.max(0, Number(value || 0));
+    const format = (base: number, suffix: string) => {
+      const compact = quantity / base;
+      const rounded = compact >= 10 ? Math.round(compact) : Math.round(compact * 10) / 10;
+      return `${rounded}${suffix}`;
+    };
+
+    if (quantity >= 1_000_000) return format(1_000_000, 'm');
+    if (quantity >= 1_000) return format(1_000, 'k');
+
+    return quantity.toLocaleString('vi-VN');
+  };
+
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
@@ -354,10 +368,10 @@ export const Products: React.FC = () => {
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1.5">
                           <span className="px-2 py-0.5 bg-cyan-500/15 text-cyan-300 text-xs rounded border border-cyan-500/30 font-medium">
-                            Tồn {product.stockQuantity ?? 0}
+                            Tồn {formatCompactQuantity(product.stockQuantity)}
                           </span>
                           <span className="px-2 py-0.5 bg-slate-700/70 text-slate-300 text-xs rounded border border-slate-600 font-medium">
-                            Đã bán {product.soldQuantity ?? 0}
+                            Đã bán {formatCompactQuantity(product.soldQuantity)}
                           </span>
                           {product.isFlashSale && (
                             <span className="px-2 py-0.5 bg-rose-500/20 text-rose-400 text-xs rounded border border-rose-500/30 font-medium">

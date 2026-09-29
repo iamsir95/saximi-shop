@@ -119,20 +119,34 @@ export function isLowStock(product: Product) {
   return product.stockQuantity <= (product.minStockLevel ?? 15);
 }
 
+export function formatCompactQuantity(value?: number) {
+  const quantity = Math.max(0, Number(value || 0));
+  const format = (base: number, suffix: string) => {
+    const compact = quantity / base;
+    const rounded = compact >= 10 ? Math.round(compact) : Math.round(compact * 10) / 10;
+    return `${rounded}${suffix}`;
+  };
+
+  if (quantity >= 1_000_000) return format(1_000_000, "m");
+  if (quantity >= 1_000) return format(1_000, "k");
+
+  return quantity.toLocaleString("vi-VN");
+}
+
 export function getStockLabel(product: Product) {
   if (typeof product.stockQuantity !== "number") {
-    return "Còn 0 sản phẩm";
+    return "Còn 0";
   }
 
   if (product.stockQuantity <= 0) {
     return "Tạm hết";
   }
 
-  return `Còn ${product.stockQuantity} sản phẩm`;
+  return `Còn ${formatCompactQuantity(product.stockQuantity)}`;
 }
 
 export function getSoldLabel(product: Product) {
-  return `Đã bán ${Math.max(0, Number(product.soldQuantity || 0))}`;
+  return `Đã bán ${formatCompactQuantity(product.soldQuantity)}`;
 }
 
 export function filterProducts(

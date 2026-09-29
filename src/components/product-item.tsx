@@ -71,6 +71,12 @@ export default function ProductItem(props: ProductItemProps) {
                   -{discountPercent}%
                 </span>
               )}
+              {props.product.promoDescription && (
+                <span className="commerce-tag commerce-tag--info">
+                  <CommerceIcon name="ticket" size={11} />
+                  Khuyến mãi
+                </span>
+              )}
               {hasGiftProgram && (
                 <span className="commerce-tag commerce-tag--success">
                   Quà tặng
@@ -105,24 +111,9 @@ export default function ProductItem(props: ProductItemProps) {
                   <span className="text-danger">-{discountPercent}%</span>
                 </div>
               )}
-              {props.product.promoDescription && (
-                <div className="promo-badge mt-2 flex items-center gap-1.5 rounded-2xl px-2.5 py-1.5 text-[11px] font-extrabold leading-4 text-primary">
-                  <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary text-white shadow-[0_6px_14px_rgba(0,204,247,0.28)]">
-                    <CommerceIcon name="ticket" size={12} />
-                  </span>
-                  <span className="line-clamp-1">
-                    {props.product.promoDescription}
-                  </span>
-                </div>
-              )}
               <div className="mt-2 flex items-center justify-between gap-2 commerce-caption text-slate-500">
                 <span className="truncate">{props.product.category?.name}</span>
                 <span className="flex flex-none items-center gap-1">
-                  {props.product.promoDescription && (
-                    <span className="commerce-tag commerce-tag--info">
-                      Khuyến mãi
-                    </span>
-                  )}
                   {soldQuantity > 0 && (
                     <span className="commerce-tag commerce-tag--muted">
                       {getSoldLabel(props.product)}

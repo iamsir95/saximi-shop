@@ -57,6 +57,7 @@ export interface Product {
   isRecommended?: boolean;
   stockQuantity?: number;
   minStockLevel?: number;
+  soldQuantity?: number;
 }
 
 export interface Station {

@@ -15,6 +15,7 @@ import {
   getDiscountPercent,
   getDisplayPrice,
   getSavedAmount,
+  getSoldLabel,
   getStockLabel,
   hasMemberPrice,
   isGiftProgramActive,
@@ -125,6 +126,7 @@ export default function ProductDetailPage() {
   const savedAmount = getSavedAmount(product, canUseMemberPricing);
   const displayPrice = getDisplayPrice(product, canUseMemberPricing);
   const lowStock = isLowStock(product);
+  const soldQuantity = Math.max(0, Number(product.soldQuantity || 0));
   const hasAttributes = Boolean(product.attributes?.length);
   const seoArticle = product.seo?.article?.trim();
   const giftPrograms = useMemo(
@@ -267,16 +269,23 @@ export default function ProductDetailPage() {
                     </div>
                   )}
                 </div>
-                <div
-                  className={
-                    "commerce-tag self-start ".concat(
-                      lowStock
-                        ? "commerce-tag--warning"
-                        : "commerce-tag--success"
-                    )
-                  }
-                >
-                  {getStockLabel(product)}
+                <div className="flex flex-none flex-col items-end gap-1">
+                  <div
+                    className={
+                      "commerce-tag self-start ".concat(
+                        lowStock
+                          ? "commerce-tag--warning"
+                          : "commerce-tag--success"
+                      )
+                    }
+                  >
+                    {getStockLabel(product)}
+                  </div>
+                  {soldQuantity > 0 && (
+                    <div className="commerce-tag commerce-tag--muted">
+                      {getSoldLabel(product)}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-sm mt-1">{product.name}</div>

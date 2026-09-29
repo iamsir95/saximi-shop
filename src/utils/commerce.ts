@@ -121,18 +121,18 @@ export function isLowStock(product: Product) {
 
 export function getStockLabel(product: Product) {
   if (typeof product.stockQuantity !== "number") {
-    return "Sẵn hàng";
+    return "Còn 0 sản phẩm";
   }
 
   if (product.stockQuantity <= 0) {
     return "Tạm hết";
   }
 
-  if (isLowStock(product)) {
-    return `Còn ${product.stockQuantity}`;
-  }
+  return `Còn ${product.stockQuantity} sản phẩm`;
+}
 
-  return "Sẵn hàng";
+export function getSoldLabel(product: Product) {
+  return `Đã bán ${Math.max(0, Number(product.soldQuantity || 0))}`;
 }
 
 export function filterProducts(

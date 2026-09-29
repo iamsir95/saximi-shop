@@ -19,6 +19,9 @@ export const Products: React.FC = () => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
+  const [stockQuantity, setStockQuantity] = useState('100');
+  const [minStockLevel, setMinStockLevel] = useState('15');
+  const [soldQuantity, setSoldQuantity] = useState('0');
   const [categoryId, setCategoryId] = useState<number>(1);
   const [image, setImage] = useState('');
   const [imageUrls, setImageUrls] = useState('');
@@ -129,6 +132,9 @@ export const Products: React.FC = () => {
     setName('');
     setPrice('');
     setOriginalPrice('');
+    setStockQuantity('100');
+    setMinStockLevel('15');
+    setSoldQuantity('0');
     setImage('');
     setImageUrls('');
     setDetail('');
@@ -151,6 +157,9 @@ export const Products: React.FC = () => {
     setName(product.name);
     setPrice(product.price.toString());
     setOriginalPrice(product.originalPrice ? product.originalPrice.toString() : '');
+    setStockQuantity(String(product.stockQuantity ?? 100));
+    setMinStockLevel(String(product.minStockLevel ?? 15));
+    setSoldQuantity(String(product.soldQuantity ?? 0));
     setCategoryId(product.categoryId);
     setImage(product.image);
     setImageUrls((product.images || []).map((item) => item.url).join('\n'));
@@ -189,6 +198,9 @@ export const Products: React.FC = () => {
       name,
       price: parseFloat(price),
       originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
+      stockQuantity: Math.max(0, Number(stockQuantity || 0)),
+      minStockLevel: Math.max(0, Number(minStockLevel || 0)),
+      soldQuantity: Math.max(0, Number(soldQuantity || 0)),
       categoryId,
       image: primaryImage,
       images: allImageUrls.map((url, index) => ({
@@ -340,7 +352,13 @@ export const Products: React.FC = () => {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="px-2 py-0.5 bg-cyan-500/15 text-cyan-300 text-xs rounded border border-cyan-500/30 font-medium">
+                            Tồn {product.stockQuantity ?? 0}
+                          </span>
+                          <span className="px-2 py-0.5 bg-slate-700/70 text-slate-300 text-xs rounded border border-slate-600 font-medium">
+                            Đã bán {product.soldQuantity ?? 0}
+                          </span>
                           {product.isFlashSale && (
                             <span className="px-2 py-0.5 bg-rose-500/20 text-rose-400 text-xs rounded border border-rose-500/30 font-medium">
                               Flash Sale
@@ -437,6 +455,42 @@ export const Products: React.FC = () => {
                     onChange={(e) => setOriginalPrice(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
                     placeholder="120000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Số lượng tồn</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={stockQuantity}
+                    onChange={(e) => setStockQuantity(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Mức cảnh báo thấp</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={minStockLevel}
+                    onChange={(e) => setMinStockLevel(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="15"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Số lượng đã bán</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={soldQuantity}
+                    onChange={(e) => setSoldQuantity(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="0"
                   />
                 </div>
               </div>

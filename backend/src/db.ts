@@ -60,6 +60,7 @@ export interface Product {
   isRecommended?: boolean;
   stockQuantity?: number;
   minStockLevel?: number;
+  soldQuantity?: number;
 }
 
 export interface Station {
@@ -765,6 +766,7 @@ export class Database {
       ...p,
       stockQuantity: p.stockQuantity ?? 100,
       minStockLevel: p.minStockLevel ?? 15,
+      soldQuantity: p.soldQuantity ?? 0,
     }));
 
     this.stations = ensureDataFile<Station[]>('stations.json', 'stations.json');
@@ -883,11 +885,13 @@ export class Database {
     this.products = this.products.map((product, index) => {
       const stockQuantity = product.stockQuantity ?? (index % 9 === 0 ? 8 : index % 7 === 0 ? 14 : 100 - (index % 5) * 7);
       const minStockLevel = product.minStockLevel ?? 15;
+      const soldQuantity = product.soldQuantity ?? 0;
       const images = this.buildProductImageLibrary(product);
       const image = product.image || images[0]?.url || '';
       if (
         product.stockQuantity !== stockQuantity ||
         product.minStockLevel !== minStockLevel ||
+        product.soldQuantity !== soldQuantity ||
         product.image !== image ||
         JSON.stringify(product.images || []) !== JSON.stringify(images)
       ) {
@@ -899,6 +903,7 @@ export class Database {
         images,
         stockQuantity,
         minStockLevel,
+        soldQuantity,
       };
     });
 
@@ -1645,6 +1650,7 @@ export class Database {
       id: newId,
       stockQuantity: 100,
       minStockLevel: 15,
+      soldQuantity: 0,
       ...product,
       image: product.image || product.images?.[0]?.url || '/icon.png',
     };
@@ -2218,6 +2224,9 @@ export class Database {
       const prod = this.products.find((p) => p.id === item.product.id);
       if (prod && prod.stockQuantity) {
         prod.stockQuantity = Math.max(0, prod.stockQuantity - item.quantity);
+      }
+      if (prod && !item.isGift) {
+        prod.soldQuantity = Math.max(0, Number(prod.soldQuantity || 0) + item.quantity);
       }
     });
     saveDataFile('products.json', this.products);

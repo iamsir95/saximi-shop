@@ -8,6 +8,7 @@ import QuantityInput from "./quantity-input";
 import {
   getDiscountPercent,
   getDisplayPrice,
+  getSoldLabel,
   getStockLabel,
   hasMemberPrice,
   isGiftProgramActive,
@@ -36,6 +37,7 @@ export default function ProductItem(props: ProductItemProps) {
   const displayPrice = getDisplayPrice(props.product, canUseMemberPricing);
   const lowStock = isLowStock(props.product);
   const stockLabel = getStockLabel(props.product);
+  const soldQuantity = Math.max(0, Number(props.product.soldQuantity || 0));
   const hasGiftProgram = Boolean(
     props.product.giftPrograms?.some((program) => isGiftProgramActive(program))
   );
@@ -115,11 +117,18 @@ export default function ProductItem(props: ProductItemProps) {
               )}
               <div className="mt-2 flex items-center justify-between gap-2 commerce-caption text-slate-500">
                 <span className="truncate">{props.product.category?.name}</span>
-                {props.product.promoDescription && (
-                  <span className="commerce-tag commerce-tag--info flex-none">
-                    Khuyến mãi
-                  </span>
-                )}
+                <span className="flex flex-none items-center gap-1">
+                  {props.product.promoDescription && (
+                    <span className="commerce-tag commerce-tag--info">
+                      Khuyến mãi
+                    </span>
+                  )}
+                  {soldQuantity > 0 && (
+                    <span className="commerce-tag commerce-tag--muted">
+                      {getSoldLabel(props.product)}
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
           </>

@@ -115,6 +115,7 @@ export interface Product {
   colors?: Color[];
   stockQuantity?: number;
   minStockLevel?: number;
+  soldQuantity?: number;
 }
 
 export interface Category {

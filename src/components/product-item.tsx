@@ -115,9 +115,11 @@ export default function ProductItem(props: ProductItemProps) {
               )}
               <div className="mt-2 flex items-center justify-between gap-2 commerce-caption text-slate-500">
                 <span className="truncate">{props.product.category?.name}</span>
-                <span className="flex-none font-semibold text-emerald-600">
-                  Sẵn hàng
-                </span>
+                {props.product.promoDescription && (
+                  <span className="commerce-tag commerce-tag--info flex-none">
+                    Khuyến mãi
+                  </span>
+                )}
               </div>
             </div>
           </>

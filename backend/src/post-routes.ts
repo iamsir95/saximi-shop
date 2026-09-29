@@ -60,7 +60,7 @@ export function mountPostRoutes(app: Express, authenticate: RequestHandler, site
       if (!response.ok) throw new Error('App shell unavailable');
       const shell = await response.text();
       const seoMetadata = metadata + (req.query.saved ? '<meta name="robots" content="noindex,follow">' : '');
-      res.status(missing ? 404 : 200).type('html').set('Cache-Control', 'no-cache').send(shell.replace(/<title>[\s\S]*?<\/title>/, seoMetadata.replace(/<(meta|link|script) /g, '<$1 data-post-seo="true" ')).replace('<div id="app"></div>', `<div id="app"><main>${body}<a href="/news">Bản tin</a></main></div>`));
+      res.status(missing ? 404 : 200).type('html').set('Cache-Control', 'no-cache').send(shell.replace(/<title>[\s\S]*?<\/title>/, () => seoMetadata.replace(/<(meta|link|script) /g, '<$1 data-post-seo="true" ')).replace('<div id="app"></div>', () => `<div id="app"><main>${body}<a href="/news">Bản tin</a></main></div>`));
     } catch (error) {
       console.error('Article render failed', error);
       res.status(503).set('Retry-After', '30').type('html').send('<h1>Bản tin tạm thời chưa tải được</h1><p>Vui lòng thử lại sau.</p>');

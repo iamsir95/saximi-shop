@@ -51,6 +51,10 @@ test('article lifecycle, pagination, sanitization, permissions and server SEO', 
     const htmlResponse = await fetch(`${base}/news/${published.slug}`);
     assert.equal(htmlResponse.status, 200); const html = await htmlResponse.text();
     assert.match(html, /<title>Tiêu đề SEO<\/title>/); assert.match(html, /application\/ld\+json/); assert.match(html, /<h2>Thông tin<\/h2>/); assert.match(html, /rel="canonical"/);
+    store.save({ ...published, seoTitle: 'Giá $&', content: '<p>Ký tự $&</p>' }, published.id);
+    const literalHtml = await (await fetch(`${base}/news/${published.slug}`)).text();
+    assert.ok(literalHtml.includes('<title>Giá $&amp;</title>'));
+    assert.ok(literalHtml.includes('<p>Ký tự $&amp;</p>'));
     assert.equal((await fetch(`${base}/news/missing`)).status, 404);
     assert.match(await (await fetch(`${base}/sitemap.xml`)).text(), /thong-tin-can-biet/);
     store.save({ ...published, status: 'archived' }, published.id);

@@ -667,11 +667,17 @@ video {
 .right-4 {
   right: 1rem;
 }
+.right-\[-38px\] {
+  right: -38px;
+}
 .top-0 {
   top: 0px;
 }
 .top-3 {
   top: 0.75rem;
+}
+.top-\[-44px\] {
+  top: -44px;
 }
 .z-0 {
   z-index: 0;
@@ -829,6 +835,9 @@ video {
 }
 .h-28 {
   height: 7rem;
+}
+.h-36 {
+  height: 9rem;
 }
 .h-4 {
   height: 1rem;
@@ -1245,8 +1254,14 @@ video {
 .rounded-\[24px\] {
   border-radius: 24px;
 }
+.rounded-\[26px\] {
+  border-radius: 26px;
+}
 .rounded-\[28px\] {
   border-radius: 28px;
+}
+.rounded-\[30px\] {
+  border-radius: 30px;
 }
 .rounded-full {
   border-radius: 9999px;
@@ -1354,9 +1369,6 @@ video {
 }
 .border-white\/20 {
   border-color: rgb(255 255 255 / 0.2);
-}
-.border-white\/30 {
-  border-color: rgb(255 255 255 / 0.3);
 }
 .border-white\/40 {
   border-color: rgb(255 255 255 / 0.4);
@@ -1498,6 +1510,9 @@ video {
 .bg-white\/10 {
   background-color: rgb(255 255 255 / 0.1);
 }
+.bg-white\/20 {
+  background-color: rgb(255 255 255 / 0.2);
+}
 .bg-white\/30 {
   background-color: rgb(255 255 255 / 0.3);
 }
@@ -1535,6 +1550,11 @@ video {
   --tw-gradient-to: rgb(245 158 11 / 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
+.from-cyan-400 {
+  --tw-gradient-from: #22d3ee var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(34 211 238 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
 .from-primary {
   --tw-gradient-from: var(--primary) var(--tw-gradient-from-position);
   --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position);
@@ -1544,6 +1564,9 @@ video {
   --tw-gradient-from: #334155 var(--tw-gradient-from-position);
   --tw-gradient-to: rgb(51 65 85 / 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.to-emerald-400 {
+  --tw-gradient-to: #34d399 var(--tw-gradient-to-position);
 }
 .to-orange-500 {
   --tw-gradient-to: #f97316 var(--tw-gradient-to-position);
@@ -1885,10 +1908,6 @@ video {
 .text-danger {
   color: var(--danger);
 }
-.text-emerald-100 {
-  --tw-text-opacity: 1;
-  color: rgb(209 250 229 / var(--tw-text-opacity));
-}
 .text-emerald-300 {
   --tw-text-opacity: 1;
   color: rgb(110 231 183 / var(--tw-text-opacity));
@@ -2078,6 +2097,11 @@ video {
   --tw-shadow-colored: 0 18px 42px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
+.shadow-\[0_18px_48px_rgba\(0\2c 204\2c 247\2c 0\.24\)\] {
+  --tw-shadow: 0 18px 48px rgba(0,204,247,0.24);
+  --tw-shadow-colored: 0 18px 48px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
 .shadow-\[0_18px_48px_rgba\(0\2c 204\2c 247\2c 0\.28\)\] {
   --tw-shadow: 0 18px 48px rgba(0,204,247,0.28);
   --tw-shadow-colored: 0 18px 48px var(--tw-shadow-color);
@@ -2198,6 +2222,11 @@ video {
 }
 .blur {
   --tw-blur: blur(8px);
+  -webkit-filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+          filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+.blur-xl {
+  --tw-blur: blur(24px);
   -webkit-filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
           filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
@@ -2523,6 +2552,14 @@ video {
 
   .lg\:max-w-\[1120px\] {
     max-width: 1120px;
+  }
+
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-\[minmax\(0\2c 1fr\)_minmax\(0\2c 1fr\)\] {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
   }
 
   .lg\:grid-cols-\[minmax\(320px\2c 430px\)_minmax\(0\2c 1fr\)\] {

@@ -4,7 +4,6 @@ import CategoryDetailPage from "@/pages/catalog/category-detail";
 import CategoryListPage from "@/pages/catalog/category-list";
 import ProductDetailPage from "@/pages/catalog/product-detail";
 import HomePage from "@/pages/home";
-import ProfilePage from "@/pages/profile";
 import SearchPage from "@/pages/search";
 import { createBrowserRouter } from "react-router-dom";
 import { getBasePath } from "@/utils/zma";
@@ -83,9 +82,9 @@ const router = createBrowserRouter(
         },
         {
           path: "/profile",
-          element: <ProfilePage />,
+          element: <MemberPage />,
           handle: {
-            logo: true,
+            title: "Tài khoản",
           },
         },
         {

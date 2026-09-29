@@ -122,7 +122,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     event.preventDefault();
     const html = event.clipboardData.getData('text/html');
     const text = event.clipboardData.getData('text/plain');
-    runCommand('insertHTML', html ? cleanRichText(html) : text.replace(/\n/g, '<br>'));
+    const plain = document.createElement('div');
+    plain.textContent = text;
+    runCommand('insertHTML', html ? cleanRichText(html) : plain.innerHTML.replace(/\n/g, '<br>'));
   };
 
   const handleHtmlChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -144,7 +146,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/80">
-        <div className="flex flex-wrap gap-1.5 border-b border-slate-800 bg-slate-900/95 p-2">
+        <div className="flex flex-wrap gap-1.5 border-b border-slate-800 bg-slate-900/95 p-2" onMouseDown={event => event.preventDefault()}>
           <button type="button" title="Đoạn văn" className={toolbarButtonClass} onClick={() => setBlock('p')}>
             <Pilcrow className="h-4 w-4" />
           </button>
@@ -202,6 +204,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <div
             ref={editorRef}
             contentEditable
+            role="textbox"
+            aria-label={label}
+            aria-multiline="true"
             onInput={syncValue}
             onPaste={handlePaste}
             className="rich-text-editor min-h-[220px] w-full overflow-y-auto bg-slate-800 px-4 py-3 text-sm leading-7 text-white outline-none"

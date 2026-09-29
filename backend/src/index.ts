@@ -7,6 +7,7 @@ import { ZaloService } from './services/zalo.service.js';
 import { Logger } from './services/logger.service.js';
 import { PaymentService, PaymentMethod } from './services/payment.service.js';
 import { OtpError, OtpService } from './services/otp.service.js';
+import { mountPostRoutes } from './post-routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -25,6 +26,7 @@ function isValidVietnamPhone(phone: string) {
 }
 
 app.use(cors());
+app.use('/api/admin/posts', express.json({ limit: '256kb' }));
 app.use(['/user/avatar', '/api/user/avatar'], express.json({ limit: '256kb' }));
 app.use(express.json());
 
@@ -52,6 +54,8 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+mountPostRoutes(app, authenticateAdmin, () => Database.getSettings().publicSiteUrl);
 
 /* ==========================================================================
    PUBLIC MINI APP APIs

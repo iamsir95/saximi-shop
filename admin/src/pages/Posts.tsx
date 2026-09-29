@@ -1,0 +1,64 @@
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, Plus, Edit2, Save, ExternalLink, FileText, Search } from 'lucide-react';
+import { api } from '../api';
+import { RichTextEditor } from '../components/RichTextEditor';
+import { MediaAsset } from '../types';
+
+type Post = { id?: string; title: string; slug: string; category: string; status: string; excerpt: string; content: string; cover: string; coverAlt: string; author: string; seoTitle: string; seoDescription: string; publishedAt?: string | null; updatedAt?: string };
+const empty: Post = { title: '', slug: '', category: 'news', status: 'draft', excerpt: '', content: '', cover: '', coverAlt: '', author: 'Saximi Shop', seoTitle: '', seoDescription: '' };
+const categories: Record<string, string> = { news: 'Thông tin cần biết', event: 'Sự kiện', promotion: 'Khuyến mãi', policy: 'Chính sách' };
+const states: Record<string, string> = { draft: 'Bản nháp', published: 'Đã xuất bản', archived: 'Đã lưu trữ' };
+const inputClass = 'w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2.5 text-sm text-white';
+const buttonClass = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-600 px-3 py-2 text-sm';
+
+export function PostsPage() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [media, setMedia] = useState<MediaAsset[]>([]);
+  const [form, setForm] = useState<Post | null>(null);
+  const [tab, setTab] = useState('content');
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  async function reload() {
+    setLoading(true); setError('');
+    try { setPosts(await api.getPosts()); }
+    catch (e) { setError((e as Error).message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { void reload(); api.getMediaLibrary({ activeOnly: true }).then(setMedia).catch(() => {}); }, []);
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+  const update = (key: keyof Post, value: string) => { setForm(old => old ? { ...old, [key]: value } : old); setDirty(true); };
+  const edit = (post: Post) => { setForm({ ...post }); setDirty(false); setError(''); setNotice(''); setTab('content'); };
+  const field = (key: keyof Post, title: string, max?: number) => <label className="grid gap-1.5 text-sm"><span>{title}</span><input className={inputClass} value={String(form?.[key] || '')} maxLength={max} onChange={e => update(key, e.target.value)} required={key === 'title'} /></label>;
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); if (!form || saving) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const saved = form.id ? await api.updatePost(form.id, form) : await api.createPost(form);
+      setForm(saved); setDirty(false); setNotice(saved.status === 'published' ? 'Bài viết đã được xuất bản.' : 'Đã lưu bài viết.');
+      setPosts(old => [saved, ...old.filter(p => p.id !== saved.id)]);
+    } catch (err) { setError((err as Error).message); }
+    finally { setSaving(false); }
+  }
+  if (form) return <form onSubmit={save} className="space-y-5 max-w-6xl mx-auto">
+    <div className="flex flex-wrap items-center justify-between gap-3"><button type="button" className={buttonClass} disabled={saving} onClick={() => { if (!dirty || confirm('Bỏ các thay đổi chưa lưu?')) setForm(null); }}><ArrowLeft size={18} />Danh sách bài viết</button><div className="flex flex-wrap gap-2">{form.id && form.status === 'published' && !dirty && <a className={buttonClass} href={`/news/${form.slug}`} target="_blank" rel="noreferrer"><ExternalLink size={16} />Xem bài</a>}<button disabled={saving} className={`${buttonClass} bg-cyan-400 text-slate-950 font-semibold`}><Save size={18} />{saving ? 'Đang lưu…' : 'Lưu bài viết'}</button></div></div>
+    {error && <p role="alert" className="text-rose-300">{error}</p>}{notice && <p role="status" className="text-emerald-300">{notice}</p>}
+    <h2 className="text-xl font-semibold">{form.id ? 'Chỉnh sửa bài viết' : 'Bài viết mới'}</h2>
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="min-w-0 space-y-5">{field('title', 'Tiêu đề', 200)}
+        <div className="flex gap-2 border-b border-slate-700 pb-2" role="tablist" aria-label="Soạn bài">{[['content', 'Nội dung'], ['seo', 'SEO']].map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={`${buttonClass} ${tab === id ? 'bg-slate-700' : ''}`} onClick={() => setTab(id)}>{name}</button>)}</div>
+        {tab === 'content' ? <div className="space-y-5"><label className="grid gap-1.5 text-sm">Tóm tắt<textarea className={inputClass} rows={3} maxLength={500} value={form.excerpt} onChange={e => update('excerpt', e.target.value)} /></label><RichTextEditor label="Nội dung bài viết" value={form.content} onChange={value => update('content', value)} minHeight={400} /></div> : <div className="space-y-5">{field('slug', 'Đường dẫn (để trống để tạo từ tiêu đề)', 160)}{field('seoTitle', 'Tiêu đề SEO', 200)}<label className="grid gap-1.5 text-sm">Mô tả SEO<textarea className={inputClass} rows={4} maxLength={320} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></label><p className="text-xs text-slate-400">{form.seoDescription.length}/320 ký tự</p><div className="border-t border-slate-700 pt-4"><p className="text-xs text-slate-400">Xem trước kết quả tìm kiếm</p><p className="text-lg text-cyan-300 mt-2 break-words">{form.seoTitle || form.title || 'Tiêu đề bài viết'}</p><p className="text-sm text-slate-400 break-all">/news/{form.slug || 'duong-dan-bai-viet'}</p><p className="text-sm mt-1 break-words">{form.seoDescription || form.excerpt}</p></div></div>}
+      </div>
+      <aside className="space-y-5 min-w-0"><label className="grid gap-1.5 text-sm">Trạng thái<select className={inputClass} value={form.status} onChange={e => update('status', e.target.value)}>{Object.entries(states).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label><label className="grid gap-1.5 text-sm">Chuyên mục<select className={inputClass} value={form.category} onChange={e => update('category', e.target.value)}>{Object.entries(categories).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>{field('author', 'Tên đơn vị đăng bài', 100)}{field('cover', 'URL ảnh bìa', 2000)}<label className="grid gap-1.5 text-sm">Chọn từ kho ảnh<select className={inputClass} value="" onChange={e => { const item = media.find(m => String(m.id) === e.target.value); if (item) { update('cover', item.url); update('coverAlt', item.altText || item.title); } }}><option value="">Chọn ảnh</option>{media.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>{form.cover && <img src={form.cover} alt={form.coverAlt || 'Ảnh bìa'} className="w-full aspect-video object-cover rounded-lg" />}{field('coverAlt', 'Mô tả ảnh (alt)', 200)}{form.publishedAt && <p className="text-xs text-slate-400">Ngày đăng: {new Date(form.publishedAt).toLocaleString('vi-VN')}</p>}</aside>
+    </div>
+  </form>;
+  const visible = posts.filter(p => (!filter || p.category === filter) && `${p.title} ${p.slug}`.toLocaleLowerCase('vi').includes(search.toLocaleLowerCase('vi')));
+  return <div className="space-y-5"><div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold flex gap-2 items-center"><FileText size={22} />Bản tin & chính sách</h2><button className={`${buttonClass} bg-cyan-400 text-slate-950 font-semibold`} onClick={() => edit(empty)}><Plus size={18} />Tạo bài viết</button></div><div className="flex flex-wrap gap-3"><label className="flex items-center gap-2 flex-1 min-w-[180px]"><Search size={18} /><input className={inputClass} aria-label="Tìm bài viết" placeholder="Tìm bài viết" value={search} onChange={e => setSearch(e.target.value)} /></label><select className={`${inputClass} !w-auto`} aria-label="Chuyên mục" value={filter} onChange={e => setFilter(e.target.value)}><option value="">Tất cả chuyên mục</option>{Object.entries(categories).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>{error && <div role="alert">{error}<button className={buttonClass} onClick={reload}>Thử lại</button></div>}{loading ? <p>Đang tải bài viết…</p> : !visible.length ? <p className="py-10 text-center text-slate-400">Chưa có bài viết.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-slate-400 border-b border-slate-700"><tr><th className="p-3">Bài viết</th><th className="p-3">Chuyên mục</th><th className="p-3">Trạng thái</th><th className="p-3">Ngày đăng</th><th className="p-3">Thao tác</th></tr></thead><tbody>{visible.map(post => <tr className="border-b border-slate-800" key={post.id}><td className="p-3 max-w-sm break-words font-medium">{post.title}</td><td className="p-3 whitespace-nowrap">{categories[post.category]}</td><td className="p-3 whitespace-nowrap">{states[post.status]}</td><td className="p-3 whitespace-nowrap">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('vi-VN') : 'Chưa xuất bản'}</td><td className="p-3"><button className={buttonClass} onClick={() => edit(post)} title="Chỉnh sửa bài viết"><Edit2 size={16} />Sửa</button></td></tr>)}</tbody></table></div>}</div>;
+}

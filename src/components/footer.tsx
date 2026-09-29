@@ -35,6 +35,11 @@ const NAV_ITEMS: { name: string; path: string; icon: CommerceIconName }[] = [
     icon: "grid",
   },
   {
+    name: "Bản tin",
+    path: "/news",
+    icon: "note",
+  },
+  {
     name: "Tài khoản",
     path: "/member",
     icon: "user",
@@ -92,4 +97,5 @@ export default function Footer() {
       </>
     );
   }
+  return null;
 }

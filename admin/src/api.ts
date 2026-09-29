@@ -42,6 +42,9 @@ async function request(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
+  getPosts: () => request('/posts'),
+  createPost: (data: unknown) => request('/posts', { method: 'POST', body: JSON.stringify(data) }),
+  updatePost: (id: string, data: unknown) => request(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   login: (username: string, password: string) =>
     request('/login', {
       method: 'POST',

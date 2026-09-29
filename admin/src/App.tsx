@@ -20,6 +20,7 @@ import { StaffPage } from './pages/Staff';
 import { OtpOutboxPage } from './pages/OtpOutbox';
 import { SettingsPage } from './pages/Settings';
 import { Login } from './pages/Login';
+import { PostsPage } from './pages/Posts';
 import { getAuthToken } from './api';
 
 export function App() {
@@ -39,6 +40,7 @@ export function App() {
 
   const getTitle = () => {
     switch (activeTab) {
+      case 'posts': return 'Bản tin & chính sách';
       case 'dashboard':
         return 'Tổng quan';
       case 'analytics':
@@ -86,6 +88,7 @@ export function App() {
       <div className="admin-main flex-1 flex flex-col min-w-0">
         <Header title={getTitle()} />
         <main className="admin-content flex-1 overflow-y-auto">
+          {activeTab === 'posts' && <PostsPage />}
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'analytics' && <AnalyticsPage />}
           {activeTab === 'orders' && <Orders />}

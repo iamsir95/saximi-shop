@@ -17,6 +17,7 @@ import AffiliateRegisterPage from "./pages/affiliate/register";
 import PaymentPage from "./pages/payment";
 import PhoneLoginPage from "./pages/auth/phone-login";
 import MemberPage from "./pages/member";
+import NewsPage, { NewsDetailPage } from "./pages/news";
 
 const router = createBrowserRouter(
   [
@@ -24,6 +25,8 @@ const router = createBrowserRouter(
       path: "/",
       element: <Layout />,
       children: [
+        { path: "/news", element: <NewsPage />, handle: { title: "Bản tin", noBack: true, noFloatingCart: true } },
+        { path: "/news/:slug", element: <NewsDetailPage />, handle: { title: "Bài viết", noFloatingCart: true } },
         {
           path: "/",
           element: <HomePage />,

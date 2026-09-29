@@ -7,7 +7,8 @@ COPY public ./public
 COPY src ./src
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
-RUN npm run build:css && npx vite build
+RUN npm run build:css && npx vite build \
+    && sed -i 's|<head>|<head><base href="/">|' www/index.html
 
 FROM node:20-alpine AS admin
 WORKDIR /app

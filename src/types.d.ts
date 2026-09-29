@@ -116,6 +116,8 @@ export interface Product {
   stockQuantity?: number;
   minStockLevel?: number;
   soldQuantity?: number;
+  isFlashSale?: boolean;
+  isRecommended?: boolean;
 }
 
 export interface Category {

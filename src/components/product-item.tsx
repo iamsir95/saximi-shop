@@ -9,10 +9,8 @@ import {
   getDiscountPercent,
   getDisplayPrice,
   getSoldLabel,
-  getStockLabel,
   hasMemberPrice,
   isGiftProgramActive,
-  isLowStock,
 } from "@/utils/commerce";
 import CommerceIcon from "./commerce-icon";
 
@@ -35,8 +33,6 @@ export default function ProductItem(props: ProductItemProps) {
     canUseMemberPricing
   );
   const displayPrice = getDisplayPrice(props.product, canUseMemberPricing);
-  const lowStock = isLowStock(props.product);
-  const stockLabel = getStockLabel(props.product);
   const soldQuantity = Math.max(0, Number(props.product.soldQuantity || 0));
   const hasGiftProgram = Boolean(
     props.product.giftPrograms?.some((program) => isGiftProgramActive(program))
@@ -71,6 +67,18 @@ export default function ProductItem(props: ProductItemProps) {
                   -{discountPercent}%
                 </span>
               )}
+              {props.product.isFlashSale && (
+                <span className="commerce-tag commerce-tag--danger">
+                  <CommerceIcon name="bolt" size={11} />
+                  Flash Sale
+                </span>
+              )}
+              {props.product.isRecommended && (
+                <span className="commerce-tag commerce-tag--info">
+                  <CommerceIcon name="sparkle" size={11} />
+                  Gợi ý
+                </span>
+              )}
               {props.product.promoDescription && (
                 <span className="commerce-tag commerce-tag--info">
                   <CommerceIcon name="ticket" size={11} />
@@ -82,17 +90,6 @@ export default function ProductItem(props: ProductItemProps) {
                   Quà tặng
                 </span>
               )}
-              <span
-                className={
-                  "commerce-tag ".concat(
-                    lowStock
-                      ? "commerce-tag--warning"
-                      : "commerce-tag--muted"
-                  )
-                }
-              >
-                {stockLabel}
-              </span>
             </div>
             <div className="pt-3 pb-1.5">
               <div className="pb-1">

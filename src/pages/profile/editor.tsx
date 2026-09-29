@@ -1,4 +1,5 @@
 import CONFIG from "@/config";
+import AvatarEditor from "./avatar-editor";
 import { shippingAddressState, userInfoKeyState, userInfoState } from "@/state";
 import { ShippingAddress } from "@/types";
 import { getApiBaseUrl } from "@/utils/request";
@@ -55,6 +56,7 @@ function ProfileEditorPage() {
         const newUserInfo = {
           ...userInfo,
           ...form,
+          avatar: undefined,
           name: form.name.trim(),
           phone,
           email: form.email.trim(),
@@ -114,6 +116,7 @@ function ProfileEditorPage() {
       }}
     >
       <div className="bg-section p-4 grid gap-4">
+        <AvatarEditor />
         <div className="liquid-card rounded-[24px] p-4">
           <div className="commerce-eyebrow text-primary">Hồ sơ mua hàng</div>
           <div className="commerce-title mt-1">Thông tin cá nhân và địa chỉ mặc định</div>

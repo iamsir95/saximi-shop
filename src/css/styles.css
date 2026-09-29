@@ -884,6 +884,9 @@ video {
 .min-h-10 {
   min-height: 2.5rem;
 }
+.min-h-11 {
+  min-height: 2.75rem;
+}
 .min-h-12 {
   min-height: 3rem;
 }
@@ -2028,6 +2031,9 @@ video {
      -moz-text-decoration-line: line-through;
           text-decoration-line: line-through;
 }
+.opacity-0 {
+  opacity: 0;
+}
 .opacity-25 {
   opacity: 0.25;
 }
@@ -2346,6 +2352,16 @@ video {
 
 .last\:border-b-0:last-child {
   border-bottom-width: 0px;
+}
+
+.focus-within\:ring-2:focus-within {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.focus-within\:ring-primary:focus-within {
+  --tw-ring-color: var(--primary);
 }
 
 .focus\:border-primary:focus {

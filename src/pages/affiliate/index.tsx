@@ -14,6 +14,7 @@ import { buildReferralLink } from "@/utils/platform";
 import { useFrontendNotification } from "@/hooks";
 import PersonalMarketingLink from "@/components/personal-marketing-link";
 import MarketingQrCode from "@/components/marketing-qr-code";
+import { Link } from "react-router-dom";
 
 type WithdrawalNotice = {
   requestCode: string;
@@ -206,11 +207,14 @@ export const AffiliatePortalPage: React.FC = () => {
         </Box>
 
         <Box className="flex items-center gap-3">
+          <Link to="/profile/edit" className="flex shrink-0 flex-col items-center gap-1" aria-label="Đổi ảnh đại diện">
           <img
-            src={activeProfile?.avatar}
+            src={currentUser?.avatar || activeProfile?.avatar}
             alt="Avatar"
             className="w-14 h-14 rounded-full border-2 border-white object-cover"
           />
+          <span className="text-xs font-semibold text-primaryForeground">Đổi ảnh</span>
+          </Link>
           <Box>
             <Text className="font-extrabold text-lg text-primaryForeground">
               {activeProfile?.name}

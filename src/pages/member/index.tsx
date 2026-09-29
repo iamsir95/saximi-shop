@@ -226,11 +226,14 @@ export default function MemberPage() {
         <Box className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-cyan-400 to-emerald-400 p-4 text-primaryForeground shadow-[0_18px_48px_rgba(0,204,247,0.24)]">
           <Box className="absolute right-[-38px] top-[-44px] h-36 w-36 rounded-full bg-white/20 blur-xl" />
           <Box className="relative z-10 flex items-start gap-3">
+            <button type="button" onClick={() => navigate(isLoggedIn ? "/profile/edit" : "/login")} className="flex shrink-0 flex-col items-center gap-1" aria-label="Đổi ảnh đại diện">
             <img
               src={accountAvatar}
               alt={accountName}
               className="h-16 w-16 rounded-[24px] object-cover ring-2 ring-white/70 shadow-lg"
             />
+            <span className="text-xs font-semibold">{isLoggedIn ? "Đổi ảnh" : "Đăng nhập"}</span>
+            </button>
             <Box className="min-w-0 flex-1">
               <Box className="flex items-start justify-between gap-2">
                 <Box className="min-w-0">

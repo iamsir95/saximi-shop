@@ -2682,6 +2682,14 @@ export class Database {
     };
     saveDataFile('users.json', this.users);
     this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_USER', `Cập nhật khách hàng ${this.users[idx].name}`, id);
+    if (data.avatar) {
+      for (const affiliate of this.affiliates) {
+        if (affiliate.userId === id || affiliate.phone === this.users[idx].phone) {
+          affiliate.avatar = data.avatar;
+        }
+      }
+      saveDataFile('affiliates.json', this.affiliates);
+    }
     return this.users[idx];
   }
 
@@ -2773,7 +2781,9 @@ export class Database {
         ...existing,
         id: existing.id.startsWith('web-u-') && data.id ? data.id : existing.id,
         name: data.name?.trim() || existing.name,
-        avatar: data.avatar || existing.avatar,
+        avatar: existing.avatar?.startsWith('data:image/jpeg;base64,')
+          ? existing.avatar
+          : data.avatar || existing.avatar,
         email: data.email?.trim() || existing.email,
         address: data.address ?? existing.address,
         lastLoginAt: now,

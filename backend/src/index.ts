@@ -25,6 +25,7 @@ function isValidVietnamPhone(phone: string) {
 }
 
 app.use(cors());
+app.use(['/user/avatar', '/api/user/avatar'], express.json({ limit: '256kb' }));
 app.use(express.json());
 
 // Initialize Database
@@ -481,6 +482,30 @@ publicApi.delete('/user/addresses/:id', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+publicApi.put('/user/avatar', (req: Request, res: Response) => {
+  let identity: jwt.JwtPayload;
+  try {
+    const token = req.headers.authorization?.replace(/^Bearer /, '');
+    const decoded = jwt.verify(token || '', JWT_SECRET);
+    if (typeof decoded === 'string' || decoded.role !== 'CUSTOMER') throw new Error('Unauthorized');
+    identity = decoded;
+  } catch {
+    return res.status(401).json({ message: 'Vui lòng đăng nhập lại để đổi ảnh đại diện.' });
+  }
+  const user = Database.findUserByPhone(String(identity.phone || ''));
+  if (!user || user.id !== identity.sub) return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
+  const avatar = req.body.avatar;
+  if (typeof avatar !== 'string' || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(avatar)) {
+    return res.status(400).json({ message: 'Ảnh đại diện không hợp lệ.' });
+  }
+  const bytes = Buffer.from(avatar.split(',')[1], 'base64');
+  if (bytes.length > 180 * 1024 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) {
+    return res.status(400).json({ message: 'Ảnh không hợp lệ hoặc vượt quá dung lượng cho phép.' });
+  }
+  Database.updateUser(user.id, { avatar });
+  res.json({ avatar });
+});
+
 publicApi.put('/user/profile', (req: Request, res: Response) => {
   const phone = normalizePhone(req.body.phone);
   if (!isValidVietnamPhone(phone)) {
@@ -493,7 +518,7 @@ publicApi.put('/user/profile', (req: Request, res: Response) => {
         name: req.body.name,
         phone,
         email: req.body.email,
-        avatar: req.body.avatar,
+        avatar: existing.avatar,
         address: req.body.address,
       })
     : Database.upsertPhoneUser({

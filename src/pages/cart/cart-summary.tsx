@@ -59,7 +59,7 @@ export default function CartSummary() {
           </tbody>
         </table>
         {giftItems.length > 0 && (
-          <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          <div className="secondary-soft rounded-2xl px-3 py-2 text-xs">
             <div className="font-black">Quà tặng kèm</div>
             <div className="mt-1 space-y-1">
               {giftItems.map((item) => (
@@ -76,7 +76,7 @@ export default function CartSummary() {
         )}
         <HorizontalDivider />
         {totalSavings > 0 && (
-          <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          <div className="secondary-soft rounded-2xl px-3 py-2 text-xs font-semibold">
             Đơn này đang tiết kiệm {formatPrice(totalSavings)}
           </div>
         )}

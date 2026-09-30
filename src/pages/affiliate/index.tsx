@@ -244,15 +244,15 @@ export const AffiliatePortalPage: React.FC = () => {
                 Cấp bậc tuyến hội
               </Text>
               <Box className="mt-3 space-y-2">
-                <Box className="rounded-2xl bg-indigo-50/70 border border-white/70 px-3 py-2">
-                  <Text className="text-[10px] font-bold text-indigo-600">
+                <Box className="secondary-soft rounded-2xl px-3 py-2">
+                  <Text className="text-[10px] font-bold text-secondaryDark">
                     {parentPresident.levelName || "Chủ tịch hội cấp trên"}
                   </Text>
                   <Text className="text-sm font-bold text-slate-800">
                     {parentPresident.name}
                   </Text>
                 </Box>
-                <Box className="ml-4 rounded-2xl bg-cyan-50/70 border border-white/70 px-3 py-2">
+                <Box className="ml-4 rounded-2xl bg-white/62 border border-white/70 px-3 py-2">
                   <Text className="text-[10px] font-bold text-primary">
                     {branchProfile?.levelName || "Chi hội trưởng trực thuộc"}
                   </Text>
@@ -261,7 +261,7 @@ export const AffiliatePortalPage: React.FC = () => {
                   </Text>
                 </Box>
                 <Box className="rounded-2xl bg-white/62 border border-white/70 px-3 py-2">
-                  <Text className="text-[10px] font-bold text-emerald-600">
+                  <Text className="text-[10px] font-bold text-secondaryDark">
                     {getAffiliateCommissionLabel(branchProfile)}
                   </Text>
                   <Text className="text-xs font-bold text-slate-700">
@@ -278,14 +278,14 @@ export const AffiliatePortalPage: React.FC = () => {
               Ví {getAffiliateCommissionLabel(branchProfile)} ({branchProfile?.directCommissionRate || 0}%)
             </Text>
             <Box className="flex justify-between items-baseline">
-              <Text className="text-2xl font-black text-emerald-600">
+              <Text className="text-2xl font-black text-primary">
                 {formatMoney(branchProfile?.walletBalance || 0)}
               </Text>
               <Button
                 size="small"
                 disabled={withdrawRequested || !branchProfile?.walletBalance}
                 onClick={handleWithdrawRequest}
-                className="bg-emerald-600 text-white font-bold rounded-xl disabled:opacity-60"
+                className="brand-action font-bold rounded-xl disabled:opacity-60"
               >
                 {withdrawRequested ? "Đã gửi" : "Rút Tiền"}
               </Button>
@@ -293,21 +293,21 @@ export const AffiliatePortalPage: React.FC = () => {
 
             <Box className="pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
               <span>Hoa hồng đang chờ duyệt:</span>
-              <span className="font-bold text-amber-600">{formatMoney(pendingCommission)}</span>
+              <span className="font-bold text-secondaryDark">{formatMoney(pendingCommission)}</span>
             </Box>
 
             {withdrawalNotice && (
-              <Box className="rounded-2xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 space-y-2">
+              <Box className="secondary-soft rounded-2xl px-3 py-3 space-y-2">
                 <Box className="flex items-start justify-between gap-3">
                   <Box className="min-w-0">
-                    <Text className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                    <Text className="text-[10px] font-black uppercase tracking-wide text-secondaryDark">
                       Thông báo rút tiền
                     </Text>
                     <Text className="text-xs font-bold text-slate-900 mt-0.5">
                       Yêu cầu {withdrawalNotice.requestCode} đã được ghi nhận
                     </Text>
                   </Box>
-                  <Box className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-emerald-700">
+                  <Box className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-secondaryDark">
                     Chờ đối soát
                   </Box>
                 </Box>
@@ -316,7 +316,7 @@ export const AffiliatePortalPage: React.FC = () => {
                     <Text className="text-[10px] text-slate-400 font-bold uppercase">
                       Số tiền
                     </Text>
-                    <Text className="font-black text-emerald-700">
+                    <Text className="font-black text-secondaryDark">
                       {formatMoney(withdrawalNotice.amount)}
                     </Text>
                   </Box>
@@ -378,7 +378,7 @@ export const AffiliatePortalPage: React.FC = () => {
 
             <Box className="liquid-card p-4 rounded-[24px]">
               <Text className="text-xs text-slate-400 font-medium">Khách đã giới thiệu</Text>
-              <Text className="text-base font-extrabold text-purple-600 mt-1">
+              <Text className="text-base font-extrabold text-secondaryDark mt-1">
                 {totalCustomers} Đơn
               </Text>
             </Box>
@@ -390,35 +390,35 @@ export const AffiliatePortalPage: React.FC = () => {
       {role === "PRESIDENT" && (
         <Box className="p-4 space-y-4">
           {/* Consignment Stock & Debt Overview */}
-          <Box className="text-white p-5 rounded-[24px] shadow-md space-y-3 bg-gradient-to-br from-amber-500/90 to-orange-600/85 backdrop-blur-xl">
-            <Text className="text-xs font-bold text-amber-100 uppercase tracking-wide">
+          <Box className="promo-spotlight p-5 rounded-[24px] shadow-md space-y-3">
+            <Text className="text-xs font-bold text-secondaryDark uppercase tracking-wide">
               Quản Lý Hàng Gối Đầu (Ứng Trước Từ Công Ty)
             </Text>
 
-            <Box className="grid grid-cols-3 gap-2 text-center bg-black/15 p-3 rounded-xl backdrop-blur-sm">
+            <Box className="grid grid-cols-3 gap-2 text-center bg-white/44 p-3 rounded-xl backdrop-blur-sm">
               <Box>
-                <Text className="text-[10px] text-amber-100">Đã ứng trước</Text>
-                <Text className="font-extrabold text-white text-base">
+                <Text className="text-[10px] text-slate-500">Đã ứng trước</Text>
+                <Text className="font-extrabold text-slate-900 text-base">
                   {consignmentStock.allocated} sp
                 </Text>
               </Box>
-              <Box className="border-x border-white/20">
-                <Text className="text-[10px] text-amber-100">Đã bán</Text>
-                <Text className="font-extrabold text-emerald-300 text-base">
+              <Box className="border-x border-white/60">
+                <Text className="text-[10px] text-slate-500">Đã bán</Text>
+                <Text className="font-extrabold text-primary text-base">
                   {consignmentStock.sold} sp
                 </Text>
               </Box>
               <Box>
-                <Text className="text-[10px] text-amber-100">Tồn kho còn lại</Text>
-                <Text className="font-extrabold text-yellow-200 text-base">
+                <Text className="text-[10px] text-slate-500">Tồn kho còn lại</Text>
+                <Text className="font-extrabold text-secondaryDark text-base">
                   {consignmentStock.remaining} sp
                 </Text>
               </Box>
             </Box>
 
             <Box className="pt-2 flex justify-between items-center text-xs">
-              <span className="text-amber-100">Công nợ sản phẩm ứng trước:</span>
-              <span className="font-black text-white text-sm">
+              <span className="text-slate-500">Công nợ sản phẩm ứng trước:</span>
+              <span className="font-black text-slate-900 text-sm">
                 {formatMoney(consignmentStock.debtAmount)}
               </span>
             </Box>
@@ -429,7 +429,7 @@ export const AffiliatePortalPage: React.FC = () => {
             <Text className="text-xs font-bold text-slate-400 uppercase tracking-wide">
               Ví {getAffiliateCommissionLabel(presidentProfile)} ({presidentProfile?.overridingCommissionRate || 0}%)
             </Text>
-            <Text className="text-2xl font-black text-emerald-600">
+            <Text className="text-2xl font-black text-primary">
               {formatMoney(presidentProfile?.walletBalance || 0)}
             </Text>
             <Text className="text-xs text-slate-500">
@@ -452,14 +452,14 @@ export const AffiliatePortalPage: React.FC = () => {
                     </Text>
                     <Text className="font-bold text-xs text-slate-800">{b.name}</Text>
                     <Text className="text-[10px] text-slate-400">{b.phone}</Text>
-                    <Text className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                    <Text className="text-[10px] text-secondaryDark font-semibold mt-0.5">
                       {getAffiliateCommissionLabel(b)} {b.directCommissionRate || 0}%
                     </Text>
                   </Box>
 
                   <Box className="text-right">
                     <Text className="text-xs font-bold text-primary">{formatMoney(b.totalSales)}</Text>
-                    <Text className="text-[10px] text-emerald-600 font-semibold">
+                    <Text className="text-[10px] text-secondaryDark font-semibold">
                       Doanh số tuyến
                     </Text>
                   </Box>

@@ -51,7 +51,7 @@ function AccountRoleCard() {
     {
       label: "Trạng thái",
       value: isLoggedIn ? "Đã xác thực số điện thoại" : "Chưa đăng nhập",
-      tone: isLoggedIn ? "text-emerald-700" : "text-amber-700",
+      tone: isLoggedIn ? "text-primary" : "text-secondaryDark",
     },
     {
       label: "Loại tài khoản",
@@ -73,7 +73,7 @@ function AccountRoleCard() {
           {
             label: "Tỷ lệ hoa hồng",
             value: `${commissionRate || 0}%`,
-            tone: "text-emerald-700",
+            tone: "text-primary",
           },
           {
             label: "Doanh số ghi nhận",
@@ -111,7 +111,7 @@ function AccountRoleCard() {
           <div
             className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center font-black text-sm shadow-lg ${
               activeAffiliate?.role === "PRESIDENT"
-                ? "bg-indigo-600/90 text-white shadow-indigo-500/20"
+                ? "secondary-soft"
                 : activeAffiliate?.role === "BRANCH_LEADER"
                   ? "bg-primary text-primaryForeground shadow-[0_10px_24px_rgba(0,204,247,0.22)]"
                   : "bg-slate-700/85 text-white shadow-slate-500/15"
@@ -162,7 +162,7 @@ function AccountRoleCard() {
       </div>
 
       {isLoggedIn && !isAffiliate && (
-        <div className="rounded-2xl bg-emerald-50/80 border border-white/70 px-3 py-2 commerce-caption text-emerald-700">
+        <div className="rounded-2xl bg-cyan-50/70 border border-white/70 px-3 py-2 commerce-caption text-primary">
           Đã đăng nhập bằng số điện thoại{" "}
           <strong>{currentUser?.phone}</strong>. Bạn có thể theo dõi đơn hàng
           và lưu địa chỉ giao hàng trên tài khoản này.
@@ -220,7 +220,7 @@ function AccountRoleCard() {
         onClick={() => navigate("/member")}
         className="w-full liquid-button rounded-2xl px-4 py-3 text-left"
       >
-        <div className="commerce-eyebrow text-rose-600">
+        <div className="commerce-eyebrow text-secondaryDark">
           Dành cho hội viên
         </div>
         <div className="commerce-title mt-0.5">

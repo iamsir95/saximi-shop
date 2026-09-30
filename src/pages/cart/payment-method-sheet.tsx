@@ -26,24 +26,24 @@ const PAYMENT_OPTIONS: {
     label: "ZaloPay",
     sublabel: "Thanh toán nhanh qua ví ZaloPay",
     badge: "Khuyên dùng",
-    color: "#0068FF",
-    bgColor: "#EBF3FF",
+    color: "#008fb3",
+    bgColor: "rgba(0, 204, 247, 0.12)",
   },
   {
     method: "VIETQR",
     icon: "qr",
     label: "Chuyển khoản VietQR",
     sublabel: "Quét mã QR bằng ứng dụng ngân hàng",
-    color: "#009B77",
-    bgColor: "#E8F5EC",
+    color: "#96354f",
+    bgColor: "rgba(239, 106, 140, 0.12)",
   },
   {
     method: "COD",
     icon: "delivery",
     label: "Thanh toán khi nhận hàng",
     sublabel: "Thanh toán tiền mặt khi nhận đơn",
-    color: "#F59E0B",
-    bgColor: "#FFFBEB",
+    color: "#008fb3",
+    bgColor: "rgba(0, 204, 247, 0.12)",
   },
 ];
 
@@ -89,8 +89,8 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
               onClick={() => setSelected(opt.method)}
               className={`w-full flex items-center gap-3 p-4 rounded-[20px] border-2 text-left transition-all active:scale-[0.99] ${
                 selected === opt.method
-                  ? "border-blue-500 shadow-md"
-                  : "border-slate-100 bg-white"
+                  ? "border-primary shadow-md bg-white/72"
+                  : "border-white/80 bg-white/58"
               }`}
               style={{
                 backgroundColor: selected === opt.method ? opt.bgColor : undefined,
@@ -112,10 +112,7 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
                     {opt.label}
                   </span>
                   {opt.badge && (
-                    <span
-                      className="text-[11px] leading-4 font-bold px-2 py-0.5 rounded-full text-white"
-                      style={{ backgroundColor: opt.color }}
-                    >
+                    <span className="commerce-tag commerce-tag--promo !min-h-0 !px-2 !py-0.5">
                       {opt.badge}
                     </span>
                   )}
@@ -128,7 +125,7 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
               {/* Radio indicator */}
               <div
                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                  selected === opt.method ? "border-blue-500" : "border-slate-300"
+                  selected === opt.method ? "border-primary" : "border-slate-300"
                 }`}
                 style={{
                   borderColor: selected === opt.method ? opt.color : undefined,

@@ -91,7 +91,7 @@ export default function AffiliateRegisterPage() {
             <PersonalMarketingLink profile={existingAffiliate} compact embedded />
             <Button
               onClick={() => navigate("/affiliate")}
-              className="w-full rounded-2xl bg-primary text-primaryForeground font-bold"
+              className="w-full rounded-2xl brand-action font-bold"
             >
               Vào cổng đại lý
             </Button>
@@ -145,7 +145,7 @@ export default function AffiliateRegisterPage() {
               onClick={handleSubmit}
               loading={submitting}
               disabled={submitting}
-              className="w-full rounded-2xl brand-gradient text-primaryForeground font-bold"
+              className="w-full rounded-2xl brand-action font-bold"
             >
               Đăng ký làm đại lý
             </Button>

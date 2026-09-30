@@ -297,15 +297,15 @@ html[data-platform="website"] {
 }
 
 .commerce-tag--success {
-  border-color: rgba(16, 185, 129, 0.28);
-  background: linear-gradient(135deg, rgba(236, 253, 245, 0.92), rgba(16, 185, 129, 0.16));
-  color: #047857;
+  border-color: rgba(var(--primary-rgb), 0.28);
+  background: linear-gradient(135deg, rgba(236, 254, 255, 0.92), rgba(var(--primary-rgb), 0.16));
+  color: var(--primary-dark);
 }
 
 .commerce-tag--warning {
-  border-color: rgba(245, 158, 11, 0.34);
-  background: linear-gradient(135deg, rgba(255, 251, 235, 0.94), rgba(245, 158, 11, 0.18));
-  color: #b45309;
+  border-color: rgba(var(--secondary-rgb), 0.32);
+  background: linear-gradient(135deg, rgba(255, 245, 248, 0.94), rgba(var(--secondary-rgb), 0.18));
+  color: var(--secondary-dark);
 }
 
 .commerce-tag--info {
@@ -463,6 +463,31 @@ html[data-platform="website"] .toast-container {
   backdrop-filter: blur(22px) saturate(1.26);
 }
 
+.brand-action {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08)),
+    rgba(var(--primary-rgb), 0.92) !important;
+  color: var(--primaryForeground) !important;
+  border: 1px solid rgba(255, 255, 255, 0.56) !important;
+  box-shadow:
+    0 14px 34px rgba(0, 204, 247, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.28);
+  backdrop-filter: blur(22px) saturate(1.28);
+}
+
+.secondary-accent {
+  color: var(--secondary-dark) !important;
+}
+
+.secondary-soft {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(var(--secondary-rgb), 0.14)),
+    rgba(255, 255, 255, 0.52) !important;
+  border-color: rgba(var(--secondary-rgb), 0.22) !important;
+  color: var(--secondary-dark) !important;
+}
+
 .auth-glass-card {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.2)),
@@ -571,7 +596,12 @@ html[data-platform="website"] .toast-container {
   font-size: var(--commerce-font-sm);
   line-height: 20px;
   font-weight: 700;
-  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  box-shadow:
+    0 10px 26px rgba(15, 42, 64, 0.08),
+    var(--glass-inner-shadow) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.24);
+  backdrop-filter: blur(22px) saturate(1.24);
   transition:
     opacity 160ms ease,
     transform 160ms ease,
@@ -585,9 +615,20 @@ html[data-platform="website"] .toast-container {
 
 .zaui-btn-primary:not(.zaui-btn-disabled) {
   background:
-    linear-gradient(120deg, rgba(var(--primary-rgb), 0.96), rgba(var(--secondary-rgb), 0.92)),
-    var(--primary);
-  color: var(--primaryForeground);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08)),
+    rgba(var(--primary-rgb), 0.92) !important;
+  color: var(--primaryForeground) !important;
+  box-shadow:
+    0 14px 34px rgba(0, 204, 247, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74) !important;
+}
+
+.zaui-btn-secondary:not(.zaui-btn-disabled),
+.zaui-btn-tertiary:not(.zaui-btn-disabled) {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.36)),
+    rgba(255, 255, 255, 0.38) !important;
+  color: var(--primary-dark) !important;
 }
 
 .zaui-btn svg,

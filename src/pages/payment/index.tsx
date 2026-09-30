@@ -36,7 +36,7 @@ function CountdownTimer({ seconds }: { seconds: number }) {
           <circle
             cx="40" cy="40" r="34"
             fill="none"
-            stroke={isUrgent ? "#EF4444" : "#3B82F6"}
+            stroke={isUrgent ? "#EF6A8C" : "#00ccf7"}
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 34}`}
@@ -45,12 +45,12 @@ function CountdownTimer({ seconds }: { seconds: number }) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-sm font-black ${isUrgent ? "text-red-500" : "text-primary"}`}>
+          <span className={`text-sm font-black ${isUrgent ? "text-secondaryDark" : "text-primary"}`}>
             {mins}:{secs}
           </span>
         </div>
       </div>
-      <p className={`text-xs font-medium ${isUrgent ? "text-red-500" : "text-slate-500"}`}>
+      <p className={`text-xs font-medium ${isUrgent ? "text-secondaryDark" : "text-slate-500"}`}>
         {timeLeft > 0 ? "Thời hạn thanh toán" : "QR đã hết hạn"}
       </p>
     </div>
@@ -89,7 +89,7 @@ function VietQRView({ details }: { details: OrderPaymentDetails }) {
             className={`w-56 h-56 mx-auto rounded-2xl shadow-inner border border-slate-200 ${imgLoaded ? "block" : "hidden"}`}
             onLoad={() => setImgLoaded(true)}
           />
-          <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+          <div className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
             NAPAS 247
           </div>
         </div>
@@ -99,8 +99,8 @@ function VietQRView({ details }: { details: OrderPaymentDetails }) {
 
       {/* Bank Info */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-700 to-slate-800 px-4 py-3">
-          <p className="text-xs font-bold text-slate-300 uppercase tracking-wide">Thông tin chuyển khoản</p>
+        <div className="brand-action px-4 py-3">
+          <p className="text-xs font-bold text-primaryForeground uppercase tracking-wide">Thông tin chuyển khoản</p>
         </div>
         {[
           { label: "Ngân hàng", value: details.bankName || "MBBank" },
@@ -111,7 +111,7 @@ function VietQRView({ details }: { details: OrderPaymentDetails }) {
         ].map((row) => (
           <div
             key={row.label}
-            className={`flex justify-between items-center px-4 py-3 border-b border-slate-50 last:border-0 ${row.highlight ? "bg-cyan-50" : ""}`}
+            className={`flex justify-between items-center px-4 py-3 border-b border-slate-50 last:border-0 ${row.highlight ? "bg-cyan-50/70" : ""}`}
           >
             <span className="text-xs text-slate-500 flex-shrink-0">{row.label}</span>
             <div className="flex items-center gap-2">
@@ -131,12 +131,12 @@ function VietQRView({ details }: { details: OrderPaymentDetails }) {
         ))}
       </div>
 
-      <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 space-y-1">
-        <p className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+      <div className="secondary-soft rounded-2xl px-4 py-3 space-y-1">
+        <p className="flex items-center gap-1.5 text-xs font-bold text-secondaryDark">
           <CommerceIcon name="alert" size={15} />
           Lưu ý quan trọng
         </p>
-        <p className="text-xs text-amber-600">
+        <p className="text-xs text-slate-600">
           Chuyển khoản <strong>đúng số tiền và nội dung</strong> để hệ thống tự động xác nhận đơn hàng.
           Đơn hàng sẽ được xác nhận trong vòng <strong>5–10 phút</strong> sau khi chuyển khoản thành công.
         </p>
@@ -150,12 +150,12 @@ function ZaloPayView({ details, onOpenZaloPay }: { details: OrderPaymentDetails;
   return (
     <div className="space-y-4">
       {/* Hero Card */}
-      <div className="brand-gradient rounded-2xl p-6 text-primaryForeground text-center space-y-4 shadow-lg">
+      <div className="brand-action rounded-2xl p-6 text-primaryForeground text-center space-y-4 shadow-lg">
         <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-md">
           <CommerceIcon name="wallet" size={30} className="text-primary" strokeWidth={1.9} />
         </div>
         <div>
-          <p className="text-sm font-medium text-blue-100">Thanh toán qua ZaloPay</p>
+          <p className="text-sm font-medium text-slate-700/78">Thanh toán qua ZaloPay</p>
           <p className="text-3xl font-black mt-1">{formatPrice(details.amount)}</p>
         </div>
         <button
@@ -165,7 +165,7 @@ function ZaloPayView({ details, onOpenZaloPay }: { details: OrderPaymentDetails;
           Mở ZaloPay ngay
           <CommerceIcon name="chevron-right" size={18} />
         </button>
-        <p className="text-xs text-blue-200">Sẽ chuyển bạn sang ví ZaloPay trong Zalo</p>
+        <p className="text-xs text-slate-700/72">Sẽ chuyển bạn sang ví ZaloPay trong Zalo</p>
       </div>
 
       {/* Benefits */}
@@ -193,16 +193,16 @@ function ZaloPayView({ details, onOpenZaloPay }: { details: OrderPaymentDetails;
 function CODView({ details }: { details: OrderPaymentDetails }) {
   return (
     <div className="space-y-4">
-      <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-6 text-white text-center space-y-3 shadow-lg">
+      <div className="brand-action rounded-2xl p-6 text-primaryForeground text-center space-y-3 shadow-lg">
         <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-md">
-          <CommerceIcon name="banknote" size={31} className="text-amber-600" strokeWidth={1.9} />
+          <CommerceIcon name="banknote" size={31} className="text-primary" strokeWidth={1.9} />
         </div>
         <div>
-          <p className="text-sm font-medium text-amber-100">Chuẩn bị số tiền mặt</p>
+          <p className="text-sm font-medium text-slate-700/78">Chuẩn bị số tiền mặt</p>
           <p className="text-3xl font-black mt-1">{formatPrice(details.amount)}</p>
         </div>
-        <div className="bg-black/15 backdrop-blur-sm rounded-xl px-4 py-2">
-          <p className="text-xs text-amber-100">
+        <div className="bg-white/24 backdrop-blur-sm rounded-xl px-4 py-2">
+          <p className="text-xs text-slate-700/72">
             Thanh toán khi nhận hàng — Không cần chuyển khoản trước
           </p>
         </div>
@@ -217,7 +217,7 @@ function CODView({ details }: { details: OrderPaymentDetails }) {
           { step: "4", text: "Ký xác nhận đã nhận hàng thành công" },
         ].map((s) => (
           <div key={s.step} className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-black flex items-center justify-center flex-shrink-0">
+            <div className="w-6 h-6 rounded-full brand-action text-xs font-black flex items-center justify-center flex-shrink-0">
               {s.step}
             </div>
             <p className="text-xs text-slate-600 pt-0.5">{s.text}</p>
@@ -225,8 +225,8 @@ function CODView({ details }: { details: OrderPaymentDetails }) {
         ))}
       </div>
 
-      <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3">
-        <p className="flex items-start gap-2 text-xs text-green-700 font-medium">
+      <div className="secondary-soft rounded-2xl px-4 py-3">
+        <p className="flex items-start gap-2 text-xs font-medium">
           <CommerceIcon name="check" size={16} className="mt-0.5 flex-none" />
           <span>
             Đơn hàng của bạn đã được ghi nhận. Chúng tôi sẽ liên hệ xác nhận và
@@ -394,10 +394,10 @@ export default function PaymentPage() {
           className={
             "flex items-center gap-1.5 rounded-full border px-3 py-1 ".concat(
               paymentStatus === "success"
-                ? "bg-green-50 border-green-200"
+                ? "bg-cyan-50 border-cyan-200"
                 : paymentStatus === "failed"
                 ? "bg-red-50 border-red-200"
-                : "bg-amber-50 border-amber-200"
+                : "bg-rose-50 border-rose-200"
             )
           }
         >
@@ -405,10 +405,10 @@ export default function PaymentPage() {
             className={
               "w-1.5 h-1.5 rounded-full ".concat(
                 paymentStatus === "success"
-                  ? "bg-green-500"
+                  ? "bg-primary"
                   : paymentStatus === "failed"
                   ? "bg-red-500"
-                  : "bg-amber-400 animate-pulse"
+                  : "bg-secondary animate-pulse"
               )
             }
           />
@@ -416,10 +416,10 @@ export default function PaymentPage() {
             className={
               "text-[10px] font-bold ".concat(
                 paymentStatus === "success"
-                  ? "text-green-600"
+                  ? "text-primary"
                   : paymentStatus === "failed"
                   ? "text-red-600"
-                  : "text-amber-600"
+                  : "text-secondaryDark"
               )
             }
           >
@@ -452,7 +452,7 @@ export default function PaymentPage() {
                   className={
                     "text-xs font-black ".concat(
                       paymentStatus === "success"
-                        ? "text-green-600"
+                        ? "text-primary"
                         : "text-primary"
                     )
                   }

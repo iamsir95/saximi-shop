@@ -31,9 +31,9 @@ const KIND_META: Record<
 > = {
   success: {
     label: "Hoàn tất",
-    badge: "bg-emerald-50 text-emerald-700",
-    iconBox: "bg-emerald-50 text-emerald-600",
-    dot: "bg-emerald-500",
+    badge: "bg-cyan-50 text-primary",
+    iconBox: "bg-cyan-50 text-primary",
+    dot: "bg-primary",
   },
   info: {
     label: "Thông tin",
@@ -43,9 +43,9 @@ const KIND_META: Record<
   },
   warning: {
     label: "Cần chú ý",
-    badge: "bg-amber-50 text-amber-700",
-    iconBox: "bg-amber-50 text-amber-600",
-    dot: "bg-amber-500",
+    badge: "bg-rose-50 text-secondaryDark",
+    iconBox: "bg-rose-50 text-secondaryDark",
+    dot: "bg-secondary",
   },
   error: {
     label: "Lỗi",
@@ -116,7 +116,7 @@ export default function NotificationCenter() {
       >
         <CommerceIcon name="bell" size={20} className="text-primary" />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white ring-2 ring-white">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-black text-white ring-2 ring-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -212,7 +212,7 @@ export default function NotificationCenter() {
                 </div>
               ) : visibleNotifications.length === 0 ? (
                 <div className="notification-surface-card rounded-[22px] bg-white/58 px-4 py-5 text-center ring-1 ring-white/70">
-                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-primary">
                     <CommerceIcon name="check" size={22} />
                   </div>
                   <div className="mt-3 text-sm font-bold text-slate-900">

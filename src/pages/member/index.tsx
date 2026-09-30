@@ -197,13 +197,13 @@ export default function MemberPage() {
       label: "Điểm nhận hàng",
       icon: "package",
       path: "/stations",
-      tone: "text-emerald-600",
+      tone: "text-primary",
     },
     {
       label: "Cổng cán bộ",
       icon: "id-card",
       path: currentAffiliate ? "/affiliate" : "/affiliate/register",
-      tone: "text-rose-600",
+      tone: "text-secondaryDark",
     },
   ];
 
@@ -378,7 +378,7 @@ export default function MemberPage() {
                   <PersonalMarketingLink profile={currentAffiliate} />
                   <Button
                     onClick={() => navigate("/affiliate", { viewTransition: true })}
-                    className="!rounded-[20px] bg-primary text-primaryForeground font-bold"
+                    className="!rounded-[20px] brand-action font-bold"
                     fullWidth
                   >
                     Vào cổng quản lý
@@ -392,7 +392,7 @@ export default function MemberPage() {
                         key={item.text}
                         className="rounded-[18px] bg-white/62 border border-white/70 px-3 py-3 flex gap-3"
                       >
-                        <Box className="w-8 h-8 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <Box className="w-8 h-8 rounded-2xl secondary-soft flex items-center justify-center shrink-0">
                           <CommerceIcon name={item.icon} size={18} />
                         </Box>
                         <Text className="text-xs text-slate-600 leading-5">
@@ -407,7 +407,7 @@ export default function MemberPage() {
                         ? navigate("/affiliate/register", { viewTransition: true })
                         : navigate("/login", { viewTransition: true })
                     }
-                    className="!rounded-[20px] bg-primary text-primaryForeground font-bold"
+                    className="!rounded-[20px] brand-action font-bold"
                     fullWidth
                   >
                     {isLoggedIn ? "Đăng ký đại lý" : "Đăng nhập để đăng ký"}
@@ -435,7 +435,7 @@ export default function MemberPage() {
               </Box>
 
               {referrerAffiliate ? (
-                <Box className="rounded-2xl bg-cyan-50/70 border border-white/70 p-3">
+                <Box className="secondary-soft rounded-2xl p-3">
                   <Text className="text-[10px] font-bold text-primary uppercase">
                     {getAffiliateRoleLabel(referrerAffiliate)}
                   </Text>

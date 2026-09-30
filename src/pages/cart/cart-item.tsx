@@ -85,7 +85,7 @@ export default function CartItem(props: CartItemProps) {
           <button
             type="button"
             onClick={removeItem}
-            className="flex h-8 w-8 items-center justify-center rounded-2xl bg-rose-50 text-danger ring-1 ring-rose-100 active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-2xl secondary-soft active:scale-95"
             aria-label={`Xoá ${props.product.name} khỏi giỏ hàng`}
           >
             <CommerceIcon name="trash" size={17} />
@@ -103,9 +103,9 @@ export default function CartItem(props: CartItemProps) {
               {props.quantity}
             </div>
             <button
-              type="button"
-              onClick={increaseQuantity}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white active:scale-95"
+            type="button"
+            onClick={increaseQuantity}
+              className="flex h-7 w-7 items-center justify-center rounded-full brand-action active:scale-95"
               aria-label={`Tăng số lượng ${props.product.name}`}
             >
               <CommerceIcon name="plus" size={14} strokeWidth={2.4} />

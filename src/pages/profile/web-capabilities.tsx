@@ -148,7 +148,7 @@ export default function WebCapabilitiesCard() {
           disabled={isEnablingPush || !canUsePush}
           className="rounded-2xl bg-white/58 border border-white/70 px-3 py-3 text-left disabled:opacity-60"
         >
-          <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-secondaryDark">
             Thông báo
           </div>
           <div className="text-xs font-bold text-slate-900 mt-1">

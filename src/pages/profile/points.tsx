@@ -48,12 +48,12 @@ export default function Points() {
     {
       label: "Doanh số tính điểm",
       value: formatPrice(commission.commissionBaseSales),
-      tone: "text-emerald-700",
+      tone: "text-primary",
     },
     {
       label: "Hoa hồng tạm tính",
       value: formatPrice(commission.totalCommission),
-      tone: "text-rose-700",
+      tone: "text-secondaryDark",
     },
   ];
 

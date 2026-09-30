@@ -21,7 +21,7 @@ function OrderItem(props: CartItem) {
     >
       <div className="text-sm">{props.product.name}</div>
       {props.isGift && (
-        <div className="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+        <div className="mt-1 inline-flex rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-primary">
           Quà tặng kèm
         </div>
       )}

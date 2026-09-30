@@ -556,103 +556,121 @@ html[data-platform="website"] .toast-container {
   position: relative;
   min-width: 0;
   flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  border-radius: 16px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.38)),
+    rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 12px 30px rgba(15, 42, 64, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(22px) saturate(1.22);
+  backdrop-filter: blur(22px) saturate(1.22);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
 
-  .zaui-input-affix-wrapper,
-  .zaui-input-search {
-    min-height: 46px;
-    border-radius: 16px !important;
-    border: 1px solid rgba(255, 255, 255, 0.68) !important;
-    background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.38)),
-      rgba(255, 255, 255, 0.5) !important;
-    box-shadow:
-      0 12px 30px rgba(15, 42, 64, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.86);
-    -webkit-backdrop-filter: blur(22px) saturate(1.22);
-    backdrop-filter: blur(22px) saturate(1.22);
-  }
+.commerce-search:focus-within {
+  border-color: rgba(var(--primary-rgb), 0.56);
+  box-shadow:
+    0 14px 34px rgba(0, 204, 247, 0.12),
+    0 0 0 3px rgba(var(--primary-rgb), 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
 
-  .zaui-input-affix-wrapper {
-    gap: 10px;
-    padding-inline: 5px 12px;
-    transition:
-      border-color 160ms ease,
-      box-shadow 160ms ease,
-      background 160ms ease;
-  }
+.commerce-search__button,
+.commerce-search__clear {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  flex: none;
+}
 
-  .zaui-input-affix-wrapper > :first-child:not(input) {
-    position: relative;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    color: var(--primary);
-    background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.22)),
-      linear-gradient(135deg, rgba(var(--primary-rgb), 0.2), rgba(var(--secondary-rgb), 0.1));
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    box-shadow:
-      0 8px 18px rgba(0, 204, 247, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.86),
-      inset 0 -1px 0 rgba(0, 204, 247, 0.08);
-    transition:
-      transform 160ms ease,
-      color 160ms ease,
-      background 160ms ease,
-      box-shadow 160ms ease;
-  }
+.commerce-search__button {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: var(--primary);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.22)),
+    linear-gradient(135deg, rgba(var(--primary-rgb), 0.2), rgba(var(--secondary-rgb), 0.1));
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 8px 18px rgba(0, 204, 247, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(0, 204, 247, 0.08);
+  transition:
+    transform 160ms ease,
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
 
-  .zaui-input-affix-wrapper > :first-child:not(input)::after {
-    content: "";
-    position: absolute;
-    inset: 2px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.42);
-    pointer-events: none;
-  }
+.commerce-search__button::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  pointer-events: none;
+}
 
-  .zaui-input-affix-wrapper > :first-child:not(input) svg {
-    position: relative;
-    z-index: 1;
-    width: 19px;
-    height: 19px;
-    stroke-width: 2.35;
-  }
+.commerce-search:focus-within .commerce-search__button {
+  color: var(--primaryForeground);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)),
+    rgba(var(--primary-rgb), 0.92);
+  box-shadow:
+    0 10px 24px rgba(0, 204, 247, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transform: scale(1.02);
+}
 
-  input {
-    min-height: 44px;
-    background: transparent !important;
-    color: #102033 !important;
-    font-weight: 700;
-  }
+.commerce-search__input {
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px 0 10px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #102033;
+  font-size: var(--commerce-font-sm);
+  line-height: 20px;
+  font-weight: 700;
+}
 
-  input::placeholder {
-    color: #7b8797;
-    font-weight: 600;
-  }
+.commerce-search__input::placeholder {
+  color: #7b8797;
+  font-weight: 600;
+}
 
-  .zaui-input-affix-wrapper:focus-within {
-    border-color: rgba(var(--primary-rgb), 0.56) !important;
-    box-shadow:
-      0 14px 34px rgba(0, 204, 247, 0.12),
-      0 0 0 3px rgba(var(--primary-rgb), 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.88);
-  }
+.commerce-search__input::-webkit-search-cancel-button {
+  appearance: none;
+}
 
-  .zaui-input-affix-wrapper:focus-within > :first-child:not(input) {
-    color: var(--primaryForeground);
-    background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)),
-      rgba(var(--primary-rgb), 0.92);
-    box-shadow:
-      0 10px 24px rgba(0, 204, 247, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.72);
-    transform: scale(1.02);
-  }
+.commerce-search__clear {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 700;
 }
 
 .zaui-btn {

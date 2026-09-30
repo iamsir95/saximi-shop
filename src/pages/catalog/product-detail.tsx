@@ -11,6 +11,7 @@ import Section from "@/components/section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Product, ProductImage } from "@/types";
 import CommerceTrustStrip from "@/components/commerce-trust-strip";
+import CommerceIcon from "@/components/commerce-icon";
 import {
   getDiscountPercent,
   getDisplayPrice,

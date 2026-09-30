@@ -4,6 +4,7 @@ const CONFIG = {
     AUTH_TOKEN: "authToken",
     DELIVERY: "delivery",
     SHIPPING_ADDRESS: "shippingAddress",
+    CART: "cart",
     AFFILIATE_REFERRER: "affiliateReferrerId",
     BROWSER_LOCATION: "browserLocation",
     APP_NOTIFICATIONS: "appNotifications",

@@ -20,43 +20,90 @@ export default function ApplyVoucher() {
   return (
     <Section title="Ưu đãi đơn hàng">
       <button
-        className="w-full flex justify-between items-center py-3 px-4 gap-3 cursor-pointer"
+        className="w-full px-4 py-3 text-left cursor-pointer"
         onClick={() => setVisible(true)}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <CommerceIcon name="ticket" size={20} className="text-primary" />
-          <div className="text-sm flex-1 truncate font-semibold text-slate-800">
-            {selectedCoupon ? selectedCoupon.code : "Chọn voucher"}
+        {selectedCoupon ? (
+          <div className="rounded-[22px] border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primaryForeground shadow-sm">
+                <CommerceIcon name="ticket" size={21} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="break-words text-sm font-black text-slate-900">
+                    {selectedCoupon.code}
+                  </span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-black text-white">
+                    Giảm {selectedCoupon.discountPercent}%
+                  </span>
+                </div>
+                <div className="mt-1 text-xs font-semibold leading-5 text-slate-600">
+                  Đơn tối thiểu {formatPrice(selectedCoupon.minOrderAmount)}
+                </div>
+                <div className="text-xs font-semibold leading-5 text-slate-600">
+                  Hạn sử dụng: {selectedCoupon.expiryDate}
+                </div>
+              </div>
+              <CommerceIcon
+                name="chevron-right"
+                size={18}
+                className="mt-2 shrink-0 text-slate-400"
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <div className="text-sm font-bold text-primary">
-            {selectedCoupon ? `Giảm ${selectedCoupon.discountPercent}%` : "Chọn"}
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <CommerceIcon name="ticket" size={20} className="text-primary" />
+              <div className="text-sm font-semibold text-slate-800">
+                Chọn voucher
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <div className="text-sm font-bold text-primary">Chọn</div>
+              <CommerceIcon
+                name="chevron-right"
+                size={18}
+                className="text-slate-400"
+              />
+            </div>
           </div>
-          <CommerceIcon name="chevron-right" size={18} className="text-slate-400" />
-        </div>
+        )}
       </button>
       <Sheet
         visible={visible}
         onClose={() => setVisible(false)}
-        height="min(74vh, 620px)"
+        height="calc(100dvh - 12px)"
         handler
         swipeToClose
         unmountOnClose
         modalClassName="voucher-sheet"
         zIndex={1200}
       >
-        <div className="flex h-full min-h-0 flex-col px-4 pb-[calc(20px+var(--safe-bottom))] pt-2">
-          <div className="shrink-0 border-b border-white/60 pb-3 text-center">
-            <div className="text-base font-black text-slate-900">
-              Ưu đãi đơn hàng
-            </div>
-            <div className="mt-1 text-xs font-semibold text-slate-500">
-              Chọn voucher đang còn hiệu lực cho đơn hàng
+        <div className="flex h-full min-h-0 flex-col px-4 pb-[calc(20px+var(--safe-bottom))] pt-3 md:px-6">
+          <div className="shrink-0 border-b border-white/60 pb-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-lg font-black text-slate-900">
+                  Ưu đãi đơn hàng
+                </div>
+                <div className="mt-1 text-sm font-semibold text-slate-500">
+                  Chọn voucher đang còn hiệu lực cho đơn hàng
+                </div>
+              </div>
+              <button
+                type="button"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-xl font-black text-slate-500 ring-1 ring-white/80"
+                aria-label="Đóng chọn voucher"
+                onClick={() => setVisible(false)}
+              >
+                ×
+              </button>
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto py-3 pr-1">
+          <div className="min-h-0 flex-1 overflow-y-auto py-4 pr-1">
             {couponsLoadable.state === "loading" ? (
               <div className="rounded-[22px] bg-white/70 px-4 py-8 text-center text-sm font-semibold text-slate-500 ring-1 ring-white/80">
                 Đang tải voucher...
@@ -74,7 +121,7 @@ export default function ApplyVoucher() {
                     <button
                       key={coupon.id}
                       className={[
-                        "w-full rounded-[20px] border p-4 text-left transition active:scale-[0.99]",
+                        "w-full rounded-[22px] border p-4 text-left transition active:scale-[0.99]",
                         isSelected
                           ? "border-primary/70 bg-cyan-50/90 shadow-lg shadow-cyan-500/10"
                           : "border-white/80 bg-white/[0.78] shadow-sm shadow-slate-200/60",
@@ -85,22 +132,27 @@ export default function ApplyVoucher() {
                       }}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                          <CommerceIcon name="ticket" size={20} />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <CommerceIcon name="ticket" size={22} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <span className="break-words text-sm font-black text-slate-900">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="break-words text-base font-black text-slate-900">
                               {coupon.code}
                             </span>
-                            <span className="shrink-0 rounded-full bg-primary px-3 py-1 text-xs font-black text-primaryForeground">
-                              -{coupon.discountPercent}%
+                            <span className="rounded-full bg-primary px-3 py-1 text-xs font-black text-primaryForeground">
+                              Giảm {coupon.discountPercent}%
                             </span>
+                            {isSelected && (
+                              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-black text-white">
+                                Đang áp dụng
+                              </span>
+                            )}
                           </div>
-                          <div className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+                          <div className="mt-2 text-sm font-semibold leading-6 text-slate-600">
                             Đơn tối thiểu {formatPrice(coupon.minOrderAmount)}
                           </div>
-                          <div className="text-xs font-semibold leading-5 text-slate-500">
+                          <div className="text-sm font-semibold leading-6 text-slate-600">
                             Hạn sử dụng: {coupon.expiryDate}
                           </div>
                         </div>

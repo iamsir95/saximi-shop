@@ -233,7 +233,10 @@ export const productState = atomFamily((id: number) =>
   })
 );
 
-export const cartState = atom<Cart>([]);
+export const cartState = atomWithStorage<Cart>(
+  CONFIG.STORAGE_KEYS.CART,
+  []
+);
 
 export const selectedCartItemIdsState = atom<number[]>([]);
 

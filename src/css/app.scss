@@ -552,6 +552,22 @@ html[data-platform="website"] .toast-container {
   }
 }
 
+.voucher-sheet {
+  .zaui-sheet-content {
+    max-height: calc(100dvh - 12px);
+  }
+}
+
+@media (min-width: 768px) {
+  .voucher-sheet {
+    .zaui-sheet-content {
+      width: min(720px, calc(100vw - 32px));
+      margin-inline: auto;
+      border-radius: 28px 28px 0 0;
+    }
+  }
+}
+
 .commerce-search {
   position: relative;
   min-width: 0;

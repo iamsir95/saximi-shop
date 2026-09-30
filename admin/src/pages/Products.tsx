@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles, Gift } from 'lucide-react';
 import { api } from '../api';
-import { Category, Product } from '../types';
+import { Category, Product, ProductPromotionLabel } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 import { ImageField } from '../components/ImageField';
 
@@ -30,6 +30,9 @@ export const Products: React.FC = () => {
   const [imageUrls, setImageUrls] = useState('');
   const [detail, setDetail] = useState('');
   const [promoDescription, setPromoDescription] = useState('');
+  const [promotionLabels, setPromotionLabels] = useState<ProductPromotionLabel[]>([]);
+  const [newPromotionLabelName, setNewPromotionLabelName] = useState('');
+  const [newPromotionLabelColor, setNewPromotionLabelColor] = useState('#EF6A8C');
   const [giftProgramsText, setGiftProgramsText] = useState('');
   const [attributesText, setAttributesText] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
@@ -39,6 +42,59 @@ export const Products: React.FC = () => {
   const [seoArticle, setSeoArticle] = useState('');
   const [isFlashSale, setIsFlashSale] = useState(false);
   const [isRecommended, setIsRecommended] = useState(false);
+
+  const defaultPromotionLabels: ProductPromotionLabel[] = [
+    { id: 'flash-sale', name: 'Flash Sale', color: '#EF6A8C' },
+    { id: 'deal-hot', name: 'Deal hot', color: '#00ccf7' },
+    { id: 'qua-tang', name: 'Quà tặng', color: '#22c55e' },
+    { id: 'freeship', name: 'Freeship', color: '#f59e0b' },
+  ];
+
+  const normalizePromotionColor = (color: string) =>
+    /^#[0-9a-f]{6}$/i.test(color.trim()) ? color.trim() : '#EF6A8C';
+
+  const makePromotionLabelId = (name: string, color: string) =>
+    `${name
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'promo'}-${normalizePromotionColor(color).replace('#', '').toLowerCase()}`;
+
+  const allPromotionLabels = React.useMemo(() => {
+    const map = new Map<string, ProductPromotionLabel>();
+    [...defaultPromotionLabels, ...products.flatMap((product) => product.promotionLabels || []), ...promotionLabels].forEach((label) => {
+      if (!label?.name) return;
+      const color = normalizePromotionColor(label.color);
+      const id = label.id || makePromotionLabelId(label.name, color);
+      map.set(id, { id, name: label.name.trim(), color });
+    });
+    return [...map.values()];
+  }, [products, promotionLabels]);
+
+  const isPromotionLabelSelected = (label: ProductPromotionLabel) =>
+    promotionLabels.some((item) => item.id === label.id);
+
+  const togglePromotionLabel = (label: ProductPromotionLabel) => {
+    setPromotionLabels((current) =>
+      current.some((item) => item.id === label.id)
+        ? current.filter((item) => item.id !== label.id)
+        : [...current, { ...label, color: normalizePromotionColor(label.color) }]
+    );
+  };
+
+  const addPromotionLabel = () => {
+    const name = newPromotionLabelName.trim();
+    if (!name) return;
+    const color = normalizePromotionColor(newPromotionLabelColor);
+    const label = { id: makePromotionLabelId(name, color), name, color };
+    setPromotionLabels((current) => {
+      const withoutDuplicate = current.filter((item) => item.id !== label.id);
+      return [...withoutDuplicate, label];
+    });
+    setNewPromotionLabelName('');
+  };
 
   const parseAttributes = (value: string) =>
     value
@@ -142,6 +198,9 @@ export const Products: React.FC = () => {
     setImageUrls('');
     setDetail('');
     setPromoDescription('');
+    setPromotionLabels([]);
+    setNewPromotionLabelName('');
+    setNewPromotionLabelColor('#EF6A8C');
     setGiftProgramsText('');
     setAttributesText('');
     setSeoTitle('');
@@ -168,6 +227,9 @@ export const Products: React.FC = () => {
     setImageUrls((product.images || []).map((item) => item.url).join('\n'));
     setDetail(product.detail || '');
     setPromoDescription(product.promoDescription || '');
+    setPromotionLabels(product.promotionLabels || []);
+    setNewPromotionLabelName('');
+    setNewPromotionLabelColor('#EF6A8C');
     setGiftProgramsText(serializeGiftPrograms(product));
     setAttributesText(serializeAttributes(product));
     setSeoTitle(product.seo?.title || '');
@@ -216,6 +278,7 @@ export const Products: React.FC = () => {
       })),
       detail: cleanRichText(detail),
       promoDescription: promoDescription.trim() || undefined,
+      promotionLabels,
       giftPrograms: parseGiftPrograms(giftProgramsText),
       attributes: parseAttributes(attributesText),
       seo: {
@@ -387,6 +450,19 @@ export const Products: React.FC = () => {
                               Gợi ý
                             </span>
                           )}
+                          {(product.promotionLabels || []).map((label) => (
+                            <span
+                              key={label.id}
+                              className="px-2 py-0.5 text-xs rounded border font-medium"
+                              style={{
+                                color: label.color,
+                                borderColor: `${label.color}55`,
+                                backgroundColor: `${label.color}22`,
+                              }}
+                            >
+                              {label.name}
+                            </span>
+                          ))}
                           {Boolean(product.giftPrograms?.length) && (
                             <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs rounded border border-emerald-500/30 font-medium">
                               Quà tặng
@@ -553,6 +629,96 @@ export const Products: React.FC = () => {
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
                       placeholder="Ví dụ: Mua hôm nay giảm 15%, tặng kèm freeship cho đơn từ 2 sản phẩm."
                     />
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/45 p-3 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs font-semibold text-slate-400">
+                        Nhãn khuyến mãi hiển thị cùng nội dung
+                      </label>
+                      {promotionLabels.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPromotionLabels([])}
+                          className="text-[11px] font-bold text-slate-500 hover:text-white"
+                        >
+                          Bỏ chọn tất cả
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {allPromotionLabels.map((label) => {
+                        const selected = isPromotionLabelSelected(label);
+                        return (
+                          <button
+                            key={label.id}
+                            type="button"
+                            onClick={() => togglePromotionLabel(label)}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                              selected ? 'bg-white/10 ring-2 ring-white/20' : 'bg-slate-950/60 opacity-75 hover:opacity-100'
+                            }`}
+                            style={{
+                              color: label.color,
+                              borderColor: `${label.color}66`,
+                              boxShadow: selected ? `0 0 0 1px ${label.color}44 inset` : undefined,
+                            }}
+                          >
+                            {selected ? '✓ ' : ''}
+                            {label.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-[1fr_88px_auto]">
+                      <input
+                        value={newPromotionLabelName}
+                        onChange={(e) => setNewPromotionLabelName(e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                        placeholder="Tạo nhãn mới, ví dụ: Mua 2 tặng 1"
+                      />
+                      <input
+                        type="color"
+                        value={newPromotionLabelColor}
+                        onChange={(e) => setNewPromotionLabelColor(e.target.value)}
+                        className="h-10 w-full rounded-xl border border-slate-700 bg-slate-800 p-1"
+                        aria-label="Màu nhãn khuyến mãi"
+                      />
+                      <button
+                        type="button"
+                        onClick={addPromotionLabel}
+                        className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500"
+                      >
+                        Thêm nhãn
+                      </button>
+                    </div>
+
+                    {promotionLabels.length > 0 && (
+                      <div className="flex flex-wrap gap-2 border-t border-slate-800 pt-3">
+                        {promotionLabels.map((label) => (
+                          <span
+                            key={label.id}
+                            className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold"
+                            style={{
+                              color: label.color,
+                              borderColor: `${label.color}66`,
+                              backgroundColor: `${label.color}18`,
+                            }}
+                          >
+                            {label.name}
+                            <button
+                              type="button"
+                              onClick={() => togglePromotionLabel(label)}
+                              className="text-slate-400 hover:text-white"
+                              aria-label={`Bỏ nhãn ${label.name}`}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div>

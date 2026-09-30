@@ -128,6 +128,7 @@ export default function ProductDetailPage() {
   const displayPrice = getDisplayPrice(product, canUseMemberPricing);
   const lowStock = isLowStock(product);
   const soldQuantity = Math.max(0, Number(product.soldQuantity || 0));
+  const promotionLabels = product.promotionLabels || [];
   const hasAttributes = Boolean(product.attributes?.length);
   const seoArticle = product.seo?.article?.trim();
   const giftPrograms = useMemo(
@@ -290,7 +291,7 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div className="text-sm mt-1">{product.name}</div>
-              {product.promoDescription && (
+              {(product.promoDescription || promotionLabels.length > 0) && (
                 <div className="promo-spotlight mt-3 rounded-[22px] px-3.5 py-3">
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_24px_rgba(0,204,247,0.28)]">
@@ -300,9 +301,28 @@ export default function ProductDetailPage() {
                       <div className="commerce-eyebrow text-primary">
                         Chương trình ưu đãi
                       </div>
-                      <div className="mt-1 text-sm font-extrabold leading-5 text-slate-800">
-                        {product.promoDescription}
-                      </div>
+                      {promotionLabels.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {promotionLabels.map((label) => (
+                            <span
+                              key={label.id}
+                              className="commerce-tag !min-h-0 !px-2 !py-1"
+                              style={{
+                                borderColor: `${label.color}55`,
+                                background: `linear-gradient(135deg, rgba(255,255,255,.9), ${label.color}22)`,
+                                color: label.color,
+                              }}
+                            >
+                              {label.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {product.promoDescription && (
+                        <div className="mt-2 text-sm font-extrabold leading-5 text-slate-800">
+                          {product.promoDescription}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

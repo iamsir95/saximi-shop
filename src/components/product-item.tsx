@@ -34,6 +34,7 @@ export default function ProductItem(props: ProductItemProps) {
   );
   const displayPrice = getDisplayPrice(props.product, canUseMemberPricing);
   const soldQuantity = Math.max(0, Number(props.product.soldQuantity || 0));
+  const promotionLabels = props.product.promotionLabels || [];
   const hasGiftProgram = Boolean(
     props.product.giftPrograms?.some((program) => isGiftProgramActive(program))
   );
@@ -79,7 +80,21 @@ export default function ProductItem(props: ProductItemProps) {
                   Gợi ý
                 </span>
               )}
-              {props.product.promoDescription && (
+              {promotionLabels.slice(0, 2).map((label) => (
+                <span
+                  key={label.id}
+                  className="commerce-tag"
+                  style={{
+                    borderColor: `${label.color}55`,
+                    background: `linear-gradient(135deg, rgba(255,255,255,.9), ${label.color}22)`,
+                    color: label.color,
+                  }}
+                >
+                  <CommerceIcon name="ticket" size={11} />
+                  {label.name}
+                </span>
+              ))}
+              {promotionLabels.length === 0 && props.product.promoDescription && (
                 <span className="commerce-tag commerce-tag--promo">
                   <CommerceIcon name="ticket" size={11} />
                   Khuyến mãi

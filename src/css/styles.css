@@ -1522,6 +1522,10 @@ video {
   padding-top: 0.125rem !important;
   padding-bottom: 0.125rem !important;
 }
+.\!py-1 {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
 .px-1 {
   padding-left: 0.25rem;
   padding-right: 0.25rem;

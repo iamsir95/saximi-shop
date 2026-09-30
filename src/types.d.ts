@@ -97,6 +97,12 @@ export interface ProductGiftProgram {
   endsAt?: string;
 }
 
+export interface ProductPromotionLabel {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -108,6 +114,7 @@ export interface Product {
   category: Category;
   detail?: string;
   promoDescription?: string;
+  promotionLabels?: ProductPromotionLabel[];
   giftPrograms?: ProductGiftProgram[];
   attributes?: ProductAttribute[];
   seo?: ProductSeoContent;

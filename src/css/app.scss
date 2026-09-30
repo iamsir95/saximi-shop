@@ -574,7 +574,7 @@ html[data-platform="website"] .toast-container {
 
   .zaui-input-affix-wrapper {
     gap: 10px;
-    padding-inline: 6px 12px;
+    padding-inline: 5px 12px;
     transition:
       border-color 160ms ease,
       box-shadow 160ms ease,
@@ -582,26 +582,45 @@ html[data-platform="website"] .toast-container {
   }
 
   .zaui-input-affix-wrapper > :first-child:not(input) {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
+    position: relative;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
     color: var(--primary);
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.18)),
-      rgba(var(--primary-rgb), 0.14);
+      linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.22)),
+      linear-gradient(135deg, rgba(var(--primary-rgb), 0.2), rgba(var(--secondary-rgb), 0.1));
     border: 1px solid rgba(255, 255, 255, 0.72);
     box-shadow:
-      0 8px 18px rgba(0, 204, 247, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.82);
+      0 8px 18px rgba(0, 204, 247, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.86),
+      inset 0 -1px 0 rgba(0, 204, 247, 0.08);
+    transition:
+      transform 160ms ease,
+      color 160ms ease,
+      background 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  .zaui-input-affix-wrapper > :first-child:not(input)::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    pointer-events: none;
   }
 
   .zaui-input-affix-wrapper > :first-child:not(input) svg {
-    width: 18px;
-    height: 18px;
+    position: relative;
+    z-index: 1;
+    width: 19px;
+    height: 19px;
+    stroke-width: 2.35;
   }
 
   input {
@@ -622,6 +641,17 @@ html[data-platform="website"] .toast-container {
       0 14px 34px rgba(0, 204, 247, 0.12),
       0 0 0 3px rgba(var(--primary-rgb), 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  }
+
+  .zaui-input-affix-wrapper:focus-within > :first-child:not(input) {
+    color: var(--primaryForeground);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1)),
+      rgba(var(--primary-rgb), 0.92);
+    box-shadow:
+      0 10px 24px rgba(0, 204, 247, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    transform: scale(1.02);
   }
 }
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ImageUpload } from './ImageUpload';
 import {
   AlignCenter,
   AlignLeft,
@@ -26,6 +27,7 @@ type RichTextEditorProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   minHeight?: number;
+  onUploadingChange?: (busy: boolean) => void;
 };
 
 const BLOCKED_TAGS = ['script', 'style', 'iframe', 'object', 'embed', 'meta', 'link'];
@@ -64,8 +66,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onChange,
   placeholder,
   minHeight = 240,
+  onUploadingChange,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const imageRange = useRef<Range | null>(null);
   const [mode, setMode] = useState<'visual' | 'html'>('visual');
 
   useEffect(() => {
@@ -147,6 +151,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/80">
         <div className="flex flex-wrap gap-1.5 border-b border-slate-800 bg-slate-900/95 p-2" onMouseDown={event => event.preventDefault()}>
+          {mode === 'visual' && <ImageUpload label="Tải ảnh chèn vào bài" onBusyChange={onUploadingChange} onBeforeSelect={() => {
+            const selection = window.getSelection();
+            imageRange.current = selection?.rangeCount && editorRef.current?.contains(selection.anchorNode) ? selection.getRangeAt(0).cloneRange() : null;
+          }} onUploaded={url => {
+            focusEditor();
+            const selection = window.getSelection();
+            if (imageRange.current && editorRef.current?.contains(imageRange.current.commonAncestorContainer)) { selection?.removeAllRanges(); selection?.addRange(imageRange.current); }
+            runCommand('insertImage', url);
+          }} />}
           <button type="button" title="Đoạn văn" className={toolbarButtonClass} onClick={() => setBlock('p')}>
             <Pilcrow className="h-4 w-4" />
           </button>

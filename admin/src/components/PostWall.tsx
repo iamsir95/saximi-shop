@@ -1,0 +1,31 @@
+import { useState } from 'react';
+import { Edit2, Eye, Trash2, RotateCcw, Plus, X, LayoutList, Table2 } from 'lucide-react';
+import type { Post } from '../pages/Posts';
+
+const button = 'inline-flex items-center justify-center gap-2 min-h-10 px-3 py-2 rounded-lg border border-slate-600 text-sm disabled:opacity-50';
+const states: Record<string, string> = { draft: 'Bản nháp', published: 'Đã xuất bản', archived: 'Lưu trữ' };
+const categories: Record<string, string> = { news: 'Cần biết', event: 'Sự kiện', promotion: 'Khuyến mãi', policy: 'Chính sách' };
+
+export function PostWall({ posts, loading, error, notice, trash, busy, onTrash, onEdit, onCreate, onDelete, onRestore, onRetry }: {
+  posts: Post[]; loading: boolean; error: string; notice: string; trash: boolean; busy: boolean;
+  onTrash: (value: boolean) => void; onEdit: (post: Post) => void; onCreate: () => void;
+  onDelete: (post: Post) => void; onRestore: (post: Post) => void; onRetry: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('');
+  const [category, setCategory] = useState('');
+  const [wall, setWall] = useState(true);
+  const [preview, setPreview] = useState<Post | null>(null);
+  const visible = posts.filter(p => (!status || p.status === status) && (!category || p.category === category) && p.title.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi')));
+  const actions = (post: Post) => <div className="flex flex-wrap gap-2"><button className={button} onClick={() => setPreview(post)}><Eye size={16} />Xem bài</button>{trash ? <button disabled={busy} className={button} onClick={() => onRestore(post)}><RotateCcw size={16} />Khôi phục</button> : <><button disabled={busy} className={button} onClick={() => onEdit(post)}><Edit2 size={16} />Sửa</button><button disabled={busy} className={`${button} text-rose-300`} onClick={() => onDelete(post)}><Trash2 size={16} />Xóa</button></>}</div>;
+  return <div className="space-y-5">
+    <div className="flex flex-wrap justify-between gap-3 items-center"><h2 className="text-xl font-semibold">Quản lý tường nhà</h2><button className={`${button} brand-gradient text-slate-950 font-semibold`} onClick={onCreate}><Plus size={18} />Tạo bài viết</button></div>
+    <div className="flex flex-wrap gap-2"><button disabled={busy} className={button} aria-pressed={!trash} onClick={() => onTrash(false)}>Bài viết</button><button disabled={busy} className={button} aria-pressed={trash} onClick={() => onTrash(true)}><Trash2 size={16} />Thùng rác</button><button className={button} aria-pressed={wall} title="Dạng tường nhà" onClick={() => setWall(true)}><LayoutList size={18} /></button><button className={button} aria-pressed={!wall} title="Dạng bảng" onClick={() => setWall(false)}><Table2 size={18} /></button></div>
+    <div className="flex flex-wrap gap-3"><input aria-label="Tìm bài viết" placeholder="Tìm bài viết" value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2" /><select aria-label="Lọc trạng thái" value={status} onChange={e => setStatus(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-800 p-2"><option value="">Mọi trạng thái</option>{Object.entries(states).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select><select aria-label="Lọc chuyên mục" value={category} onChange={e => setCategory(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-800 p-2"><option value="">Mọi chuyên mục</option>{Object.entries(categories).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+    {error && <p role="alert" className="text-rose-300">{error} <button className={button} onClick={onRetry}>Thử lại</button></p>}{notice && <p role="status" className="text-emerald-300">{notice}</p>}
+    {loading ? <p>Đang tải bài viết…</p> : !visible.length ? <p className="py-12 text-center text-slate-400">{trash ? 'Thùng rác trống.' : 'Chưa có bài viết phù hợp.'}</p> : wall ? <div className="grid gap-4 xl:grid-cols-2">{visible.map(p => <article key={p.id} className="rounded-lg border border-slate-700 bg-slate-900/50 overflow-hidden">
+      {p.cover && <img src={p.cover} alt={p.coverAlt} className="w-full h-48 object-cover" loading="lazy" />}<div className="p-4 space-y-3"><div className="flex flex-wrap gap-2 text-xs text-slate-400"><span>{categories[p.category]} · {states[p.status]}</span><time>{p.publishedAt ? new Date(p.publishedAt).toLocaleDateString('vi-VN') : 'Chưa xuất bản'}</time></div><h3 className="font-semibold text-lg break-words">{p.title}</h3><p className="text-sm text-slate-400 line-clamp-3 break-words">{p.excerpt}</p>{!!p.voucherIds?.length && <p className="text-xs text-pink-300">{p.voucherIds.length} voucher đính kèm</p>}{actions(p)}</div>
+    </article>)}</div> : <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr><th className="p-3">Bài viết</th><th className="p-3">Trạng thái</th><th className="p-3">Thao tác</th></tr></thead><tbody>{visible.map(p => <tr key={p.id} className="border-t border-slate-700"><td className="p-3 max-w-sm break-words">{p.title}</td><td className="p-3">{states[p.status]}</td><td className="p-3">{actions(p)}</td></tr>)}</tbody></table></div>}
+    {preview && <div className="fixed inset-0 z-50 bg-black/70 p-3 overflow-y-auto" role="dialog" aria-modal="true" aria-label="Xem bài viết"><div className="mx-auto max-w-3xl rounded-lg bg-slate-900 p-5 space-y-4"><div className="flex justify-between gap-4"><h2 className="text-xl font-semibold break-words">{preview.title}</h2><button autoFocus className={button} title="Đóng" onClick={() => setPreview(null)}><X size={20} /></button></div><p className="text-sm text-slate-400">{preview.author} · {states[preview.status]}</p>{preview.cover && <img src={preview.cover} alt={preview.coverAlt} className="w-full max-h-96 object-contain" />}<p>{preview.excerpt}</p><div className="rich-text-editor overflow-x-auto [&_img]:max-w-full" dangerouslySetInnerHTML={{ __html: preview.content }} />{preview.status === 'published' && !trash && <a className={button} href={`/news/${preview.slug}`} target="_blank" rel="noreferrer">Mở trên website</a>}</div></div>}
+  </div>;
+}

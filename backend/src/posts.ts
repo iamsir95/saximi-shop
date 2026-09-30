@@ -10,6 +10,8 @@ export interface Post {
   category: PostCategory; status: 'draft' | 'published' | 'archived';
   cover: string; coverAlt: string; author: string; seoTitle: string; seoDescription: string;
   createdAt: string; updatedAt: string; publishedAt: string | null;
+  voucherIds?: number[];
+  deletedAt?: string;
 }
 export class PostError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -34,9 +36,10 @@ export function cleanArticle(value: string) {
 
 export class PostStore {
   constructor(private file = path.join(__dirname, '../data/posts.json')) {}
-  all(): Post[] {
+  all(includeDeleted = false): Post[] {
     if (!fs.existsSync(this.file)) return [];
-    return JSON.parse(fs.readFileSync(this.file, 'utf8'));
+    const posts: Post[] = JSON.parse(fs.readFileSync(this.file, 'utf8'));
+    return includeDeleted ? posts : posts.filter(p => !p.deletedAt);
   }
   private write(posts: Post[]) {
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
@@ -45,9 +48,11 @@ export class PostStore {
   }
   save(input: Record<string, unknown>, id?: string): Post {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new PostError('Dữ liệu bài viết không hợp lệ.');
-    const posts = this.all();
+    const posts = this.all(true);
     const previous = id ? posts.find(p => p.id === id) : undefined;
-    if (id && !previous) throw new PostError('Không tìm thấy bài viết.', 404);
+    if (id && (!previous || previous.deletedAt)) throw new PostError('Không tìm thấy bài viết.', 404);
+    const voucherIds = input.voucherIds ?? previous?.voucherIds ?? [];
+    if (!Array.isArray(voucherIds) || voucherIds.length > 8 || voucherIds.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new PostError('Chọn tối đa 8 voucher hợp lệ.');
     const field = (key: string, max: number) => {
       const value = input[key];
       if (value !== undefined && typeof value !== 'string') throw new PostError(`Trường ${key} không hợp lệ.`);
@@ -74,8 +79,19 @@ export class PostStore {
       seoTitle: field('seoTitle', 200), seoDescription: field('seoDescription', 320),
       createdAt: previous?.createdAt || now, updatedAt: now,
       publishedAt: previous?.publishedAt || (status === 'published' ? now : null),
+      voucherIds: [...new Set(voucherIds)],
     };
     this.write(previous ? posts.map(p => p.id === id ? post : p) : [...posts, post]);
+    return post;
+  }
+  trash(id: string, restore = false) {
+    const posts = this.all(true);
+    const post = posts.find(p => p.id === id);
+    if (!post) throw new PostError('Không tìm thấy bài viết.', 404);
+    if (restore) { delete post.deletedAt; post.status = 'draft'; }
+    else post.deletedAt = new Date().toISOString();
+    post.updatedAt = new Date().toISOString();
+    this.write(posts);
     return post;
   }
   list(query: { category?: string; q?: string; cursor?: string; limit?: string; ids?: string }) {

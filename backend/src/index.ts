@@ -8,6 +8,7 @@ import { Logger } from './services/logger.service.js';
 import { PaymentService, PaymentMethod } from './services/payment.service.js';
 import { OtpError, OtpService } from './services/otp.service.js';
 import { mountPostRoutes } from './post-routes.js';
+import { mountUploads } from './uploads.js';
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -26,6 +27,7 @@ function isValidVietnamPhone(phone: string) {
 }
 
 app.use(cors());
+app.use('/api/admin/uploads', express.json({ limit: '8mb' }));
 app.use('/api/admin/posts', express.json({ limit: '256kb' }));
 app.use(['/user/avatar', '/api/user/avatar'], express.json({ limit: '256kb' }));
 app.use(express.json());
@@ -55,7 +57,11 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-mountPostRoutes(app, authenticateAdmin, () => Database.getSettings().publicSiteUrl);
+mountPostRoutes(app, authenticateAdmin, () => Database.getSettings().publicSiteUrl, undefined, () => Database.getCoupons());
+mountUploads(app, authenticateAdmin, (url, title) => {
+  Database.addMediaAsset({ url, title, sourceType: 'MANUAL', purpose: 'GENERAL', tags: ['upload'], isActive: true });
+  CacheService.invalidate('media-library');
+});
 
 /* ==========================================================================
    PUBLIC MINI APP APIs

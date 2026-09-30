@@ -190,7 +190,7 @@ export const AffiliatePortalPage: React.FC = () => {
       <Box
         className="text-white p-5 rounded-b-[28px] shadow-lg"
         style={{
-          background: "linear-gradient(135deg, rgba(0, 204, 247, 0.94), rgba(20, 184, 166, 0.76))",
+          background: "var(--brand-gradient)",
           backdropFilter: "blur(24px) saturate(1.35)",
         }}
       >

@@ -3,11 +3,14 @@ import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Spa
 import { api } from '../api';
 import { Category, Product } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
+import { ImageUpload } from '../components/ImageUpload';
 
 export const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploads, setUploads] = useState(0);
+  const onUploadingChange = (busy: boolean) => setUploads(n => Math.max(0, n + (busy ? 1 : -1)));
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all');
 
@@ -179,6 +182,7 @@ export const Products: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploads) { alert('Vui lòng đợi tải ảnh hoàn tất trước khi lưu.'); return; }
     const galleryUrls = imageUrls
       .split('\n')
       .map((url) => url.trim())
@@ -536,7 +540,7 @@ export const Products: React.FC = () => {
                     <div className="relative">
                       <ImageIcon className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
-                        type="url"
+                        type="text"
                         value={image}
                         onChange={(e) => setImage(e.target.value)}
                         className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-11 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
@@ -545,6 +549,9 @@ export const Products: React.FC = () => {
                     </div>
                   </div>
 
+                  <ImageUpload label="Tải ảnh chính từ máy tính" onUploaded={setImage} onBusyChange={onUploadingChange} />
+                  {image && <img src={image} alt="Ảnh chính sản phẩm" className="h-32 w-32 rounded-lg object-contain" />}
+                  <ImageUpload multiple label="Tải ảnh album từ máy tính" onUploaded={url => setImageUrls(old => [old.trim(), url].filter(Boolean).join('\n'))} onBusyChange={onUploadingChange} />
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-1.5">Kho ảnh sản phẩm chuyên nghiệp</label>
                     <textarea
@@ -658,6 +665,7 @@ export const Products: React.FC = () => {
                 </div>
 
                 <RichTextEditor
+                  onUploadingChange={onUploadingChange}
                   label="Mô tả sản phẩm"
                   value={detail}
                   onChange={setDetail}
@@ -666,6 +674,7 @@ export const Products: React.FC = () => {
                 />
 
                 <RichTextEditor
+                  onUploadingChange={onUploadingChange}
                   label="Nội dung bài viết SEO"
                   value={seoArticle}
                   onChange={setSeoArticle}

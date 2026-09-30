@@ -42,7 +42,10 @@ async function request(endpoint: string, options: RequestInit = {}) {
 }
 
 export const api = {
-  getPosts: () => request('/posts'),
+  getPosts: (trash = false) => request(`/posts${trash ? '?trash=true' : ''}`),
+  deletePost: (id: string) => request(`/posts/${id}`, { method: 'DELETE' }),
+  restorePost: (id: string) => request(`/posts/${id}/restore`, { method: 'POST' }),
+  uploadImage: (data: string, name: string) => request('/uploads', { method: 'POST', body: JSON.stringify({ data, name }) }),
   createPost: (data: unknown) => request('/posts', { method: 'POST', body: JSON.stringify(data) }),
   updatePost: (id: string, data: unknown) => request(`/posts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   login: (username: string, password: string) =>

@@ -7,6 +7,10 @@
   --foreground: #102033;
   --section: rgba(255, 255, 255, 0.5);
   --primary: #00ccf7;
+  --secondary: #EF6A8C;
+  --secondary-rgb: 239, 106, 140;
+  --secondary-dark: #96354f;
+  --brand-gradient: linear-gradient(120deg, var(--primary), var(--secondary));
   --primary-rgb: 0, 204, 247;
   --primary-dark: #008fb3;
   --primary-soft: rgba(0, 204, 247, 0.12);

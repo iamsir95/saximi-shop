@@ -2,11 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+:root { --brand-primary: #00ccf7; --brand-secondary: #EF6A8C; --brand-gradient: linear-gradient(120deg, var(--brand-primary), var(--brand-secondary)); }
+.brand-gradient { background: var(--brand-gradient); }
+.admin-brand { border-image: var(--brand-gradient) 1; }
+.admin-nav-item[aria-pressed="true"] { background: var(--brand-gradient); color: #102033; }
+
 @layer base {
   body {
     background:
       radial-gradient(circle at 18% 8%, rgba(0, 204, 247, 0.1), transparent 28%),
-      radial-gradient(circle at 88% 0%, rgba(20, 184, 166, 0.08), transparent 30%),
+      linear-gradient(125deg, rgba(0, 204, 247, 0.05), rgba(239, 106, 140, 0.08)),
       #0f172a;
     color: #f8fafc;
   }
@@ -15,7 +20,7 @@
 .admin-shell {
   background:
     radial-gradient(circle at 18% 10%, rgba(0, 204, 247, 0.11), transparent 26%),
-    linear-gradient(180deg, #111827 0%, #0f172a 48%, #0b1120 100%);
+    linear-gradient(130deg, #111827 0%, #17202d 48%, #291d29 100%);
 }
 
 .admin-content > div {

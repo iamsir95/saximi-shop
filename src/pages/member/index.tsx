@@ -223,7 +223,7 @@ export default function MemberPage() {
   return (
     <Page className="min-h-screen pb-24">
       <Box className="p-4 space-y-4">
-        <Box className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-cyan-400 to-emerald-400 p-4 text-primaryForeground shadow-[0_18px_48px_rgba(0,204,247,0.24)]">
+        <Box className="relative overflow-hidden rounded-[30px] brand-gradient p-4 text-primaryForeground shadow-[0_18px_48px_rgba(0,204,247,0.24)]">
           <Box className="absolute right-[-38px] top-[-44px] h-36 w-36 rounded-full bg-white/20 blur-xl" />
           <Box className="relative z-10 flex items-start gap-3">
             <button type="button" onClick={() => navigate(isLoggedIn ? "/profile/edit" : "/login")} className="flex shrink-0 flex-col items-center gap-1" aria-label="Đổi ảnh đại diện">

@@ -114,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                       title={item.label}
                       className={`admin-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-semibold text-[13px] transition-all duration-200 ${
                         isActive
-                          ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20'
+                          ? 'brand-gradient text-slate-950 shadow-lg shadow-cyan-500/20'
                           : 'text-slate-400 hover:text-slate-100 hover:bg-white/6'
                       }`}
                     >

@@ -1,10 +1,24 @@
 import { Express, RequestHandler } from 'express';
-import { PostStore, PostError } from './posts.js';
+import { PostStore, PostError, Post } from './posts.js';
+import type { Coupon } from './db.js';
 
 const escape = (value: string) => value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const labels: Record<string, string> = { news: 'Thông tin cần biết', event: 'Sự kiện', promotion: 'Khuyến mãi', policy: 'Chính sách' };
 
-export function mountPostRoutes(app: Express, authenticate: RequestHandler, siteUrl: () => string, store = new PostStore()) {
+export function mountPostRoutes(app: Express, authenticate: RequestHandler, siteUrl: () => string, store = new PostStore(), getCoupons: () => Coupon[] = () => []) {
+  const vouchers = (post: { voucherIds?: number[] }) => (post.voucherIds || []).flatMap(id => {
+    const c = getCoupons().find(coupon => coupon.id === id);
+    if (!c) return [];
+    const expiry = /^\d{4}-\d{2}-\d{2}$/.test(c.expiryDate) ? `${c.expiryDate}T23:59:59+07:00` : c.expiryDate;
+    return [{ ...c, available: c.isActive && Number.isFinite(Date.parse(expiry)) && Date.parse(expiry) >= Date.now() }];
+  });
+  const savePost = (body: Record<string, unknown>, id?: string) => {
+    if (Array.isArray(body?.voucherIds)) {
+      const old = id ? store.all().find(p => p.id === id)?.voucherIds || [] : [];
+      if (body.voucherIds.some(v => !getCoupons().some(c => c.id === v) && !old.includes(v))) throw new PostError('Voucher được chọn không tồn tại.');
+    }
+    return store.save(body, id);
+  };
   const guard: RequestHandler = (req, res, next) => {
     if ((req as any).admin?.role !== 'SUPER_ADMIN') return res.status(403).json({ message: 'Bạn không có quyền quản lý bài viết.' });
     next();
@@ -19,18 +33,21 @@ export function mountPostRoutes(app: Express, authenticate: RequestHandler, site
   };
   app.get(['/posts', '/api/posts'], handle((req, res) => {
     const query = Object.fromEntries(['category', 'q', 'cursor', 'limit', 'ids'].map(key => [key, typeof req.query[key] === 'string' ? req.query[key] : undefined]));
-    res.json(store.list(query));
+    const page = store.list(query);
+    res.json({ ...page, items: page.items.map(p => ({ ...p, vouchers: vouchers(p) })) });
   }));
   app.get(['/posts/:slug', '/api/posts/:slug'], handle((req, res) => {
     const post = store.all().find(p => p.slug === req.params.slug && p.status === 'published');
     if (!post) return res.status(404).json({ message: 'Bài viết không tồn tại hoặc chưa được xuất bản.' });
-    res.json(post);
+    res.json({ ...post, vouchers: vouchers(post) });
   }));
-  app.get('/api/admin/posts', authenticate, guard, handle((_req, res) => {
-    res.json(store.all().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+  app.get('/api/admin/posts', authenticate, guard, handle((req, res) => {
+    res.json(store.all(req.query.trash === 'true').filter(p => req.query.trash === 'true' ? Boolean(p.deletedAt) : true).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
   }));
-  app.post('/api/admin/posts', authenticate, guard, handle((req, res) => { res.status(201).json(store.save(req.body)); }));
-  app.put('/api/admin/posts/:id', authenticate, guard, handle((req, res) => { res.json(store.save(req.body, req.params.id)); }));
+  app.post('/api/admin/posts', authenticate, guard, handle((req, res) => { res.status(201).json(savePost(req.body)); }));
+  app.put('/api/admin/posts/:id', authenticate, guard, handle((req, res) => { res.json(savePost(req.body, req.params.id)); }));
+  app.delete('/api/admin/posts/:id', authenticate, guard, handle((req, res) => { store.trash(req.params.id); res.json({ success: true }); }));
+  app.post('/api/admin/posts/:id/restore', authenticate, guard, handle((req, res) => { res.json(store.trash(req.params.id, true)); }));
 
   const origin = () => new URL(siteUrl()).origin;
   app.get('/sitemap.xml', handle((_req, res) => {

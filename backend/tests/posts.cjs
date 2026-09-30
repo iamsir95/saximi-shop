@@ -11,11 +11,12 @@ test('article lifecycle, pagination, sanitization, permissions and server SEO', 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'saximi-post-tests-'));
   const store = new PostStore(path.join(dir, 'posts.json'));
   const app = express(); app.use(express.json());
+  const coupons = [{ id: 1, code: 'TEST10', discountPercent: 10, minOrderAmount: 100000, expiryDate: '2099-12-31', isActive: true }];
   app.get('/shell', (_req, res) => res.send('<html><head><title>Shop</title></head><body><div id="app"></div></body></html>'));
   mountPostRoutes(app, (req, res, next) => {
     if (!req.headers.authorization) return res.sendStatus(401);
     req.admin = { role: req.headers.authorization }; next();
-  }, () => 'https://hpn.saximi.com.vn', store);
+  }, () => 'https://hpn.saximi.com.vn', store, () => coupons);
   const server = await new Promise(resolve => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
   process.env.POST_APP_SHELL_URL = `${base}/shell`;
@@ -60,5 +61,22 @@ test('article lifecycle, pagination, sanitization, permissions and server SEO', 
     store.save({ ...published, status: 'archived' }, published.id);
     assert.equal((await fetch(`${base}/api/posts/${published.slug}`)).status, 404);
     assert.doesNotMatch(await (await fetch(`${base}/sitemap.xml`)).text(), /thong-tin-can-biet/);
+    assert.equal((await save({ ...published, voucherIds: [999] }, 'SUPER_ADMIN', published.id)).status, 400);
+    const linked = await (await save({ ...published, voucherIds: [1], status: 'published' }, 'SUPER_ADMIN', published.id)).json();
+    assert.deepEqual(linked.voucherIds, [1]);
+    let detail = await (await fetch(`${base}/api/posts/${published.slug}`)).json();
+    assert.equal(detail.vouchers[0].code, 'TEST10'); assert.equal(detail.vouchers[0].available, true);
+    coupons[0].isActive = false;
+    detail = await (await fetch(`${base}/api/posts/${published.slug}`)).json();
+    assert.equal(detail.vouchers[0].available, false);
+    assert.equal((await fetch(`${base}/api/admin/posts/${published.id}`, { method: 'DELETE', headers: { Authorization: 'CUSTOMER' } })).status, 403);
+    assert.equal((await fetch(`${base}/api/admin/posts/${published.id}`, { method: 'DELETE', headers: { Authorization: 'SUPER_ADMIN' } })).status, 200);
+    assert.equal((await fetch(`${base}/api/posts/${published.slug}`)).status, 404);
+    assert.doesNotMatch(await (await fetch(`${base}/sitemap.xml`)).text(), /thong-tin-can-biet/);
+    assert.equal(store.all(true).filter(p => p.deletedAt).length, 1);
+    assert.equal((await save(linked, 'SUPER_ADMIN', published.id)).status, 404);
+    const restored = await (await fetch(`${base}/api/admin/posts/${published.id}/restore`, { method: 'POST', headers: { Authorization: 'SUPER_ADMIN' } })).json();
+    assert.equal(restored.status, 'draft'); assert.deepEqual(restored.voucherIds, [1]);
+    assert.equal((await fetch(`${base}/api/posts/${published.slug}`)).status, 404);
   } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); fs.rmSync(dir, { recursive: true, force: true }); }
 });

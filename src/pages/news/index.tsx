@@ -6,8 +6,10 @@ import toast from "react-hot-toast";
 import { useAtomValue } from "jotai";
 import { platformSettingsState } from "@/state";
 import "./news.css";
+import { PostVouchers, PostVoucher } from './vouchers';
 
 type Post = {
+  vouchers?: PostVoucher[];
   id: string; slug: string; title: string; excerpt: string; content?: string;
   category: string; cover: string; coverAlt: string; author: string;
   publishedAt: string; updatedAt: string; seoTitle: string; seoDescription: string;
@@ -121,6 +123,7 @@ export default function NewsPage() {
       <div className="news-posts" aria-busy={loading}>{items.map(post => <article className="news-post" key={post.id}>
         <header><div className="news-publisher"><CommerceIcon name="note" size={22} /><div><strong>{post.author}</strong><time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></div></div><Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link></header>
         <Link className="news-post-link" to={`/news/${post.slug}`}><h2>{post.title}</h2><p>{post.excerpt}</p>{post.cover && <img loading="lazy" src={post.cover} alt={post.coverAlt} />}<span className="news-read">Đọc tiếp <CommerceIcon name="chevron-right" size={16} /></span></Link>
+        <PostVouchers vouchers={post.vouchers} />
         <PostActions post={post} />
       </article>)}</div>
       <div ref={sentinel} className="news-feed-status" aria-live="polite">{loading ? <p>Đang tải bài viết…</p> : error ? <><p role="alert">{error}</p><button onClick={() => cursor ? void load(cursor) : setRetry(n => n + 1)}>Thử lại</button></> : !items.length ? <p>{query ? "Không tìm thấy bài viết phù hợp." : "Chưa có bài viết trong chuyên mục này."}</p> : cursor ? <button onClick={() => void load(cursor)}>Xem thêm bài viết</button> : <p>Bạn đã xem hết bài viết.</p>}</div>
@@ -146,6 +149,7 @@ export function NewsDetailPage() {
     <Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link>
     <h1>{post.title}</h1><p className="news-byline">{post.author} · Đăng ngày <time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></p>
     <p className="news-intro">{post.excerpt}</p>{post.cover && <img className="news-cover" src={post.cover} alt={post.coverAlt} />}
+    <PostVouchers vouchers={post.vouchers} />
     <div className="news-richtext" dangerouslySetInnerHTML={{ __html: post.content || '' }} />
     {post.updatedAt !== post.publishedAt && <p className="news-byline">Cập nhật: <time dateTime={post.updatedAt}>{date(post.updatedAt)}</time></p>}
     <PostActions key={post.id} post={post} /><Link className="news-back" to={`/news?category=${post.category}`}>Xem bài viết cùng chuyên mục<CommerceIcon name="chevron-right" size={18} /></Link>

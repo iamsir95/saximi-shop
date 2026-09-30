@@ -307,6 +307,23 @@ publicApi.get('/orders', (req: Request, res: Response) => {
 publicApi.post('/orders', (req: Request, res: Response) => {
   try {
     const { items, delivery, total, note, couponCode, referrerId, paymentMethod = 'COD' } = req.body;
+    const deliveryPhone = normalizePhone(delivery?.phone || '');
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Đơn hàng cần có ít nhất một sản phẩm' });
+    }
+
+    if (!String(delivery?.name || '').trim()) {
+      return res.status(400).json({ message: 'Vui lòng nhập tên người nhận' });
+    }
+
+    if (!isValidVietnamPhone(deliveryPhone)) {
+      return res.status(400).json({ message: 'Số điện thoại nhận hàng không hợp lệ' });
+    }
+
+    if (!String(delivery?.address || '').trim()) {
+      return res.status(400).json({ message: 'Vui lòng nhập địa chỉ hoặc điểm nhận hàng' });
+    }
 
     // Map frontend items {id, name, price, quantity} → OrderItem {product, quantity}
     const mappedItems = (items || []).map((item: any) => ({
@@ -323,7 +340,7 @@ publicApi.post('/orders', (req: Request, res: Response) => {
 
     const newOrder = Database.createOrder({
       items: mappedItems,
-      delivery: delivery || { type: 'shipping' },
+      delivery: { ...delivery, phone: deliveryPhone },
       total: total || 0,
       note,
       couponCode,

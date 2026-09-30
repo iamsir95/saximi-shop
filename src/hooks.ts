@@ -33,6 +33,8 @@ type NotifyInput = Omit<FrontendNotification, "id" | "createdAt" | "read"> & {
 };
 
 const MAX_STORED_NOTIFICATIONS = 40;
+const normalizeCheckoutPhone = (phone?: string) =>
+  String(phone || "").replace(/\D/g, "");
 
 export function useFrontendNotification() {
   const setNotifications = useSetAtom(appNotificationsState);
@@ -250,8 +252,10 @@ export function useCheckout() {
 
   return async (paymentMethod: "ZALOPAY" | "VIETQR" | "COD" = "COD") => {
     try {
-      // Lấy thông tin người dùng (Zalo auth)
-      const userInfo = await requestInfo();
+      const userInfo = await requestInfo().catch((error) => {
+        console.warn("Could not load user info for checkout", error);
+        return undefined;
+      });
       const {
         deliveryMode,
         shippingAddress,
@@ -259,18 +263,6 @@ export function useCheckout() {
         affiliateReferrerId,
         note,
       } = await getCheckoutSnapshot();
-
-      if (!userInfo?.phone && !isZaloMiniAppRuntime()) {
-        notify({
-          title: "Cần đăng nhập",
-          message: "Vui lòng đăng nhập bằng số điện thoại trước khi đặt hàng.",
-          kind: "warning",
-          topic: "account",
-          actionPath: "/login",
-        });
-        navigate("/login", { viewTransition: true });
-        return;
-      }
 
       if (!cart.length) {
         notify({
@@ -284,23 +276,34 @@ export function useCheckout() {
         return;
       }
 
-      if (deliveryMode === "shipping") {
-        const missingShippingAddress =
-          !shippingAddress?.address ||
-          !shippingAddress?.name ||
-          !/^0\d{9}$/.test((shippingAddress?.phone || "").replace(/\D/g, ""));
+      const customerName =
+        shippingAddress?.name?.trim() ||
+        userInfo?.name?.trim() ||
+        "";
+      const customerPhone =
+        normalizeCheckoutPhone(shippingAddress?.phone || userInfo?.phone);
+      const customerAddress =
+        shippingAddress?.address?.trim() ||
+        userInfo?.address?.trim() ||
+        "";
+      const missingCustomerContact =
+        !customerName || !/^0\d{9}$/.test(customerPhone);
+      const missingShippingAddress =
+        deliveryMode === "shipping" && !customerAddress;
 
-        if (missingShippingAddress) {
-          notify({
-            title: "Thiếu địa chỉ nhận hàng",
-            message: "Vui lòng nhập đủ tên, số điện thoại và địa chỉ giao hàng.",
-            kind: "warning",
-            topic: "delivery",
-            actionPath: "/shipping-address",
-          });
-          navigate("/shipping-address", { viewTransition: true });
-          return;
-        }
+      if (missingCustomerContact || missingShippingAddress) {
+        notify({
+          title: "Thiếu thông tin nhận hàng",
+          message:
+            deliveryMode === "pickup"
+              ? "Vui lòng nhập tên và số điện thoại để shop liên hệ khi chuẩn bị hàng."
+              : "Vui lòng nhập đủ tên, số điện thoại và địa chỉ giao hàng.",
+          kind: "warning",
+          topic: "delivery",
+          actionPath: "/shipping-address",
+        });
+        navigate("/shipping-address", { viewTransition: true });
+        return;
       }
 
       if (deliveryMode === "pickup" && !selectedStation) {
@@ -316,17 +319,19 @@ export function useCheckout() {
       }
 
       const fallbackCustomer = {
-        name: userInfo?.name || "Khách hàng Zalo",
-        phone: userInfo?.phone || "0912345678",
-        address: userInfo?.address || "Địa chỉ giao hàng",
+        name: customerName,
+        phone: customerPhone,
+        address: customerAddress || "Khách tự đến lấy",
       };
       const delivery =
         deliveryMode === "pickup"
           ? {
               type: "pickup",
-              name: selectedStation?.name || fallbackCustomer.name,
-              phone: selectedStation?.phone || fallbackCustomer.phone,
-              address: selectedStation?.address || fallbackCustomer.address,
+              name: fallbackCustomer.name,
+              phone: fallbackCustomer.phone,
+              address: selectedStation
+                ? `Tự đến lấy tại ${selectedStation.name} - ${selectedStation.address}`
+                : fallbackCustomer.address,
               stationId: selectedStation?.id,
             }
           : {

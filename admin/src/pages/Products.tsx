@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Spa
 import { api } from '../api';
 import { Category, Product } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
-import { ImageUpload } from '../components/ImageUpload';
+import { ImageField } from '../components/ImageField';
 
 export const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -535,36 +535,8 @@ export const Products: React.FC = () => {
                     <ImageIcon className="w-4 h-4 text-blue-400" />
                     Album ảnh sản phẩm
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">URL Hình Ảnh Chính</label>
-                    <div className="relative">
-                      <ImageIcon className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={image}
-                        onChange={(e) => setImage(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-11 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                        placeholder="https://..."
-                      />
-                    </div>
-                  </div>
-
-                  <ImageUpload label="Tải ảnh chính từ máy tính" onUploaded={setImage} onBusyChange={onUploadingChange} />
-                  {image && <img src={image} alt="Ảnh chính sản phẩm" className="h-32 w-32 rounded-lg object-contain" />}
-                  <ImageUpload multiple label="Tải ảnh album từ máy tính" onUploaded={url => setImageUrls(old => [old.trim(), url].filter(Boolean).join('\n'))} onBusyChange={onUploadingChange} />
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Kho ảnh sản phẩm chuyên nghiệp</label>
-                    <textarea
-                      rows={6}
-                      value={imageUrls}
-                      onChange={(e) => setImageUrls(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                      placeholder={'Mỗi dòng một URL ảnh\nhttps://...\nhttps://...'}
-                    />
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Website sẽ hiển thị album dạng slide trượt ngang theo đúng thứ tự ảnh.
-                    </p>
-                  </div>
+                  <ImageField label="Ảnh chính" value={image} onChange={setImage} onBusyChange={onUploadingChange} />
+                  <ImageField label="Album ảnh" multiple value={imageUrls} onChange={setImageUrls} onBusyChange={onUploadingChange} />
                 </div>
 
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">

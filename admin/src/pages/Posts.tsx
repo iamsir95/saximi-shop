@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, Edit2, Save, ExternalLink, FileText, Search } from 'lu
 import { api } from '../api';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { MediaAsset } from '../types';
-import { ImageUpload } from '../components/ImageUpload';
+import { ImageField } from '../components/ImageField';
 import { VoucherPicker } from '../components/VoucherPicker';
 import { PostWall } from '../components/PostWall';
 
@@ -63,7 +63,16 @@ export function PostsPage() {
         {tab === 'content' ? <div className="space-y-5"><label className="grid gap-1.5 text-sm">Tóm tắt<textarea className={inputClass} rows={3} maxLength={500} value={form.excerpt} onChange={e => update('excerpt', e.target.value)} /></label><RichTextEditor onUploadingChange={uploadBusy} label="Nội dung bài viết" value={form.content} onChange={value => update('content', value)} minHeight={400} /></div> : <div className="space-y-5">{field('slug', 'Đường dẫn (để trống để tạo từ tiêu đề)', 160)}{field('seoTitle', 'Tiêu đề SEO', 200)}<label className="grid gap-1.5 text-sm">Mô tả SEO<textarea className={inputClass} rows={4} maxLength={320} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></label><p className="text-xs text-slate-400">{form.seoDescription.length}/320 ký tự</p><div className="border-t border-slate-700 pt-4"><p className="text-xs text-slate-400">Xem trước kết quả tìm kiếm</p><p className="text-lg text-cyan-300 mt-2 break-words">{form.seoTitle || form.title || 'Tiêu đề bài viết'}</p><p className="text-sm text-slate-400 break-all">/news/{form.slug || 'duong-dan-bai-viet'}</p><p className="text-sm mt-1 break-words">{form.seoDescription || form.excerpt}</p></div></div>}
         <VoucherPicker value={form.voucherIds || []} onChange={voucherIds => { setForm(old => old ? { ...old, voucherIds } : old); setDirty(true); }} />
       </div>
-      <aside className="space-y-5 min-w-0"><label className="grid gap-1.5 text-sm">Trạng thái<select className={inputClass} value={form.status} onChange={e => update('status', e.target.value)}>{Object.entries(states).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label><label className="grid gap-1.5 text-sm">Chuyên mục<select className={inputClass} value={form.category} onChange={e => update('category', e.target.value)}>{Object.entries(categories).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>{field('author', 'Tên đơn vị đăng bài', 100)}{field('cover', 'URL ảnh bìa', 2000)}<ImageUpload onBusyChange={uploadBusy} onUploaded={url => update('cover', url)} label="Tải ảnh bìa từ máy tính" /><label className="grid gap-1.5 text-sm">Chọn từ kho ảnh<select className={inputClass} value="" onChange={e => { const item = media.find(m => String(m.id) === e.target.value); if (item) { update('cover', item.url); update('coverAlt', item.altText || item.title); } }}><option value="">Chọn ảnh</option>{media.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>{form.cover && <img src={form.cover} alt={form.coverAlt || 'Ảnh bìa'} className="w-full aspect-video object-cover rounded-lg" />}{field('coverAlt', 'Mô tả ảnh (alt)', 200)}{form.publishedAt && <p className="text-xs text-slate-400">Ngày đăng: {new Date(form.publishedAt).toLocaleString('vi-VN')}</p>}</aside>
+      <aside className="space-y-5 min-w-0">
+        <label className="grid gap-1.5 text-sm">Trạng thái<select className={inputClass} value={form.status} onChange={e => update('status', e.target.value)}>{Object.entries(states).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
+        <label className="grid gap-1.5 text-sm">Chuyên mục<select className={inputClass} value={form.category} onChange={e => update('category', e.target.value)}>{Object.entries(categories).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
+        {field('author', 'Tên đơn vị đăng bài', 100)}
+        <ImageField label="Ảnh bìa" value={form.cover} onChange={url => update('cover', url)} onBusyChange={uploadBusy} library={
+          <select aria-label="Chọn từ kho ảnh" className={inputClass} value="" onChange={e => { const item = media.find(m => String(m.id) === e.target.value); if (item) { update('cover', item.url); update('coverAlt', item.altText || item.title); } }}><option value="">Chọn ảnh</option>{media.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
+        } />
+        {field('coverAlt', 'Mô tả ảnh (alt)', 200)}
+        {form.publishedAt && <p className="text-xs text-slate-400">Ngày đăng: {new Date(form.publishedAt).toLocaleString('vi-VN')}</p>}
+      </aside>
     </div>
   </form>;
   const changePost = async (post: Post, restore: boolean) => {

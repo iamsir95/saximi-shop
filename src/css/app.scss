@@ -553,37 +553,75 @@ html[data-platform="website"] .toast-container {
 }
 
 .commerce-search {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 auto;
+
   .zaui-input-affix-wrapper,
-  .zaui-input-search,
-  input {
-    min-height: 42px;
-    border-radius: 18px !important;
-    background: rgba(255, 255, 255, 0.54) !important;
+  .zaui-input-search {
+    min-height: 46px;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.68) !important;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.38)),
+      rgba(255, 255, 255, 0.5) !important;
+    box-shadow:
+      0 12px 30px rgba(15, 42, 64, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.86);
     -webkit-backdrop-filter: blur(22px) saturate(1.22);
     backdrop-filter: blur(22px) saturate(1.22);
   }
 
   .zaui-input-affix-wrapper {
-    gap: 8px;
-    padding-left: 6px;
+    gap: 10px;
+    padding-inline: 6px 12px;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease;
   }
 
   .zaui-input-affix-wrapper > :first-child:not(input) {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: 12px;
     color: var(--primary);
-    background: var(--primary-soft);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.18)),
+      rgba(var(--primary-rgb), 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow:
+      0 8px 18px rgba(0, 204, 247, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.82);
   }
 
   .zaui-input-affix-wrapper > :first-child:not(input) svg {
     width: 18px;
     height: 18px;
+  }
+
+  input {
+    min-height: 44px;
+    background: transparent !important;
+    color: #102033 !important;
+    font-weight: 700;
+  }
+
+  input::placeholder {
+    color: #7b8797;
+    font-weight: 600;
+  }
+
+  .zaui-input-affix-wrapper:focus-within {
+    border-color: rgba(var(--primary-rgb), 0.56) !important;
+    box-shadow:
+      0 14px 34px rgba(0, 204, 247, 0.12),
+      0 0 0 3px rgba(var(--primary-rgb), 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.88);
   }
 }
 

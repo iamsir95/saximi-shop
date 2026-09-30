@@ -110,13 +110,11 @@ export default function ProductItem(props: ProductItemProps) {
               )}
               <div className="mt-2 flex items-center justify-between gap-2 commerce-caption text-slate-500">
                 <span className="truncate">{props.product.category?.name}</span>
-                <span className="flex flex-none items-center gap-1">
-                  {soldQuantity > 0 && (
-                    <span className="commerce-tag commerce-tag--muted">
-                      {getSoldLabel(props.product)}
-                    </span>
-                  )}
-                </span>
+                {soldQuantity > 0 && (
+                  <span className="flex-none text-[11px] font-semibold leading-4 text-slate-400">
+                    {getSoldLabel(props.product)}
+                  </span>
+                )}
               </div>
             </div>
           </>

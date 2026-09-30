@@ -282,7 +282,7 @@ export default function ProductDetailPage() {
                     {getStockLabel(product)}
                   </div>
                   {soldQuantity > 0 && (
-                    <div className="commerce-tag commerce-tag--muted">
+                    <div className="text-[11px] font-semibold leading-4 text-slate-400">
                       {getSoldLabel(product)}
                     </div>
                   )}

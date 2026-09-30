@@ -61,7 +61,7 @@ export default function Points() {
     <div
       className="relative overflow-hidden rounded-[28px] text-primaryForeground p-4 bg-cover shadow-[0_18px_48px_rgba(0,204,247,0.28)]"
       style={{
-        backgroundImage: `linear-gradient(135deg, rgba(0, 204, 247, 0.94), rgba(20, 184, 166, 0.78)), url(${barcodeIllusLeft}), url(${barcodeIllusRight})`,
+        backgroundImage: `linear-gradient(135deg, rgba(0, 204, 247, 0.94), rgba(239, 106, 140, 0.78)), url(${barcodeIllusLeft}), url(${barcodeIllusRight})`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "top left, bottom right",
         backgroundSize: "auto, auto",

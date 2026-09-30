@@ -307,9 +307,9 @@ export default function ProductDetailPage() {
                 </div>
               )}
               {giftPrograms.length > 0 && (
-                <div className="mt-3 space-y-2 rounded-[22px] border border-emerald-200/70 bg-emerald-50/80 px-3.5 py-3 text-xs text-emerald-800 shadow-[0_12px_28px_rgba(16,185,129,0.1)]">
+                <div className="promo-spotlight mt-3 space-y-2 rounded-[22px] px-3.5 py-3 text-xs text-slate-800">
                   <div className="flex items-center gap-2 font-black">
-                    <span className="commerce-tag commerce-tag--success">
+                    <span className="commerce-tag commerce-tag--promo">
                       Quà tặng kèm
                     </span>
                   </div>

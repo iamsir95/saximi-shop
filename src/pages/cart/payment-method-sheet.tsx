@@ -151,7 +151,7 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
           loading={loading}
           onClick={() => onSelect(selected)}
           className="!rounded-[20px] !font-bold !text-base !min-h-12 !text-primaryForeground"
-          style={{ background: "linear-gradient(135deg, #00ccf7 0%, #14b8a6 100%)" }}
+          style={{ background: "var(--brand-gradient)" }}
         >
           {loading ? "Đang xử lý..." : `Đặt hàng • ${formatPrice(totalAmount)}`}
         </Button>

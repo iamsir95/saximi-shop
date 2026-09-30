@@ -80,7 +80,7 @@ export default function ProductItem(props: ProductItemProps) {
                 </span>
               )}
               {props.product.promoDescription && (
-                <span className="commerce-tag commerce-tag--info">
+                <span className="commerce-tag commerce-tag--promo">
                   <CommerceIcon name="ticket" size={11} />
                   Khuyến mãi
                 </span>

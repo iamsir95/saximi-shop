@@ -22,7 +22,7 @@ function FloatingCartPreview() {
         handle?.noFooter ? "bottom-6" : "bottom-16"
       } mb-sb flex items-center space-x-2 text-left text-primaryForeground px-4 py-2 rounded-[22px] shadow-[0_18px_42px_rgba(0,204,247,0.28)]`}
       style={{
-        background: "linear-gradient(135deg, rgba(0, 204, 247, 0.94), rgba(20, 184, 166, 0.74))",
+        background: "var(--brand-gradient)",
         backdropFilter: "blur(22px) saturate(1.35)",
       }}
     >

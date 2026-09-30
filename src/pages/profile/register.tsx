@@ -11,7 +11,7 @@ export default function Register() {
     <button
       className="w-full text-left rounded-[24px] text-primaryForeground p-4 bg-cover space-y-0.5 shadow-[0_18px_42px_rgba(0,204,247,0.24)]"
       style={{
-        backgroundImage: `linear-gradient(135deg, rgba(0, 204, 247, 0.92), rgba(20, 184, 166, 0.72)), url(${registerIllusRight})`,
+        backgroundImage: `linear-gradient(135deg, rgba(0, 204, 247, 0.92), rgba(239, 106, 140, 0.74)), url(${registerIllusRight})`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "bottom right",
         backgroundSize: "auto",

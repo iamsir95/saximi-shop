@@ -150,7 +150,7 @@ function ZaloPayView({ details, onOpenZaloPay }: { details: OrderPaymentDetails;
   return (
     <div className="space-y-4">
       {/* Hero Card */}
-      <div className="bg-gradient-to-br from-primary to-teal-400 rounded-2xl p-6 text-primaryForeground text-center space-y-4 shadow-lg">
+      <div className="brand-gradient rounded-2xl p-6 text-primaryForeground text-center space-y-4 shadow-lg">
         <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-md">
           <CommerceIcon name="wallet" size={30} className="text-primary" strokeWidth={1.9} />
         </div>

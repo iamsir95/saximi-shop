@@ -8,6 +8,8 @@ module.exports = {
         foreground: "var(--foreground)",
         primary: "var(--primary)",
         primaryForeground: "var(--primaryForeground)",
+        secondary: "var(--secondary)",
+        secondaryDark: "var(--secondary-dark)",
         section: "var(--section)",
         inactive: "var(--inactive)",
         tabIndicator: "var(--tabIndicator)",

@@ -62,8 +62,7 @@ export default function AffiliateRegisterPage() {
         <Box
           className="rounded-[28px] p-5 text-white shadow-lg"
           style={{
-            background:
-              "linear-gradient(135deg, rgba(0, 204, 247, 0.92), rgba(20, 184, 166, 0.76))",
+            background: "var(--brand-gradient)",
             backdropFilter: "blur(24px) saturate(1.35)",
           }}
         >
@@ -146,7 +145,7 @@ export default function AffiliateRegisterPage() {
               onClick={handleSubmit}
               loading={submitting}
               disabled={submitting}
-              className="w-full rounded-2xl bg-emerald-600 text-white font-bold"
+              className="w-full rounded-2xl brand-gradient text-primaryForeground font-bold"
             >
               Đăng ký làm đại lý
             </Button>

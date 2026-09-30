@@ -170,8 +170,8 @@ function AccountRoleCard() {
       )}
 
       {referrerAffiliate && !isAffiliate && (
-        <div className="rounded-2xl bg-cyan-50/70 border border-white/70 px-3 py-2">
-          <div className="commerce-eyebrow text-primary">
+        <div className="promo-spotlight rounded-2xl px-3 py-2">
+          <div className="commerce-eyebrow text-secondaryDark">
             Đang mua qua link giới thiệu
           </div>
           <div className="commerce-caption text-slate-700 mt-0.5">
@@ -235,9 +235,9 @@ function AccountRoleCard() {
               ? navigate("/affiliate/register", { viewTransition: true })
               : navigate("/login", { viewTransition: true })
           }
-          className="w-full rounded-2xl bg-emerald-50/80 border border-white/70 px-4 py-3 text-left"
+          className="w-full promo-spotlight rounded-2xl px-4 py-3 text-left"
         >
-          <div className="commerce-eyebrow text-emerald-600">
+          <div className="commerce-eyebrow text-secondaryDark">
             Đăng ký làm đại lý
           </div>
           <div className="commerce-title mt-0.5">

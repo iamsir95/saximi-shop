@@ -450,6 +450,31 @@ publicApi.post('/payment/sepay/webhook', (req: Request, res: Response) => {
   });
 });
 
+publicApi.get('/zalo/webhook', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    provider: 'zalo',
+    message: 'Zalo webhook endpoint is ready',
+  });
+});
+
+publicApi.post('/zalo/webhook', (req: Request, res: Response) => {
+  const payload = req.body || {};
+  const eventName =
+    payload.event_name ||
+    payload.eventName ||
+    payload.event ||
+    payload.type ||
+    'unknown';
+
+  Logger.info(`💬 [Zalo Webhook] Event: ${eventName}`);
+  res.json({
+    success: true,
+    provider: 'zalo',
+    received: true,
+  });
+});
+
 publicApi.get('/payment/status/:orderId', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.orderId);
   const order = Database.checkAndUpdatePaymentStatus(orderId);

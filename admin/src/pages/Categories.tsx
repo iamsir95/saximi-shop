@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, X, FolderTree } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, FolderTree, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api';
 import { Category } from '../types';
 
@@ -14,6 +14,7 @@ export const Categories: React.FC = () => {
   // Form State
   const [name, setName] = useState('');
   const [image, setImage] = useState('');
+  const [showOnHome, setShowOnHome] = useState(true);
 
   const loadCategories = async () => {
     try {
@@ -35,6 +36,7 @@ export const Categories: React.FC = () => {
     setEditingCategory(null);
     setName('');
     setImage('');
+    setShowOnHome(true);
     setIsModalOpen(true);
   };
 
@@ -42,12 +44,13 @@ export const Categories: React.FC = () => {
     setEditingCategory(cat);
     setName(cat.name);
     setImage(cat.image);
+    setShowOnHome(cat.showOnHome !== false);
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { name, image: image || '/icon.png' };
+    const payload = { name, image: image || '/icon.png', showOnHome };
 
     try {
       if (editingCategory) {
@@ -112,7 +115,19 @@ export const Categories: React.FC = () => {
                 />
                 <div>
                   <h4 className="font-bold text-white text-base">{cat.name}</h4>
-                  <span className="text-xs text-slate-400">ID: #{cat.id}</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-400">ID: #{cat.id}</span>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        cat.showOnHome === false
+                          ? 'bg-slate-700 text-white'
+                          : 'bg-blue-600 text-white'
+                      }`}
+                    >
+                      {cat.showOnHome === false ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      {cat.showOnHome === false ? 'Ẩn trang chủ' : 'Hiện trang chủ'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -176,6 +191,19 @@ export const Categories: React.FC = () => {
                   placeholder="https://..."
                 />
               </div>
+
+              <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3">
+                <span>
+                  <span className="block text-sm font-bold text-white">Hiển thị ở trang chủ</span>
+                  <span className="text-xs text-slate-400">Tắt mục này nếu chỉ muốn giữ danh mục trong hệ thống.</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={showOnHome}
+                  onChange={(e) => setShowOnHome(e.target.checked)}
+                  className="h-5 w-5 accent-blue-500"
+                />
+              </label>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                 <button

@@ -4,17 +4,13 @@ import { categoriesState } from "@/state";
 
 export default function Category() {
   const categories = useAtomValue(categoriesState);
+  const homeCategories = categories.filter(
+    (category) => category.showOnHome !== false
+  );
 
   return (
-    <div
-      className="home-category-strip liquid-card commerce-card grid gap-x-3 gap-y-4 py-4 px-4 overflow-x-auto"
-      style={{
-        gridTemplateColumns: `repeat(${Math.ceil(
-          categories.length > 4 ? categories.length / 2 : categories.length
-        )}, minmax(70px, 1fr))`,
-      }}
-    >
-      {categories.map((category) => (
+    <div className="home-category-strip liquid-card commerce-card grid gap-x-3 gap-y-4 py-4 px-4">
+      {homeCategories.map((category) => (
         <TransitionLink
           key={category.id}
           className="flex flex-col items-center gap-2 flex-none overflow-hidden cursor-pointer mx-auto min-w-[72px]"

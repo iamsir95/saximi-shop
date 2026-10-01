@@ -504,6 +504,17 @@ html[data-platform="website"] .toast-container {
   backdrop-filter: blur(22px) saturate(1.28);
 }
 
+.brand-action,
+.brand-action *,
+.bg-primary,
+.bg-primary *,
+.bg-secondary,
+.bg-secondary *,
+.bg-danger,
+.bg-danger * {
+  color: #fff !important;
+}
+
 .secondary-accent {
   color: var(--secondary-dark) !important;
 }
@@ -821,6 +832,13 @@ select {
 }
 
 .notification-surface-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.46)),
+    rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  box-shadow:
+    0 14px 34px rgba(15, 42, 64, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76);
   -webkit-backdrop-filter: blur(22px) saturate(1.24);
   backdrop-filter: blur(22px) saturate(1.24);
 }
@@ -968,7 +986,7 @@ select {
     gap: 12px 10px !important;
     border-radius: 18px;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    overflow-x: hidden !important;
+    overflow: hidden !important;
   }
 
   .home-category-strip a {
@@ -1037,6 +1055,19 @@ select {
 
   .zaui-sheet .zaui-sheet-content {
     border-radius: 22px 22px 0 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-category-strip {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-category-strip {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 }
 

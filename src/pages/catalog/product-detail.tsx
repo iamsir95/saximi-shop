@@ -114,20 +114,51 @@ export default function ProductDetailPage() {
   const product = useAtomValue(productState(Number(id)))!;
   const products = useAtomValue(productsState);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const activeVariants = useMemo(
+    () => (product.enableVariants ? product.variants || [] : []).filter((variant) => variant.isActive !== false),
+    [product.enableVariants, product.variants]
+  );
+  const [selectedVariantId, setSelectedVariantId] = useState("");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
   const gallery = useMemo(() => buildImageLibrary(product), [product]);
   const selectedImage = gallery[selectedImageIndex] || gallery[0];
+  const selectedVariant =
+    activeVariants.find((variant) => variant.id === selectedVariantId) ||
+    activeVariants[0];
+  const selectedVariantImageIndex = selectedVariant?.imageUrl
+    ? gallery.findIndex((image) => image.url === selectedVariant.imageUrl)
+    : -1;
+  const productForCart = useMemo(() => {
+    if (!selectedVariant) return product;
+    return {
+      ...product,
+      name: `${product.name} - ${selectedVariant.name}`,
+      price: selectedVariant.price || product.price,
+      originalPrice: selectedVariant.originalPrice || product.originalPrice,
+      image: selectedVariant.imageUrl || product.image,
+      stockQuantity: selectedVariant.stockQuantity ?? product.stockQuantity,
+      selectedVariantId: selectedVariant.id,
+      selectedVariantName: selectedVariant.name,
+      attributes: [
+        ...(product.attributes || []),
+        ...Object.entries(selectedVariant.attributes || {}).map(([name, value]) => ({
+          name,
+          value,
+        })),
+      ],
+    };
+  }, [product, selectedVariant]);
 
   const navigate = useNavigate();
-  const { addToCart } = useAddToCart(product);
+  const { addToCart } = useAddToCart(productForCart);
   const canUseMemberPricing = useMemberPricingEligible();
-  const hasDiscount = canUseMemberPricing && hasMemberPrice(product);
-  const discountPercent = getDiscountPercent(product, canUseMemberPricing);
-  const savedAmount = getSavedAmount(product, canUseMemberPricing);
-  const displayPrice = getDisplayPrice(product, canUseMemberPricing);
-  const lowStock = isLowStock(product);
-  const soldQuantity = Math.max(0, Number(product.soldQuantity || 0));
+  const hasDiscount = canUseMemberPricing && hasMemberPrice(productForCart);
+  const discountPercent = getDiscountPercent(productForCart, canUseMemberPricing);
+  const savedAmount = getSavedAmount(productForCart, canUseMemberPricing);
+  const displayPrice = getDisplayPrice(productForCart, canUseMemberPricing);
+  const lowStock = isLowStock(productForCart);
+  const soldQuantity = Math.max(0, Number(productForCart.soldQuantity || 0));
   const promotionLabels = product.promotionLabels || [];
   const hasAttributes = Boolean(product.attributes?.length);
   const seoArticle = product.seo?.article?.trim();
@@ -135,6 +166,7 @@ export default function ProductDetailPage() {
     () =>
       (product.giftPrograms || [])
         .filter((program) => isGiftProgramActive(program))
+        .filter((program) => program.showOnProductPage !== false)
         .map((program) => ({
           ...program,
           giftProduct: products.find(
@@ -171,6 +203,23 @@ export default function ProductDetailPage() {
       if (metaDescription) metaDescription.content = previousDescription;
     };
   }, [product]);
+
+  useEffect(() => {
+    if (!selectedVariantId && activeVariants[0]) {
+      setSelectedVariantId(activeVariants[0].id);
+    }
+  }, [activeVariants, selectedVariantId]);
+
+  useEffect(() => {
+    if (selectedVariantImageIndex >= 0) {
+      setSelectedImageIndex(selectedVariantImageIndex);
+      galleryRef.current?.children[selectedVariantImageIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [selectedVariantImageIndex]);
 
   const scrollToImage = (index: number) => {
     setSelectedImageIndex(index);
@@ -281,7 +330,7 @@ export default function ProductDetailPage() {
                       )
                     }
                   >
-                    {getStockLabel(product)}
+                    {getStockLabel(productForCart)}
                   </div>
                   {soldQuantity > 0 && (
                     <div className="text-[11px] font-semibold leading-4 text-slate-400">
@@ -335,11 +384,67 @@ export default function ProductDetailPage() {
                     </span>
                   </div>
                   {giftPrograms.map((program) => (
-                    <div key={program.id} className="font-semibold leading-5">
-                      {program.title}: mua {program.minQuantity} tặng{" "}
-                      {program.giftQuantity} {program.giftProduct?.name}
+                    <div key={program.id} className="rounded-2xl bg-white/60 p-3 font-semibold leading-5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="commerce-tag commerce-tag--success !min-h-0 !px-2 !py-1">
+                          {program.badgeLabel || "Quà tặng"}
+                        </span>
+                        <span>{program.title}</span>
+                      </div>
+                      <div className="mt-1 text-slate-600">
+                        Mua {program.minQuantity} tặng {program.giftQuantity}{" "}
+                        {program.giftProduct?.name}
+                      </div>
+                      {program.description && (
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {program.description}
+                        </div>
+                      )}
                     </div>
                   ))}
+                </div>
+              )}
+              {activeVariants.length > 0 && (
+                <div className="mt-3 rounded-[22px] bg-white/62 p-3 ring-1 ring-white/70">
+                  <div className="commerce-eyebrow text-primary">
+                    Chọn biến thể
+                  </div>
+                  <div className="mt-2 grid gap-2">
+                    {activeVariants.map((variant) => {
+                      const selected = selectedVariant?.id === variant.id;
+                      return (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          onClick={() => setSelectedVariantId(variant.id)}
+                          className={`flex items-center gap-3 rounded-2xl border p-2 text-left transition active:scale-[0.99] ${
+                            selected
+                              ? "border-primary bg-cyan-50/70 shadow-[0_10px_24px_rgba(0,204,247,0.12)]"
+                              : "border-slate-200 bg-white/72"
+                          }`}
+                        >
+                          <img
+                            src={variant.imageUrl || product.image}
+                            alt={variant.name}
+                            className="h-12 w-12 rounded-xl object-cover bg-skeleton"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-black text-slate-800">
+                              {variant.name}
+                            </div>
+                            <div className="mt-0.5 text-[11px] text-slate-500">
+                              {Object.entries(variant.attributes || {})
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(" · ") || variant.sku || "Biến thể sản phẩm"}
+                            </div>
+                          </div>
+                          <div className="text-right text-xs font-black text-primary">
+                            {formatPrice(variant.price || product.price)}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">

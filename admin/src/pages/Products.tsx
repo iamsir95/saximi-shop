@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles, Gift } from 'lucide-react';
 import { api } from '../api';
-import { Category, Product, ProductPromotionLabel } from '../types';
+import { Category, Product, ProductGiftProgram, ProductPromotionLabel, ProductVariant } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 import { ImageField } from '../components/ImageField';
 
@@ -33,7 +33,9 @@ export const Products: React.FC = () => {
   const [promotionLabels, setPromotionLabels] = useState<ProductPromotionLabel[]>([]);
   const [newPromotionLabelName, setNewPromotionLabelName] = useState('');
   const [newPromotionLabelColor, setNewPromotionLabelColor] = useState('#EF6A8C');
-  const [giftProgramsText, setGiftProgramsText] = useState('');
+  const [giftPrograms, setGiftPrograms] = useState<ProductGiftProgram[]>([]);
+  const [enableVariants, setEnableVariants] = useState(false);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [attributesText, setAttributesText] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
@@ -96,6 +98,59 @@ export const Products: React.FC = () => {
     setNewPromotionLabelName('');
   };
 
+  const addGiftProgram = () => {
+    setGiftPrograms((current) => [
+      ...current,
+      {
+        id: `${editingProduct?.id || 'new'}-gift-${Date.now()}`,
+        title: 'Mua sản phẩm nhận quà',
+        badgeLabel: 'Quà tặng kèm',
+        description: '',
+        giftProductId: products[0]?.id || 0,
+        minQuantity: 1,
+        giftQuantity: 1,
+        isActive: true,
+        autoAddToCart: true,
+        showOnProductPage: true,
+        priority: current.length + 1,
+      },
+    ]);
+  };
+
+  const updateGiftProgram = (id: string, patch: Partial<ProductGiftProgram>) => {
+    setGiftPrograms((current) =>
+      current.map((program) => (program.id === id ? { ...program, ...patch } : program))
+    );
+  };
+
+  const removeGiftProgram = (id: string) => {
+    setGiftPrograms((current) => current.filter((program) => program.id !== id));
+  };
+
+  const addVariant = () => {
+    setVariants((current) => [
+      ...current,
+      {
+        id: `${editingProduct?.id || 'new'}-variant-${Date.now()}`,
+        name: 'Biến thể mới',
+        sku: '',
+        imageUrl: image || imageUrls.split('\n').map((url) => url.trim()).find(Boolean) || '',
+        attributes: {},
+        isActive: true,
+      },
+    ]);
+  };
+
+  const updateVariant = (id: string, patch: Partial<ProductVariant>) => {
+    setVariants((current) =>
+      current.map((variant) => (variant.id === id ? { ...variant, ...patch } : variant))
+    );
+  };
+
+  const removeVariant = (id: string) => {
+    setVariants((current) => current.filter((variant) => variant.id !== id));
+  };
+
   const parseAttributes = (value: string) =>
     value
       .split('\n')
@@ -116,54 +171,54 @@ export const Products: React.FC = () => {
       .map((item) => `${item.name}: ${item.value}`)
       .join('\n');
 
-  const parseGiftPrograms = (value: string) =>
-    value
-      .split('\n')
-      .map((line) => line.trim())
+  const normalizeGiftPrograms = () =>
+    giftPrograms
+      .filter((program) => program.title.trim() && Number(program.giftProductId))
+      .map((program, index) => ({
+        ...program,
+        id: program.id || `${editingProduct?.id || 'new'}-gift-${index + 1}`,
+        title: program.title.trim(),
+        badgeLabel: program.badgeLabel?.trim() || 'Quà tặng kèm',
+        description: program.description?.trim() || undefined,
+        giftProductId: Number(program.giftProductId),
+        minQuantity: Math.max(1, Number(program.minQuantity || 1)),
+        giftQuantity: Math.max(1, Number(program.giftQuantity || 1)),
+        priority: index + 1,
+        showOnProductPage: program.showOnProductPage ?? true,
+        autoAddToCart: program.autoAddToCart ?? true,
+      }));
+
+  const parseVariantAttributes = (value?: Record<string, string> | string) => {
+    if (!value) return {};
+    if (typeof value === 'object') return value;
+    return value
+      .split(',')
+      .map((item) => item.trim())
       .filter(Boolean)
-      .map((line, index) => {
-        const [
-          title,
-          giftProductId,
-          minQuantity = '1',
-          giftQuantity = '1',
-          active = 'true',
-          startsAt,
-          endsAt,
-        ] = line.split('|').map((part) => part.trim());
-        const giftId = Number(giftProductId);
+      .reduce<Record<string, string>>((acc, item) => {
+        const [name, ...rest] = item.includes(':') ? item.split(':') : item.split('=');
+        if (name && rest.length) acc[name.trim()] = rest.join(':').trim();
+        return acc;
+      }, {});
+  };
 
-        if (!title || !giftId) return null;
+  const serializeVariantAttributes = (attributes?: Record<string, string>) =>
+    Object.entries(attributes || {}).map(([key, value]) => `${key}: ${value}`).join(', ');
 
-        return {
-          id: editingProduct
-            ? `${editingProduct.id}-gift-${index + 1}`
-            : `new-gift-${index + 1}`,
-          title,
-          giftProductId: giftId,
-          minQuantity: Math.max(1, Number(minQuantity || 1)),
-          giftQuantity: Math.max(1, Number(giftQuantity || 1)),
-          isActive: !['false', '0', 'off', 'inactive', 'tắt'].includes(active.toLowerCase()),
-          startsAt: startsAt || undefined,
-          endsAt: endsAt || undefined,
-        };
-      })
-      .filter(Boolean);
-
-  const serializeGiftPrograms = (product: Product) =>
-    (product.giftPrograms || [])
-      .map((program) =>
-        [
-          program.title,
-          program.giftProductId,
-          program.minQuantity,
-          program.giftQuantity,
-          program.isActive ? 'true' : 'false',
-          program.startsAt || '',
-          program.endsAt || '',
-        ].join(' | ')
-      )
-      .join('\n');
+  const normalizeVariants = () =>
+    variants
+      .filter((variant) => variant.name.trim())
+      .map((variant, index) => ({
+        ...variant,
+        id: variant.id || `${editingProduct?.id || 'new'}-variant-${index + 1}`,
+        name: variant.name.trim(),
+        sku: variant.sku?.trim() || undefined,
+        price: variant.price ? Number(variant.price) : undefined,
+        originalPrice: variant.originalPrice ? Number(variant.originalPrice) : undefined,
+        stockQuantity: variant.stockQuantity !== undefined ? Math.max(0, Number(variant.stockQuantity)) : undefined,
+        attributes: parseVariantAttributes(variant.attributes),
+        isActive: variant.isActive ?? true,
+      }));
 
   const loadProductsAndCategories = async () => {
     try {
@@ -201,7 +256,9 @@ export const Products: React.FC = () => {
     setPromotionLabels([]);
     setNewPromotionLabelName('');
     setNewPromotionLabelColor('#EF6A8C');
-    setGiftProgramsText('');
+    setGiftPrograms([]);
+    setEnableVariants(false);
+    setVariants([]);
     setAttributesText('');
     setSeoTitle('');
     setSeoDescription('');
@@ -230,7 +287,9 @@ export const Products: React.FC = () => {
     setPromotionLabels(product.promotionLabels || []);
     setNewPromotionLabelName('');
     setNewPromotionLabelColor('#EF6A8C');
-    setGiftProgramsText(serializeGiftPrograms(product));
+    setGiftPrograms(product.giftPrograms || []);
+    setEnableVariants(Boolean(product.enableVariants));
+    setVariants(product.variants || []);
     setAttributesText(serializeAttributes(product));
     setSeoTitle(product.seo?.title || '');
     setSeoDescription(product.seo?.description || '');
@@ -279,7 +338,9 @@ export const Products: React.FC = () => {
       detail: cleanRichText(detail),
       promoDescription: promoDescription.trim() || undefined,
       promotionLabels,
-      giftPrograms: parseGiftPrograms(giftProgramsText),
+      giftPrograms: normalizeGiftPrograms(),
+      enableVariants,
+      variants: enableVariants ? normalizeVariants() : [],
       attributes: parseAttributes(attributesText),
       seo: {
         title: seoTitle.trim() || undefined,
@@ -726,16 +787,99 @@ export const Products: React.FC = () => {
                       <Gift className="w-4 h-4 text-emerald-400" />
                       Mua tặng kèm sản phẩm
                     </label>
-                    <textarea
-                      rows={5}
-                      value={giftProgramsText}
-                      onChange={(e) => setGiftProgramsText(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                      placeholder={'Mỗi dòng một chương trình\nTên chương trình | ID sản phẩm tặng | SL mua tối thiểu | SL tặng | true | Ngày bắt đầu | Ngày kết thúc\nVí dụ: Mua 2 tặng 1 nước rửa | 8 | 2 | 1 | true | 2026-09-28 | 2026-12-31'}
-                    />
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Dùng ID sản phẩm tặng trong danh sách sản phẩm. Bỏ trống ngày nếu chương trình luôn hiệu lực.
-                    </p>
+                    <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/45 p-3">
+                      {giftPrograms.map((program) => (
+                        <div key={program.id} className="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 space-y-3">
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <input
+                              value={program.title}
+                              onChange={(e) => updateGiftProgram(program.id, { title: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="Tên chương trình"
+                            />
+                            <input
+                              value={program.badgeLabel || ''}
+                              onChange={(e) => updateGiftProgram(program.id, { badgeLabel: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="Nhãn hiển thị, ví dụ: Mua 2 tặng 1"
+                            />
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={program.description || ''}
+                            onChange={(e) => updateGiftProgram(program.id, { description: e.target.value })}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                            placeholder="Mô tả ngắn điều kiện/quà tặng"
+                          />
+                          <div className="grid gap-2 md:grid-cols-4">
+                            <select
+                              value={program.giftProductId}
+                              onChange={(e) => updateGiftProgram(program.id, { giftProductId: Number(e.target.value) })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white md:col-span-2"
+                            >
+                              <option value={0}>Chọn sản phẩm tặng</option>
+                              {products.filter((item) => item.id !== editingProduct?.id).map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  #{item.id} - {item.name}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              min={1}
+                              value={program.minQuantity}
+                              onChange={(e) => updateGiftProgram(program.id, { minQuantity: Number(e.target.value) })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="SL mua"
+                            />
+                            <input
+                              type="number"
+                              min={1}
+                              value={program.giftQuantity}
+                              onChange={(e) => updateGiftProgram(program.id, { giftQuantity: Number(e.target.value) })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="SL tặng"
+                            />
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-2">
+                            <input
+                              type="date"
+                              value={program.startsAt || ''}
+                              onChange={(e) => updateGiftProgram(program.id, { startsAt: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                            />
+                            <input
+                              type="date"
+                              value={program.endsAt || ''}
+                              onChange={(e) => updateGiftProgram(program.id, { endsAt: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap gap-3 text-xs font-bold text-slate-300">
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" checked={program.isActive} onChange={(e) => updateGiftProgram(program.id, { isActive: e.target.checked })} className="accent-blue-500" />
+                                Đang bật
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" checked={program.showOnProductPage !== false} onChange={(e) => updateGiftProgram(program.id, { showOnProductPage: e.target.checked })} className="accent-blue-500" />
+                                Hiển thị ở chi tiết
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input type="checkbox" checked={program.autoAddToCart !== false} onChange={(e) => updateGiftProgram(program.id, { autoAddToCart: e.target.checked })} className="accent-blue-500" />
+                                Tự thêm vào đơn
+                              </label>
+                            </div>
+                            <button type="button" onClick={() => removeGiftProgram(program.id)} className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-300">
+                              Xóa chương trình
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={addGiftProgram} className="w-full rounded-xl border border-dashed border-emerald-500/40 px-4 py-3 text-sm font-bold text-emerald-300 hover:bg-emerald-500/10">
+                        + Thêm chương trình tặng kèm
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -752,6 +896,109 @@ export const Products: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-bold text-white">
+                      <Tags className="w-4 h-4 text-cyan-400" />
+                      Biến thể sản phẩm
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Bật khi sản phẩm có màu, size, combo hoặc phiên bản riêng. Có thể chọn ảnh từ album cho từng biến thể.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={enableVariants}
+                      onChange={(e) => setEnableVariants(e.target.checked)}
+                      className="accent-blue-500"
+                    />
+                    Bật biến thể
+                  </label>
+                </div>
+
+                {enableVariants && (
+                  <div className="space-y-3">
+                    {variants.map((variant) => {
+                      const galleryChoices = [
+                        image,
+                        ...imageUrls.split('\n').map((url) => url.trim()).filter(Boolean),
+                      ].filter(Boolean);
+                      return (
+                        <div key={variant.id} className="rounded-2xl border border-slate-700 bg-slate-900/60 p-3 space-y-3">
+                          <div className="grid gap-2 md:grid-cols-[1fr_150px_140px_140px]">
+                            <input
+                              value={variant.name}
+                              onChange={(e) => updateVariant(variant.id, { name: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="Tên biến thể, ví dụ: Màu xanh / Size L"
+                            />
+                            <input
+                              value={variant.sku || ''}
+                              onChange={(e) => updateVariant(variant.id, { sku: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="SKU"
+                            />
+                            <input
+                              type="number"
+                              value={variant.price || ''}
+                              onChange={(e) => updateVariant(variant.id, { price: e.target.value ? Number(e.target.value) : undefined })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="Giá riêng"
+                            />
+                            <input
+                              type="number"
+                              value={variant.stockQuantity ?? ''}
+                              onChange={(e) => updateVariant(variant.id, { stockQuantity: e.target.value ? Number(e.target.value) : undefined })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="Tồn kho"
+                            />
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-[1fr_1fr]">
+                            <select
+                              value={variant.imageUrl || ''}
+                              onChange={(e) => updateVariant(variant.id, { imageUrl: e.target.value })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                            >
+                              <option value="">Dùng ảnh chính sản phẩm</option>
+                              {galleryChoices.map((url, index) => (
+                                <option key={`${url}-${index}`} value={url}>
+                                  Ảnh album {index + 1}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              value={serializeVariantAttributes(variant.attributes)}
+                              onChange={(e) => updateVariant(variant.id, { attributes: parseVariantAttributes(e.target.value) })}
+                              className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                              placeholder="Thuộc tính: Màu: Xanh, Size: L"
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                              <input
+                                type="checkbox"
+                                checked={variant.isActive}
+                                onChange={(e) => updateVariant(variant.id, { isActive: e.target.checked })}
+                                className="accent-blue-500"
+                              />
+                              Đang bán
+                            </label>
+                            <button type="button" onClick={() => removeVariant(variant.id)} className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-300">
+                              Xóa biến thể
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <button type="button" onClick={addVariant} className="w-full rounded-xl border border-dashed border-cyan-500/40 px-4 py-3 text-sm font-bold text-cyan-300 hover:bg-cyan-500/10">
+                      + Thêm biến thể
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">

@@ -67,6 +67,11 @@ export default function CartItem(props: CartItemProps) {
           <div className="commerce-body font-semibold line-clamp-2 text-slate-800">
             {props.product.name}
           </div>
+          {props.product.selectedVariantName && (
+            <div className="text-[11px] font-bold text-primary">
+              {props.product.selectedVariantName}
+            </div>
+          )}
           <div className="flex flex-col">
             <div className="text-base font-black leading-5 text-primary">
               {formatPrice(props.product.price)}

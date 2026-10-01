@@ -32,7 +32,10 @@ export default function CartList() {
     >
       <div className="w-full">
         {cart.map((item) => (
-          <CartItem key={item.product.id} {...item} />
+          <CartItem
+            key={`${item.product.id}:${item.product.selectedVariantId || ""}`}
+            {...item}
+          />
         ))}
       </div>
       <HorizontalDivider />

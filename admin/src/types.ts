@@ -70,12 +70,29 @@ export interface ProductSeoContent {
 export interface ProductGiftProgram {
   id: string;
   title: string;
+  badgeLabel?: string;
+  description?: string;
   giftProductId: number;
   minQuantity: number;
   giftQuantity: number;
   isActive: boolean;
+  autoAddToCart?: boolean;
+  showOnProductPage?: boolean;
+  priority?: number;
   startsAt?: string;
   endsAt?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  sku?: string;
+  price?: number;
+  originalPrice?: number;
+  stockQuantity?: number;
+  imageUrl?: string;
+  attributes?: Record<string, string>;
+  isActive: boolean;
 }
 
 export interface ProductPromotionLabel {
@@ -96,6 +113,10 @@ export interface Product {
   promoDescription?: string;
   promotionLabels?: ProductPromotionLabel[];
   giftPrograms?: ProductGiftProgram[];
+  variants?: ProductVariant[];
+  enableVariants?: boolean;
+  selectedVariantId?: string;
+  selectedVariantName?: string;
   attributes?: ProductAttribute[];
   seo?: ProductSeoContent;
   sizes?: string[];

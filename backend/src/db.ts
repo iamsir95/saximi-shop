@@ -34,12 +34,29 @@ export interface ProductSeoContent {
 export interface ProductGiftProgram {
   id: string;
   title: string;
+  badgeLabel?: string;
+  description?: string;
   giftProductId: number;
   minQuantity: number;
   giftQuantity: number;
   isActive: boolean;
+  autoAddToCart?: boolean;
+  showOnProductPage?: boolean;
+  priority?: number;
   startsAt?: string;
   endsAt?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  sku?: string;
+  price?: number;
+  originalPrice?: number;
+  stockQuantity?: number;
+  imageUrl?: string;
+  attributes?: Record<string, string>;
+  isActive: boolean;
 }
 
 export interface ProductPromotionLabel {
@@ -60,6 +77,8 @@ export interface Product {
   promoDescription?: string;
   promotionLabels?: ProductPromotionLabel[];
   giftPrograms?: ProductGiftProgram[];
+  variants?: ProductVariant[];
+  enableVariants?: boolean;
   attributes?: ProductAttribute[];
   seo?: ProductSeoContent;
   sizes?: string[];
@@ -265,6 +284,8 @@ export interface InHouseDelivery {
 export interface OrderItem {
   product: Product;
   quantity: number;
+  variantId?: string;
+  variantName?: string;
   isGift?: boolean;
   giftProgramId?: string;
   giftForProductId?: number;
@@ -704,7 +725,8 @@ export class Database {
 
       const quantity = Math.max(1, Number(item.quantity || 1));
       item.product.giftPrograms
-        .filter((program) => this.isGiftProgramActive(program, now))
+      .filter((program) => this.isGiftProgramActive(program, now))
+      .filter((program) => program.autoAddToCart !== false)
         .forEach((program) => {
           const minQuantity = Math.max(1, Number(program.minQuantity || 1));
           const giftQuantity = Math.max(1, Number(program.giftQuantity || 1));
@@ -744,7 +766,21 @@ export class Database {
       const productId = Number(itemProduct.id || item.id || 0);
       const product = this.products.find((p) => p.id === productId);
       if (!product) return normalizedItems;
-      const pricedProduct = this.normalizeOrderProductPrice(product, canUseMemberPricing);
+      const variantId = item.variantId || itemProduct.selectedVariantId;
+      const variant = product.variants?.find((entry) => entry.id === variantId && entry.isActive !== false);
+      const baseProduct = variant
+        ? {
+            ...product,
+            name: `${product.name} - ${variant.name}`,
+            price: variant.price || product.price,
+            originalPrice: variant.originalPrice || product.originalPrice,
+            image: variant.imageUrl || product.image,
+            stockQuantity: variant.stockQuantity ?? product.stockQuantity,
+            selectedVariantId: variant.id,
+            selectedVariantName: variant.name,
+          }
+        : product;
+      const pricedProduct = this.normalizeOrderProductPrice(baseProduct, canUseMemberPricing);
 
       const quantity = Math.max(1, Number(item.quantity || 1));
       normalizedItems.push({
@@ -753,6 +789,8 @@ export class Database {
           images: product.images || this.buildProductImageLibrary(product),
         },
         quantity,
+        variantId: variant?.id,
+        variantName: variant?.name,
       });
       return normalizedItems;
     }, []);

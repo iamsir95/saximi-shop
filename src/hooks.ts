@@ -138,10 +138,16 @@ export function useAddToCart(product: Product) {
     () => getPurchasableProduct(product, canUseMemberPricing),
     [canUseMemberPricing, product]
   );
+  const productCartKey = `${product.id}:${product.selectedVariantId || ""}`;
 
   const currentCartItem = useMemo(
-    () => cart.find((item) => item.product.id === product.id),
-    [cart, product.id]
+    () =>
+      cart.find(
+        (item) =>
+          `${item.product.id}:${item.product.selectedVariantId || ""}` ===
+          productCartKey
+      ),
+    [cart, productCartKey]
   );
 
   const addToCart = (
@@ -149,7 +155,11 @@ export function useAddToCart(product: Product) {
     options?: { toast: boolean }
   ) => {
     setCart((cart) => {
-      const itemIndex = cart.findIndex((item) => item.product.id === product.id);
+      const itemIndex = cart.findIndex(
+        (item) =>
+          `${item.product.id}:${item.product.selectedVariantId || ""}` ===
+          productCartKey
+      );
       const itemInCart = itemIndex > -1 ? cart[itemIndex] : undefined;
       const newQuantity =
         typeof quantity === "function"
@@ -359,6 +369,8 @@ export function useCheckout() {
             originalPrice: item.product.originalPrice,
             image: item.product.image,
             categoryId: item.product.category?.id,
+            variantId: item.product.selectedVariantId,
+            variantName: item.product.selectedVariantName,
             quantity: item.quantity,
           })),
           delivery,

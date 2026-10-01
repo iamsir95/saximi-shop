@@ -53,6 +53,7 @@ export function getEligibleGiftItems(
     const quantity = Math.max(1, Number(item.quantity || 1));
     item.product.giftPrograms
       .filter((program) => isGiftProgramActive(program, now))
+      .filter((program) => program.autoAddToCart !== false)
       .forEach((program) => {
         const minQuantity = Math.max(1, Number(program.minQuantity || 1));
         const giftQuantity = Math.max(1, Number(program.giftQuantity || 1));

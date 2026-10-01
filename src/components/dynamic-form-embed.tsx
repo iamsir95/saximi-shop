@@ -13,6 +13,7 @@ export default function DynamicFormEmbed({
 }) {
   const [values, setValues] = useState<Record<string, string | boolean>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [sentMessage, setSentMessage] = useState("");
 
   const updateValue = (id: string, value: string | boolean) => {
     setValues((current) => ({ ...current, [id]: value }));
@@ -45,7 +46,11 @@ export default function DynamicFormEmbed({
         throw new Error(error.message || "Chưa gửi được form.");
       }
       setValues({});
-      toast.success("Đã gửi thông tin đến quản trị viên");
+      const message =
+        form.successMessage ||
+        "Đã gửi thông tin đến quản trị viên. Chúng tôi sẽ liên hệ lại sớm.";
+      setSentMessage(message);
+      toast.success(message);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -65,6 +70,11 @@ export default function DynamicFormEmbed({
         </div>
       </div>
       <div className="dynamic-form-embed__fields">
+        {sentMessage && (
+          <div className="dynamic-form-embed__success" role="status">
+            {sentMessage}
+          </div>
+        )}
         {form.fields.map((field) => {
           const commonProps = {
             id: `dynamic-form-${form.id}-${field.id}`,

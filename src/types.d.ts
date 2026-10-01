@@ -75,6 +75,7 @@ export interface DynamicForm {
   title: string;
   description?: string;
   submitLabel: string;
+  successMessage?: string;
   placements: DynamicFormPlacement[];
   fields: DynamicFormField[];
   isActive: boolean;

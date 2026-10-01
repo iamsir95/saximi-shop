@@ -33,6 +33,7 @@ function defaultForm(): Partial<DynamicForm> {
     title: 'Form tư vấn',
     description: 'Để lại thông tin, Saximi Shop sẽ liên hệ hỗ trợ.',
     submitLabel: 'Gửi thông tin',
+    successMessage: 'Đã nhận yêu cầu. Saximi Shop sẽ liên hệ lại trong thời gian sớm nhất.',
     placements: ['news'],
     fields: [
       { ...emptyField(), label: 'Họ và tên', required: true, sortOrder: 1 },
@@ -51,6 +52,7 @@ export const FormsPage: React.FC = () => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'forms' | 'submissions'>('forms');
+  const newRequests = submissions.filter((item) => item.status === 'new').length;
 
   const sortedFields = useMemo(
     () => [...(editing?.fields || [])].sort((a, b) => a.sortOrder - b.sortOrder),
@@ -130,7 +132,7 @@ export const FormsPage: React.FC = () => {
             Form động kéo thả
           </h3>
           <p className="text-xs text-slate-400">
-            Tạo form để kéo thả trực tiếp vào nội dung bài viết/bản tin.
+            Tạo form tùy biến, kéo thả vào bài viết và nhận yêu cầu khách hàng tại đây.
           </p>
         </div>
         <div className="flex gap-2">
@@ -144,7 +146,7 @@ export const FormsPage: React.FC = () => {
             onClick={() => setTab('submissions')}
             className={`rounded-xl px-4 py-2 text-sm font-bold ${tab === 'submissions' ? 'bg-blue-600 text-white' : 'bg-slate-900 text-slate-300'}`}
           >
-            Phản hồi
+            Yêu cầu khách {newRequests > 0 ? `(${newRequests})` : ''}
           </button>
           <button
             onClick={() => setEditing(defaultForm())}
@@ -258,6 +260,10 @@ export const FormsPage: React.FC = () => {
                 <span className="mb-1.5 block text-xs font-bold text-slate-400">Mô tả</span>
                 <textarea value={editing.description || ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} className="min-h-20 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white" />
               </label>
+              <label className="block md:col-span-2">
+                <span className="mb-1.5 block text-xs font-bold text-slate-400">Thông báo sau khi khách gửi</span>
+                <input value={editing.successMessage || ''} onChange={(e) => setEditing({ ...editing, successMessage: e.target.value })} className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm text-white" placeholder="Ví dụ: Đã nhận yêu cầu, chúng tôi sẽ liên hệ lại." />
+              </label>
             </div>
 
             <div className="mt-5">
@@ -290,13 +296,14 @@ export const FormsPage: React.FC = () => {
                       if (dragIndex !== null && dragIndex !== index) reorderFields(dragIndex, index);
                       setDragIndex(null);
                     }}
-                    className="grid gap-2 rounded-2xl border border-slate-700 bg-slate-800 p-3 md:grid-cols-[auto_1fr_150px_1fr_auto_auto]"
+                    className="grid gap-2 rounded-2xl border border-slate-700 bg-slate-800 p-3 md:grid-cols-[auto_1fr_150px_1fr_1fr_auto_auto]"
                   >
                     <GripVertical className="mt-2 h-5 w-5 cursor-grab text-slate-500" />
                     <input value={field.label} onChange={(e) => updateField(field.id, { label: e.target.value })} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" placeholder="Tên trường" />
                     <select value={field.type} onChange={(e) => updateField(field.id, { type: e.target.value as DynamicFormFieldType })} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white">
                       {FIELD_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                     </select>
+                    <input value={field.placeholder || ''} onChange={(e) => updateField(field.id, { placeholder: e.target.value })} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" placeholder="Gợi ý nhập liệu" />
                     <input value={field.options?.join(', ') || ''} onChange={(e) => updateField(field.id, { options: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white" placeholder="Lựa chọn, cách nhau dấu phẩy" />
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-300">
                       <input type="checkbox" checked={Boolean(field.required)} onChange={(e) => updateField(field.id, { required: e.target.checked })} className="accent-blue-500" />

@@ -409,6 +409,7 @@ export interface DynamicForm {
   title: string;
   description?: string;
   submitLabel: string;
+  successMessage?: string;
   placements: DynamicFormPlacement[];
   fields: DynamicFormField[];
   isActive: boolean;
@@ -902,6 +903,7 @@ export class Database {
       title: String(data.title || existing?.title || 'Form liên hệ').trim(),
       description: String(data.description ?? existing?.description ?? '').trim(),
       submitLabel: String(data.submitLabel || existing?.submitLabel || 'Gửi thông tin').trim(),
+      successMessage: String(data.successMessage || existing?.successMessage || 'Đã gửi yêu cầu. Quản trị viên sẽ liên hệ lại trong thời gian sớm nhất.').trim(),
       placements: Array.isArray(data.placements)
         ? data.placements
         : existing?.placements || ['home'],

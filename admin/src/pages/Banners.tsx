@@ -1,15 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, X, Image as ImageIcon } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Edit2,
+  ExternalLink,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { api } from '../api';
 import { BannerItem } from '../types';
+import { ImageField } from '../components/ImageField';
 
 export const BannersPage: React.FC = () => {
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploads, setUploads] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
 
   const [imageUrl, setImageUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isActive, setIsActive] = useState(true);
+
+  const onUploadingChange = (busy: boolean) => setUploads((count) => Math.max(0, count + (busy ? 1 : -1)));
+  const inputClass = 'w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400';
 
   const loadBanners = async () => {
     try {
@@ -18,6 +37,7 @@ export const BannersPage: React.FC = () => {
       setBanners(data);
     } catch (err) {
       console.error(err);
+      alert('Không tải được banner');
     } finally {
       setLoading(false);
     }
@@ -27,94 +47,202 @@ export const BannersPage: React.FC = () => {
     loadBanners();
   }, []);
 
+  const openCreateModal = () => {
+    setEditingBanner(null);
+    setImageUrl('');
+    setTitle('');
+    setLinkUrl('');
+    setIsActive(true);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (banner: BannerItem) => {
+    setEditingBanner(banner);
+    setImageUrl(banner.imageUrl);
+    setTitle(banner.title || '');
+    setLinkUrl(banner.linkUrl || '');
+    setIsActive(banner.isActive !== false);
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageUrl) return;
+    if (uploads) {
+      alert('Vui lòng đợi ảnh banner tải lên hoàn tất.');
+      return;
+    }
+    if (!imageUrl.trim()) return;
+
+    setSaving(true);
+    const payload = {
+      imageUrl: imageUrl.trim(),
+      title: title.trim() || 'Banner khuyến mãi',
+      linkUrl: linkUrl.trim() || undefined,
+      isActive,
+    };
+
     try {
-      await api.createBanner({ imageUrl, title: title || 'Banner Khuyến Mãi', isActive: true });
+      if (editingBanner) {
+        await api.updateBanner(editingBanner.id, payload);
+      } else {
+        await api.createBanner(payload);
+      }
       setIsModalOpen(false);
-      setImageUrl('');
-      setTitle('');
       loadBanners();
     } catch (err: any) {
-      alert(err.message || 'Lỗi khi tạo banner');
+      alert(err.message || 'Không lưu được banner');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa banner này?')) {
-      try {
-        await api.deleteBanner(id);
-        loadBanners();
-      } catch (err: any) {
-        alert(err.message || 'Xóa thất bại');
-      }
+    if (!window.confirm('Bạn có chắc chắn muốn xóa banner này?')) return;
+    try {
+      await api.deleteBanner(id);
+      loadBanners();
+    } catch (err: any) {
+      alert(err.message || 'Xóa thất bại');
+    }
+  };
+
+  const moveBanner = async (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= banners.length) return;
+    const next = [...banners];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    setBanners(next);
+    try {
+      await api.reorderBanners(next.map((banner) => banner.id));
+    } catch (err: any) {
+      alert(err.message || 'Không sắp xếp được banner');
+      loadBanners();
+    }
+  };
+
+  const toggleBanner = async (banner: BannerItem) => {
+    try {
+      await api.updateBanner(banner.id, { ...banner, isActive: banner.isActive === false });
+      loadBanners();
+    } catch (err: any) {
+      alert(err.message || 'Không cập nhật được trạng thái banner');
     }
   };
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl">
+      <div className="flex flex-col gap-4 bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-blue-400" />
-            Quản Lý Banner Khuyến Mãi
+            <ImageIcon className="w-5 h-5 text-cyan-300" />
+            Quản lý banner trang chủ
           </h3>
-          <p className="text-xs text-slate-400">Danh sách ảnh banner hiển thị trên Slider Trang chủ Zalo Mini App</p>
+          <p className="text-xs text-slate-400">Thêm ảnh, chỉnh đường dẫn, bật/tắt và sắp xếp thứ tự hiển thị trên slider.</p>
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all"
+          onClick={openCreateModal}
+          className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 transition-all"
         >
           <Plus className="w-5 h-5" />
-          <span>Thêm Banner Mới</span>
+          <span>Thêm banner</span>
         </button>
       </div>
 
-      {/* Grid List */}
       {loading ? (
         <div className="py-12 text-center text-slate-400">Đang tải banner...</div>
+      ) : banners.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 py-16 text-center text-slate-400">
+          <ImageIcon className="mx-auto mb-3 h-10 w-10 text-slate-600" />
+          Chưa có banner. Hãy thêm banner đầu tiên cho trang chủ.
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {banners.map((b) => (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {banners.map((banner, index) => (
             <div
-              key={b.id}
-              className="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl hover:border-slate-600 transition-all flex flex-col justify-between"
+              key={banner.id}
+              className="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-xl hover:border-slate-600 transition-all"
             >
-              <div className="h-44 overflow-hidden bg-slate-900 relative">
-                <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" />
-                <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-400 border border-slate-700">
-                  Đang hiển thị
+              <div className="relative h-44 overflow-hidden bg-slate-900">
+                <img src={banner.imageUrl} alt={banner.title || `Banner #${banner.id}`} className="w-full h-full object-cover" />
+                <div className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">
+                  Thứ tự {index + 1}
+                </div>
+                <div className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold backdrop-blur ${
+                  banner.isActive !== false ? 'bg-emerald-500/85 text-white' : 'bg-slate-950/70 text-slate-300'
+                }`}>
+                  {banner.isActive !== false ? 'Đang hiển thị' : 'Đang tắt'}
                 </div>
               </div>
 
-              <div className="p-4 flex items-center justify-between">
+              <div className="space-y-4 p-4">
                 <div>
-                  <h4 className="font-bold text-white text-sm">{b.title || `Banner #${b.id}`}</h4>
-                  <p className="text-xs text-slate-400 truncate max-w-[200px]">{b.imageUrl}</p>
+                  <h4 className="text-sm font-bold text-white">{banner.title || `Banner #${banner.id}`}</h4>
+                  <p className="mt-1 truncate text-xs text-slate-400">{banner.imageUrl}</p>
+                  {banner.linkUrl && (
+                    <a href={banner.linkUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full items-center gap-1 text-xs font-semibold text-cyan-300">
+                      <LinkIcon className="h-3.5 w-3.5 flex-none" />
+                      <span className="truncate">{banner.linkUrl}</span>
+                      <ExternalLink className="h-3.5 w-3.5 flex-none" />
+                    </a>
+                  )}
                 </div>
 
-                <button
-                  onClick={() => handleDelete(b.id)}
-                  className="p-2 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg text-xs font-medium transition-colors"
-                  title="Xóa banner"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="grid grid-cols-5 gap-2 border-t border-slate-700/70 pt-3">
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => moveBanner(index, -1)}
+                    className="rounded-lg bg-slate-900 p-2 text-slate-300 hover:text-white disabled:opacity-35"
+                    title="Đưa lên"
+                  >
+                    <ArrowUp className="mx-auto h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === banners.length - 1}
+                    onClick={() => moveBanner(index, 1)}
+                    className="rounded-lg bg-slate-900 p-2 text-slate-300 hover:text-white disabled:opacity-35"
+                    title="Đưa xuống"
+                  >
+                    <ArrowDown className="mx-auto h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(banner)}
+                    className="rounded-lg bg-cyan-500/10 p-2 text-cyan-300 hover:bg-cyan-500/20"
+                    title="Sửa banner"
+                  >
+                    <Edit2 className="mx-auto h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleBanner(banner)}
+                    className="rounded-lg bg-amber-500/10 px-2 text-[11px] font-bold text-amber-300 hover:bg-amber-500/20"
+                    title="Bật/tắt nhanh"
+                  >
+                    Bật/Tắt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(banner.id)}
+                    className="rounded-lg bg-rose-500/10 p-2 text-rose-300 hover:bg-rose-500/20"
+                    title="Xóa banner"
+                  >
+                    <Trash2 className="mx-auto h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-6">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-6 shadow-2xl space-y-6">
             <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-              <h3 className="text-xl font-bold text-white">Thêm Banner Khuyến Mãi Mới</h3>
+              <h3 className="text-xl font-bold text-white">{editingBanner ? 'Chỉnh sửa banner' : 'Thêm banner mới'}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white p-1">
                 <X className="w-6 h-6" />
               </button>
@@ -122,27 +250,36 @@ export const BannersPage: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Tiêu đề Banner</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Tiêu đề banner</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="Ví dụ: Siêu Sale Mùa Hè 50%"
+                  className={inputClass}
+                  placeholder="Ví dụ: Siêu sale cuối tuần"
                 />
               </div>
 
+              <ImageField label="Ảnh banner" value={imageUrl} onChange={setImageUrl} onBusyChange={onUploadingChange} />
+
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">URL Hình ảnh Banner *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Đường dẫn khi bấm banner</label>
                 <input
-                  type="url"
-                  required
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="https://..."
+                  type="text"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  className={inputClass}
+                  placeholder="https://... hoặc /product/5, /news"
                 />
               </div>
+
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <span>
+                  <span className="block text-sm font-bold text-white">Hiển thị banner</span>
+                  <span className="mt-1 block text-xs text-slate-400">Tắt khi muốn giữ banner trong admin nhưng chưa hiển thị trên website.</span>
+                </span>
+                <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-5 w-5 accent-cyan-400" />
+              </label>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                 <button
@@ -154,9 +291,10 @@ export const BannersPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/30"
+                  disabled={saving || uploads > 0}
+                  className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl font-bold text-sm shadow-lg shadow-cyan-600/20 disabled:opacity-60"
                 >
-                  Lưu Banner
+                  {uploads > 0 ? 'Đang tải ảnh...' : saving ? 'Đang lưu...' : 'Lưu banner'}
                 </button>
               </div>
             </form>

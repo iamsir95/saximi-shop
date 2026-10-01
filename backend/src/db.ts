@@ -1800,8 +1800,8 @@ export class Database {
   }
 
   // Banners, Categories, Products, Stations, Coupons...
-  public static getBanners(): string[] {
-    return this.banners.map((b) => (typeof b === 'string' ? b : b.imageUrl));
+  public static getBanners(): BannerItem[] {
+    return this.getBannerItems().filter((banner) => banner.isActive !== false);
   }
   public static getBannerItems(): BannerItem[] {
     return this.banners.map((b, idx) => {
@@ -1820,6 +1820,34 @@ export class Database {
     this.ensureMediaLibrary();
     this.logAction('admin', 'SUPER_ADMIN', 'ADD_BANNER', `Thêm banner mới: ${newBanner.title}`);
     return newBanner;
+  }
+  public static updateBanner(id: number, data: Partial<BannerItem>): BannerItem | null {
+    const bannerItems = this.getBannerItems();
+    const idx = bannerItems.findIndex((banner) => banner.id === id);
+    if (idx < 0) return null;
+    const updatedBanner: BannerItem = {
+      ...bannerItems[idx],
+      title: data.title?.trim() || bannerItems[idx].title,
+      imageUrl: data.imageUrl?.trim() || bannerItems[idx].imageUrl,
+      linkUrl: data.linkUrl?.trim() || undefined,
+      isActive: data.isActive ?? bannerItems[idx].isActive,
+    };
+    bannerItems[idx] = updatedBanner;
+    this.banners = bannerItems;
+    saveDataFile('banners.json', this.banners);
+    this.ensureMediaLibrary();
+    this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_BANNER', `Cập nhật banner #${id}: ${updatedBanner.title}`);
+    return updatedBanner;
+  }
+  public static reorderBanners(ids: number[]): BannerItem[] {
+    const bannerItems = this.getBannerItems();
+    const byId = new Map(bannerItems.map((banner) => [banner.id, banner]));
+    const ordered = ids.flatMap((id) => byId.get(id) || []);
+    const remaining = bannerItems.filter((banner) => !ids.includes(banner.id));
+    this.banners = [...ordered, ...remaining];
+    saveDataFile('banners.json', this.banners);
+    this.logAction('admin', 'SUPER_ADMIN', 'REORDER_BANNERS', 'Sắp xếp lại banner trang chủ');
+    return this.getBannerItems();
   }
   public static deleteBanner(id: number): boolean {
     const bannerItems = this.getBannerItems();

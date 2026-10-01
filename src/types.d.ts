@@ -153,6 +153,14 @@ export interface ProductPromotionLabel {
   color: string;
 }
 
+export interface BannerItem {
+  id: number;
+  imageUrl: string;
+  title?: string;
+  linkUrl?: string;
+  isActive: boolean;
+}
+
 export interface Product {
   id: number;
   name: string;

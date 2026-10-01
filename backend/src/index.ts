@@ -899,6 +899,22 @@ app.post('/api/admin/banners', authenticateAdmin, (req: Request, res: Response) 
   res.status(201).json(newBanner);
 });
 
+app.patch('/api/admin/banners/reorder', authenticateAdmin, (req: Request, res: Response) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids.map((id: unknown) => Number(id)).filter(Number.isFinite) : [];
+  const banners = Database.reorderBanners(ids);
+  CacheService.invalidate('banners');
+  res.json(banners);
+});
+
+app.put('/api/admin/banners/:id', authenticateAdmin, (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const updated = Database.updateBanner(id, req.body);
+  if (!updated) return res.status(404).json({ message: 'Banner not found' });
+  CacheService.invalidate('banners');
+  CacheService.invalidate('media-library');
+  res.json(updated);
+});
+
 app.delete('/api/admin/banners/:id', authenticateAdmin, (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   Database.deleteBanner(id);

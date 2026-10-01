@@ -69,6 +69,10 @@ export const api = {
   getBanners: () => request('/banners'),
   createBanner: (data: any) =>
     request('/banners', { method: 'POST', body: JSON.stringify(data) }),
+  updateBanner: (id: number, data: any) =>
+    request(`/banners/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  reorderBanners: (ids: number[]) =>
+    request('/banners/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
   deleteBanner: (id: number) => request(`/banners/${id}`, { method: 'DELETE' }),
   getMediaLibrary: (params: { q?: string; purpose?: string; sourceType?: string; activeOnly?: boolean } = {}) => {
     const search = new URLSearchParams();

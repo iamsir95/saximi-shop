@@ -20,6 +20,7 @@ import {
   OrderStatus,
   PlatformSettings,
   Product,
+  BannerItem,
   ShippingAddress,
   Station,
   UserInfo,
@@ -206,7 +207,7 @@ export const phoneState = atom(async () => {
 });
 
 export const bannersState = atom(() =>
-  requestWithFallback<string[]>("/banners", [])
+  requestWithFallback<Array<string | BannerItem>>("/banners", [])
 );
 
 export const tabsState = atom(["Tất cả", "Nam", "Nữ", "Trẻ em"]);

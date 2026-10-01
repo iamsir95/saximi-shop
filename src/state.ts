@@ -32,12 +32,21 @@ import {
   getSetting,
   getUserInfo,
 } from "zmp-sdk/apis";
-import toast from "react-hot-toast";
 import { calculateDistance } from "./utils/location";
 import { formatDistant } from "./utils/format";
 import CONFIG from "./config";
 import { isZaloMiniAppRuntime } from "./utils/platform";
 import { getApiBaseUrl } from "./utils/request";
+
+const guestUserInfo: UserInfo = {
+  id: "web-customer",
+  name: "Khách hàng Website",
+  avatar:
+    "https://ui-avatars.com/api/?name=Saximi%20shop&background=1570ef&color=fff",
+  phone: "",
+  email: "",
+  address: "",
+};
 
 function getAffiliateReferrerFromUrl() {
   if (typeof window === "undefined") return undefined;
@@ -84,6 +93,25 @@ async function loginWithZaloUser(userInfo: UserInfo) {
   return result.user;
 }
 
+async function decodeZaloPhoneToken(token: string) {
+  if (!token) return "";
+
+  const response = await fetch(`${getApiBaseUrl()}/user/decode-phone`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Zalo phone decode failed: ${response.status}`);
+  }
+
+  const result = (await response.json()) as { phone?: string };
+  return String(result.phone || "").replace(/\D/g, "").replace(/^84(?=\d{8,10}$)/, "0");
+}
+
 export const userInfoKeyState = atom(0);
 
 export const userInfoState = atom<Promise<UserInfo>>(async (get) => {
@@ -98,34 +126,26 @@ export const userInfoState = atom<Promise<UserInfo>>(async (get) => {
   }
 
   if (!isZaloMiniAppRuntime()) {
-    return {
-      id: "web-customer",
-      name: "Khách hàng Website",
-      avatar:
-        "https://ui-avatars.com/api/?name=Saximi%20shop&background=1570ef&color=fff",
-      phone: "",
-      email: "",
-      address: "",
-    };
+    return guestUserInfo;
   }
 
   try {
-    const {
-      authSetting: {
-        "scope.userInfo": initialGrantedUserInfo,
-        "scope.userPhonenumber": initialGrantedPhoneNumber,
-      },
-    } = await getSetting({});
+    const setting = await getSetting({});
+    const authSetting = setting.authSetting || {};
     const isDev = !window.ZJSBridge;
-    let grantedUserInfo = initialGrantedUserInfo;
-    let grantedPhoneNumber = initialGrantedPhoneNumber;
+    let grantedUserInfo = Boolean(authSetting["scope.userInfo"]);
+    let grantedPhoneNumber = Boolean(authSetting["scope.userPhonenumber"]);
 
     if (!isDev && (!grantedUserInfo || !grantedPhoneNumber)) {
-      await authorize({
-        scopes: ["scope.userInfo", "scope.userPhonenumber"],
-      });
-      grantedUserInfo = true;
-      grantedPhoneNumber = true;
+      try {
+        await authorize({
+          scopes: ["scope.userInfo", "scope.userPhonenumber"],
+        });
+        grantedUserInfo = true;
+        grantedPhoneNumber = true;
+      } catch (error) {
+        console.warn("Zalo authorization was skipped or denied", error);
+      }
     }
 
     if (grantedUserInfo || isDev) {
@@ -148,6 +168,12 @@ export const userInfoState = atom<Promise<UserInfo>>(async (get) => {
   } catch (error) {
     console.warn(error);
   }
+
+  return {
+    ...guestUserInfo,
+    id: "zalo-guest",
+    name: "Khách hàng Zalo",
+  };
 });
 
 export const loadableUserInfoState = loadable(userInfoState);
@@ -172,20 +198,7 @@ export const phoneState = atom(async () => {
 
   try {
     const { token } = await getPhoneNumber({});
-    // Phía tích hợp làm theo hướng dẫn tại https://mini.zalo.me/documents/api/getPhoneNumber/ để chuyển đổi token thành số điện thoại người dùng ở server.
-    // phone = await decodeToken(token);
-
-    // Các bước bên dưới để demo chức năng, phía tích hợp có thể bỏ đi sau.
-    toast(
-      "Đã lấy được token chứa số điện thoại người dùng. Phía tích hợp cần decode token này ở server. Giả lập số điện thoại 0912345678...",
-      {
-        icon: "ℹ",
-        duration: 10000,
-      }
-    );
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    phone = "0912345678";
-    // End demo
+    phone = await decodeZaloPhoneToken(token);
   } catch (error) {
     console.warn(error);
   }
@@ -316,24 +329,7 @@ export const stationsState = atom(async (get) => {
 
   if (isZaloMiniAppRuntime()) {
     try {
-      const { token } = await getLocation({});
-      // Phía tích hợp làm theo hướng dẫn tại https://mini.zalo.me/documents/api/getLocation/ để chuyển đổi token thành thông tin vị trí người dùng ở server.
-      // location = await decodeToken(token);
-
-      // Các bước bên dưới để demo chức năng, phía tích hợp có thể bỏ đi sau.
-      toast(
-        "Đã lấy được token chứa thông tin vị trí người dùng. Phía tích hợp cần decode token này ở server. Giả lập vị trí tại VNG Campus...",
-        {
-          icon: "ℹ",
-          duration: 10000,
-        }
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      location = {
-        lat: 10.773756,
-        lng: 106.689247,
-      };
-      // End demo
+      await getLocation({});
     } catch (error) {
       console.warn(error);
     }

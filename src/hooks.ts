@@ -21,7 +21,7 @@ import {
 import { FrontendNotification, Product } from "@/types";
 import { getConfig } from "@/utils/template";
 import { getApiBaseUrl } from "@/utils/request";
-import { authorize, createOrder, openChat } from "zmp-sdk/apis";
+import { authorize, openChat } from "zmp-sdk/apis";
 import { loadable, useAtomCallback } from "jotai/utils";
 import { isZaloMiniAppRuntime } from "@/utils/platform";
 import { findAffiliateForUser } from "@/utils/affiliate";
@@ -111,7 +111,7 @@ export function useRequestInformation() {
 
   return async () => {
     const userInfo = await getStoredUserInfo();
-    if (!userInfo) {
+    if (!userInfo || (isZaloMiniAppRuntime() && !userInfo.phone)) {
       if (!isZaloMiniAppRuntime()) {
         refreshPermissions();
         return await getStoredUserInfo();
@@ -119,7 +119,11 @@ export function useRequestInformation() {
 
       await authorize({
         scopes: ["scope.userInfo", "scope.userPhonenumber"],
-      }).then(refreshPermissions);
+      })
+        .then(refreshPermissions)
+        .catch((error) => {
+          console.warn("Zalo permission request was denied", error);
+        });
       return await getStoredUserInfo();
     }
     return userInfo;
@@ -392,50 +396,13 @@ export function useCheckout() {
       });
     } catch (error) {
       console.warn("Checkout error:", error);
-      if (!isZaloMiniAppRuntime()) {
-        notify({
-          title: "Chưa tạo được đơn",
-          message: "Chưa kết nối được backend để tạo đơn hàng website.",
-          kind: "error",
-          topic: "order",
-        });
-        return;
-      }
-
-      // Fallback: nếu backend không chạy, vẫn dùng ZMP createOrder
-      try {
-        await createOrder({
-          amount: totalAmount,
-          desc: "Thanh toán đơn hàng Saximi shop",
-          item: cart.map((item) => ({
-            id: item.product.id,
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-          })),
-        });
-        setCart([]);
-        refreshNewOrders();
-        navigate("/orders", { viewTransition: true });
-        notify(
-          {
-            title: "Thanh toán thành công",
-            message: "Cảm ơn bạn đã mua hàng tại Saximi shop.",
-            kind: "success",
-            topic: "payment",
-            actionPath: "/orders",
-          },
-          { browser: true }
-        );
-      } catch (fallbackError) {
-        console.warn(fallbackError);
-        notify({
-          title: "Thanh toán thất bại",
-          message: "Vui lòng thử lại sau hoặc chọn phương thức thanh toán khác.",
-          kind: "error",
-          topic: "payment",
-        });
-      }
+      notify({
+        title: "Chưa tạo được đơn",
+        message:
+          "Hệ thống chưa ghi nhận được đơn hàng. Vui lòng kiểm tra kết nối và thử lại, giỏ hàng vẫn được giữ nguyên.",
+        kind: "error",
+        topic: "order",
+      });
     }
   };
 }

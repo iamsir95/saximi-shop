@@ -1,7 +1,7 @@
 import HorizontalDivider from "@/components/horizontal-divider";
 import { useAtomValue } from "jotai";
 import { useNavigate, useParams } from "react-router-dom";
-import { productsState, productState } from "@/state";
+import { platformSettingsState, productsState, productState } from "@/state";
 import { formatPrice } from "@/utils/format";
 import ShareButton from "./share-buttont";
 import RelatedProducts from "./related-products";
@@ -23,6 +23,7 @@ import {
   isLowStock,
 } from "@/utils/commerce";
 import { hasHtmlContent, sanitizeRichText } from "@/utils/rich-text";
+import { absoluteSeoUrl, applySeoTags, stripSeoText, truncateSeoText } from "@/utils/seo";
 
 function withImageParams(url: string, params: Record<string, string>) {
   try {
@@ -113,6 +114,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const product = useAtomValue(productState(Number(id)))!;
   const products = useAtomValue(productsState);
+  const settings = useAtomValue(platformSettingsState);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const activeVariants = useMemo(
     () => (product.enableVariants ? product.variants || [] : []).filter((variant) => variant.isActive !== false),
@@ -178,31 +180,50 @@ export default function ProductDetailPage() {
   );
 
   useEffect(() => {
-    const previousTitle = document.title;
-    const seoTitle = product.seo?.title || product.name;
-    const seoDescription =
+    const origin = settings?.publicSiteUrl || "https://hpn.saximi.com.vn";
+    const canonical = new URL(`/product/${product.id}`, origin).href;
+    const seoTitle = truncateSeoText(product.seo?.title || `${product.name} | Saximi Shop`, 65);
+    const seoDescription = truncateSeoText(
       product.seo?.description ||
-      product.promoDescription ||
-      product.detail ||
-      "Saximi shop";
-    document.title = seoTitle;
-
-    let metaDescription = document.querySelector<HTMLMetaElement>(
-      'meta[name="description"]'
+        product.promoDescription ||
+        stripSeoText(product.detail) ||
+        `${product.name} đang được bán tại Saximi Shop với giao nhận linh hoạt và hỗ trợ khách hàng nhanh.`,
+      158
     );
-    if (!metaDescription) {
-      metaDescription = document.createElement("meta");
-      metaDescription.name = "description";
-      document.head.appendChild(metaDescription);
-    }
-    const previousDescription = metaDescription.content;
-    metaDescription.content = seoDescription.slice(0, 170);
-
+    const image = absoluteSeoUrl(selectedImage?.url || product.image, origin);
+    const cleanup = applySeoTags({
+      title: seoTitle,
+      description: seoDescription,
+      canonical,
+      type: "product",
+      image,
+      structuredData: {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.name,
+        description: seoDescription,
+        image: gallery.map((item) => absoluteSeoUrl(item.url, origin)),
+        sku: `SAXIMI-${product.id}`,
+        brand: { "@type": "Brand", name: "Saximi Shop" },
+        offers: {
+          "@type": "Offer",
+          url: canonical,
+          priceCurrency: "VND",
+          price: displayPrice,
+          availability:
+            Number(productForCart.stockQuantity ?? 1) > 0
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+          itemCondition: "https://schema.org/NewCondition",
+          seller: { "@type": "Organization", name: "Saximi Shop" },
+        },
+      },
+    });
     return () => {
-      document.title = previousTitle;
-      if (metaDescription) metaDescription.content = previousDescription;
+      cleanup();
+      document.title = "Saximi Shop";
     };
-  }, [product]);
+  }, [displayPrice, gallery, product, productForCart.stockQuantity, selectedImage?.url, settings?.publicSiteUrl]);
 
   useEffect(() => {
     if (!selectedVariantId && activeVariants[0]) {

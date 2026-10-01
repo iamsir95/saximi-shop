@@ -90,7 +90,7 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-mountPostRoutes(app, authenticateAdmin, () => Database.getSettings().publicSiteUrl, undefined, () => Database.getCoupons());
+mountPostRoutes(app, authenticateAdmin, () => Database.getSettings().publicSiteUrl, undefined, () => Database.getCoupons(), () => Database.getProducts());
 mountUploads(app, authenticateAdmin, (url, title) => {
   Database.addMediaAsset({ url, title, sourceType: 'MANUAL', purpose: 'GENERAL', tags: ['upload'], isActive: true });
   CacheService.invalidate('media-library');

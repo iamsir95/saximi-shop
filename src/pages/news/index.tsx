@@ -9,6 +9,7 @@ import "./news.css";
 import { PostVouchers, PostVoucher } from './vouchers';
 import DynamicFormEmbed from "@/components/dynamic-form-embed";
 import { DynamicForm } from "@/types";
+import { absoluteSeoUrl, applySeoTags } from "@/utils/seo";
 
 type Post = {
   vouchers?: PostVoucher[];
@@ -29,30 +30,33 @@ function usePostSeo(post?: Post, feed = false) {
   const settings = useAtomValue(platformSettingsState);
   useEffect(() => {
     if (!post && !feed) return;
-    document.querySelectorAll('[data-post-seo]').forEach(el => el.remove());
     const title = post?.seoTitle || post?.title || "Bản tin | Saximi Shop";
-    document.title = title;
-    const tags: HTMLElement[] = [];
     const origin = settings?.publicSiteUrl || 'https://hpn.saximi.com.vn';
     const filters = new URLSearchParams(window.location.search);
     const category = filters.get('category');
     const url = new URL(post ? `/news/${post.slug}` : `/news${category ? `?category=${encodeURIComponent(category)}` : ''}`, origin).href;
     const description = post?.seoDescription || post?.excerpt || "Thông tin cần biết, sự kiện, khuyến mãi và chính sách từ Saximi Shop.";
-    for (const [key, content] of Object.entries({ description, "og:description": description, "og:title": title, "og:url": url, "og:type": post ? "article" : "website", ...(post?.cover ? { "og:image": new URL(post.cover, origin).href } : {}) })) {
-      const meta = document.createElement("meta");
-      meta.setAttribute(key.startsWith("og:") ? "property" : "name", key);
-      meta.content = content; meta.dataset.postSeo = "true"; document.head.appendChild(meta); tags.push(meta);
-    }
-    const canonical = document.createElement('link'); canonical.rel = 'canonical'; canonical.href = url; canonical.dataset.postSeo = 'true'; document.head.appendChild(canonical); tags.push(canonical);
-    if (!post && (filters.has('saved') || filters.has('q'))) {
-      const robots = document.createElement('meta'); robots.name = 'robots'; robots.content = 'noindex,follow'; robots.dataset.postSeo = 'true'; document.head.appendChild(robots); tags.push(robots);
-    }
-    if (post) {
-      const structured = document.createElement('script'); structured.type = 'application/ld+json'; structured.dataset.postSeo = 'true';
-      structured.textContent = JSON.stringify({ '@context': 'https://schema.org', '@type': post.category === 'policy' ? 'WebPage' : 'Article', headline: post.title, datePublished: post.publishedAt, dateModified: post.updatedAt, author: { '@type': 'Organization', name: post.author }, url });
-      document.head.appendChild(structured); tags.push(structured);
-    }
-    return () => { tags.forEach(el => el.remove()); document.title = "Saximi Shop"; };
+    const cleanup = applySeoTags({
+      title,
+      description,
+      canonical: url,
+      type: post ? "article" : "website",
+      image: absoluteSeoUrl(post?.cover, origin),
+      robots: !post && (filters.has('saved') || filters.has('q')) ? "noindex,follow" : undefined,
+      structuredData: post ? {
+        '@context': 'https://schema.org',
+        '@type': post.category === 'policy' ? 'WebPage' : 'Article',
+        headline: post.title,
+        description,
+        image: absoluteSeoUrl(post.cover, origin),
+        datePublished: post.publishedAt,
+        dateModified: post.updatedAt,
+        author: { '@type': 'Organization', name: post.author },
+        publisher: { '@type': 'Organization', name: 'Saximi Shop' },
+        url,
+      } : undefined,
+    });
+    return () => { cleanup(); document.title = "Saximi Shop"; };
   }, [post, feed, settings?.publicSiteUrl, window.location.search]);
 }
 

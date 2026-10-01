@@ -32,7 +32,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location ~ ^/(news(/|$)|sitemap\.xml$|robots\.txt$) {
+    location ~ ^/(news(/|$)|product/[0-9]+/?$|sitemap\.xml$|robots\.txt$) {
         proxy_pass http://backend:5001;
         proxy_set_header Host $host;
     }

@@ -22,7 +22,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location ~ ^/api/(uploads|posts|banners|categories|media-library|products|stations|coupons|settings|affiliate|auth|web-push|orders|payment|user|zalo)(/|$) {
+    location ~ ^/api/(uploads|posts|forms|banners|categories|media-library|products|stations|coupons|settings|affiliate|auth|web-push|orders|payment|user|zalo)(/|$) {
         rewrite ^/api/(.*)$ /$1 break;
         proxy_pass http://backend:5001;
         proxy_http_version 1.1;

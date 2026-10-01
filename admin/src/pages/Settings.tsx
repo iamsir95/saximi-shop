@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Link2, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
 import { api } from '../api';
 import { PlatformSettings } from '../types';
+import { ImageField } from '../components/ImageField';
 
 const emptySettings: PlatformSettings = {
   shopName: 'Saximi shop',
@@ -52,6 +53,8 @@ export function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
+  const [uploads, setUploads] = useState(0);
+  const onUploadingChange = (busy: boolean) => setUploads((count) => Math.max(0, count + (busy ? 1 : -1)));
 
   const inputClass =
     'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm font-semibold text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-300/10';
@@ -76,6 +79,10 @@ export function SettingsPage() {
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (uploads) {
+      setNotice('Vui lòng đợi ảnh logo/favicon tải lên hoàn tất.');
+      return;
+    }
     setSaving(true);
     setNotice('');
     try {
@@ -121,11 +128,11 @@ export function SettingsPage() {
           </div>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || uploads > 0}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/20 disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
-            {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
+            {uploads > 0 ? 'Đang tải ảnh...' : saving ? 'Đang lưu...' : 'Lưu cài đặt'}
           </button>
         </div>
       </div>
@@ -148,22 +155,25 @@ export function SettingsPage() {
               <Field label="Tên shop" icon={<Store className="h-4 w-4" />}>
                 <input className={inputClass} value={settings.shopName} onChange={(e) => update('shopName', e.target.value)} />
               </Field>
-              <Field label="URL logo shop" icon={<Store className="h-4 w-4" />}>
-                <input
-                  className={inputClass}
+              <div className="md:col-span-2">
+                <ImageField
+                  label="Logo shop"
                   value={settings.logoUrl}
-                  onChange={(e) => update('logoUrl', e.target.value)}
-                  placeholder="https://..."
+                  onChange={(value) => update('logoUrl', value)}
+                  onBusyChange={onUploadingChange}
                 />
-              </Field>
-              <Field label="URL favicon" icon={<ImageIcon className="h-4 w-4" />}>
-                <input
-                  className={inputClass}
+              </div>
+              <div className="md:col-span-2">
+                <ImageField
+                  label="Favicon website"
                   value={settings.faviconUrl}
-                  onChange={(e) => update('faviconUrl', e.target.value)}
-                  placeholder="/favicon.svg hoặc https://..."
+                  onChange={(value) => update('faviconUrl', value)}
+                  onBusyChange={onUploadingChange}
                 />
-              </Field>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  Nên dùng ảnh vuông tối thiểu 256x256. Website sẽ tự đồng bộ favicon sau khi lưu cài đặt.
+                </p>
+              </div>
               <Field label="Màu thương hiệu" icon={<Palette className="h-4 w-4" />}>
                 <div className="flex gap-2">
                   <input

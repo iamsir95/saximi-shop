@@ -30,10 +30,28 @@ export default function Layout() {
       return;
     }
 
+    const normalizedFaviconUrl = (() => {
+      try {
+        return new URL(faviconUrl, window.location.origin).href;
+      } catch {
+        return faviconUrl;
+      }
+    })();
+
     const upsertIconLink = (rel: "icon" | "apple-touch-icon") => {
-      let link = document.querySelector<HTMLLinkElement>(
-        `link[rel="${rel}"][data-dynamic-favicon="true"]`
+      const staticLinks = Array.from(
+        document.querySelectorAll<HTMLLinkElement>(`link[rel="${rel}"]`)
       );
+      staticLinks.forEach((item) => {
+        item.href = normalizedFaviconUrl;
+        item.dataset.dynamicFavicon = "true";
+        if (rel === "icon") {
+          item.sizes = "any";
+          item.type = normalizedFaviconUrl.endsWith(".svg") ? "image/svg+xml" : "image/png";
+        }
+      });
+
+      let link = staticLinks.find((item) => item.dataset.dynamicFavicon === "true");
 
       if (!link) {
         link = document.createElement("link");
@@ -42,11 +60,11 @@ export default function Layout() {
         document.head.appendChild(link);
       }
 
-      link.href = faviconUrl;
+      link.href = normalizedFaviconUrl;
 
       if (rel === "icon") {
         link.sizes = "any";
-        link.type = faviconUrl.endsWith(".svg") ? "image/svg+xml" : "";
+        link.type = normalizedFaviconUrl.endsWith(".svg") ? "image/svg+xml" : "image/png";
       }
     };
 

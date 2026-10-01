@@ -9,10 +9,12 @@ import {
   Search,
   Tags,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import { api } from '../api';
 import { MediaAsset, MediaPurpose, MediaSourceType } from '../types';
+import { ImageUpload } from '../components/ImageUpload';
 
 const PURPOSE_OPTIONS: Array<{ value: MediaPurpose | 'all'; label: string }> = [
   { value: 'all', label: 'Tất cả mục đích' },
@@ -57,6 +59,8 @@ export const MediaLibraryPage: React.FC = () => {
   const [formPurpose, setFormPurpose] = useState<MediaPurpose>('GENERAL');
   const [tags, setTags] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [inputMode, setInputMode] = useState<'upload' | 'url'>('upload');
 
   const loadAssets = async () => {
     try {
@@ -97,6 +101,8 @@ export const MediaLibraryPage: React.FC = () => {
     setFormPurpose('GENERAL');
     setTags('');
     setIsActive(true);
+    setUploading(false);
+    setInputMode('upload');
     setIsModalOpen(true);
   };
 
@@ -108,6 +114,8 @@ export const MediaLibraryPage: React.FC = () => {
     setFormPurpose(asset.purpose);
     setTags(asset.tags.join(', '));
     setIsActive(asset.isActive);
+    setUploading(false);
+    setInputMode('url');
     setIsModalOpen(true);
   };
 
@@ -118,6 +126,10 @@ export const MediaLibraryPage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (uploading) {
+      alert('Vui lòng đợi ảnh tải lên hoàn tất.');
+      return;
+    }
     const payload = {
       title,
       url,
@@ -337,16 +349,66 @@ export const MediaLibraryPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">URL hình ảnh *</label>
-                <input
-                  required
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="https://..."
-                />
+              <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-950/40 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="block text-xs font-semibold text-slate-400">Nguồn hình ảnh *</label>
+                  <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-950 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setInputMode('upload')}
+                      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${
+                        inputMode === 'upload' ? 'bg-cyan-400 text-slate-950' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      Tải lên
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputMode('url')}
+                      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${
+                        inputMode === 'url' ? 'bg-cyan-400 text-slate-950' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Dùng URL
+                    </button>
+                  </div>
+                </div>
+
+                {inputMode === 'upload' ? (
+                  <div className="space-y-2">
+                    <ImageUpload
+                      label={uploading ? 'Đang tải ảnh…' : 'Chọn ảnh từ máy tính'}
+                      onBusyChange={setUploading}
+                      onUploaded={(uploadedUrl) => {
+                        setUrl(uploadedUrl);
+                        if (!title.trim()) setTitle('Ảnh tải lên');
+                        if (!tags.trim()) setTags('upload, media');
+                      }}
+                    />
+                    <p className="text-[11px] text-slate-500">Hỗ trợ JPG, PNG, WebP tối đa 5 MB. Ảnh sẽ được nén tối ưu và lưu vào thư viện.</p>
+                  </div>
+                ) : (
+                  <input
+                    required
+                    type="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="https://..."
+                  />
+                )}
+
+                {url && (
+                  <div className="grid gap-3 rounded-xl border border-slate-800 bg-slate-900/70 p-3 sm:grid-cols-[96px_minmax(0,1fr)]">
+                    <img src={url} alt={title || 'Ảnh xem trước'} className="h-24 w-24 rounded-xl border border-slate-700 object-cover" />
+                    <div className="min-w-0 self-center">
+                      <p className="text-xs font-semibold text-slate-300">Ảnh đã chọn</p>
+                      <p className="mt-1 break-all text-[11px] text-slate-500">{url}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -406,9 +468,10 @@ export const MediaLibraryPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={uploading}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/30"
                 >
-                  Lưu Ảnh
+                  {uploading ? 'Đang tải ảnh…' : 'Lưu Ảnh'}
                 </button>
               </div>
             </form>

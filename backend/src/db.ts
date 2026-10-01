@@ -1663,8 +1663,27 @@ export class Database {
   }
 
   public static addMediaAsset(data: Omit<MediaAsset, 'id' | 'createdAt' | 'updatedAt'>): MediaAsset {
-    const nextId = this.mediaLibrary.length > 0 ? Math.max(...this.mediaLibrary.map((item) => item.id)) + 1 : 1;
     const now = new Date().toISOString();
+    const existingIndex = this.mediaLibrary.findIndex((asset) => asset.url === data.url);
+    if (existingIndex >= 0) {
+      const existing = this.mediaLibrary[existingIndex];
+      const updated: MediaAsset = {
+        ...existing,
+        title: data.title || existing.title,
+        altText: data.altText ?? existing.altText,
+        sourceType: data.sourceType || existing.sourceType,
+        sourceId: data.sourceId ?? existing.sourceId,
+        purpose: data.purpose || existing.purpose,
+        tags: this.normalizeTags(data.tags || existing.tags),
+        isActive: data.isActive ?? existing.isActive,
+        updatedAt: now,
+      };
+      this.mediaLibrary[existingIndex] = updated;
+      saveDataFile('media_library.json', this.mediaLibrary);
+      this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_MEDIA_ASSET', `Cập nhật ảnh thư viện: ${updated.title}`, String(updated.id));
+      return updated;
+    }
+    const nextId = this.mediaLibrary.length > 0 ? Math.max(...this.mediaLibrary.map((item) => item.id)) + 1 : 1;
     const asset: MediaAsset = {
       id: nextId,
       url: data.url,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles, Gift } from 'lucide-react';
 import { api } from '../api';
-import { Category, Product, ProductGiftProgram, ProductPromotionLabel, ProductVariant } from '../types';
+import { Category, MediaAsset, Product, ProductGiftProgram, ProductPromotionLabel, ProductVariant } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 import { ImageField } from '../components/ImageField';
 
@@ -38,6 +38,7 @@ const uniqueJoin = (items: Array<string | undefined>) =>
 export const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploads, setUploads] = useState(0);
   const onUploadingChange = (busy: boolean) => setUploads(n => Math.max(0, n + (busy ? 1 : -1)));
@@ -254,12 +255,14 @@ export const Products: React.FC = () => {
   const loadProductsAndCategories = async () => {
     try {
       setLoading(true);
-      const [prods, cats] = await Promise.all([
+      const [prods, cats, media] = await Promise.all([
         api.getProducts(),
         api.getCategories(),
+        api.getMediaLibrary({ activeOnly: true }).catch(() => []),
       ]);
       setProducts(prods);
       setCategories(cats);
+      setMediaAssets(media);
       if (cats.length > 0) setCategoryId(cats[0].id);
     } catch (err) {
       console.error(err);
@@ -479,6 +482,31 @@ export const Products: React.FC = () => {
       );
     }
   };
+
+  const mediaLibrarySelectClass = 'w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400';
+  const renderMediaLibraryPicker = (onPick: (asset: MediaAsset) => void, placeholder = 'Chọn ảnh từ kho') => (
+    <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/55 p-3">
+      <select
+        aria-label={placeholder}
+        className={mediaLibrarySelectClass}
+        value=""
+        onChange={(e) => {
+          const asset = mediaAssets.find((item) => String(item.id) === e.target.value);
+          if (asset) onPick(asset);
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {mediaAssets.map((asset) => (
+          <option key={asset.id} value={asset.id}>
+            #{asset.id} - {asset.title}
+          </option>
+        ))}
+      </select>
+      <p className="text-[11px] text-slate-500">
+        Ảnh upload trong mục Kho ảnh sẽ xuất hiện tại đây. Có thể chọn nhiều ảnh cho album.
+      </p>
+    </div>
+  );
 
   return (
     <div className="p-8 space-y-6">
@@ -783,8 +811,23 @@ export const Products: React.FC = () => {
                     <ImageIcon className="w-4 h-4 text-blue-400" />
                     Album ảnh sản phẩm
                   </div>
-                  <ImageField label="Ảnh chính" value={image} onChange={setImage} onBusyChange={onUploadingChange} />
-                  <ImageField label="Album ảnh" multiple value={imageUrls} onChange={setImageUrls} onBusyChange={onUploadingChange} />
+                  <ImageField
+                    label="Ảnh chính"
+                    value={image}
+                    onChange={setImage}
+                    onBusyChange={onUploadingChange}
+                    library={renderMediaLibraryPicker((asset) => setImage(asset.url), 'Chọn ảnh chính từ kho')}
+                  />
+                  <ImageField
+                    label="Album ảnh"
+                    multiple
+                    value={imageUrls}
+                    onChange={setImageUrls}
+                    onBusyChange={onUploadingChange}
+                    library={renderMediaLibraryPicker((asset) => {
+                      setImageUrls((current) => [current.trim(), asset.url].filter(Boolean).join('\n'));
+                    }, 'Thêm ảnh album từ kho')}
+                  />
                 </div>
 
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">

@@ -2,6 +2,7 @@ import React from "react";
 import { Sheet, Button } from "zmp-ui";
 import CommerceIcon, { CommerceIconName } from "@/components/commerce-icon";
 import type { PaymentMethod } from "@/types";
+import { isZaloMiniAppRuntime } from "@/utils/platform";
 
 interface PaymentMethodSheetProps {
   visible: boolean;
@@ -57,7 +58,22 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
   totalAmount,
   loading,
 }) => {
-  const [selected, setSelected] = React.useState<PaymentMethod>("ZALOPAY");
+  const isZaloMiniApp = isZaloMiniAppRuntime();
+  const paymentOptions = React.useMemo(
+    () =>
+      PAYMENT_OPTIONS.filter(
+        (option) => option.method !== "ZALOPAY" || isZaloMiniApp
+      ),
+    [isZaloMiniApp]
+  );
+  const defaultPaymentMethod = isZaloMiniApp ? "ZALOPAY" : "VIETQR";
+  const [selected, setSelected] = React.useState<PaymentMethod>(defaultPaymentMethod);
+
+  React.useEffect(() => {
+    if (!paymentOptions.some((option) => option.method === selected)) {
+      setSelected(defaultPaymentMethod);
+    }
+  }, [defaultPaymentMethod, paymentOptions, selected]);
 
   return (
     <Sheet
@@ -83,7 +99,7 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
         </p>
 
         <div className="space-y-3 mb-5">
-          {PAYMENT_OPTIONS.map((opt) => (
+          {paymentOptions.map((opt) => (
             <button
               key={opt.method}
               onClick={() => setSelected(opt.method)}
@@ -154,7 +170,8 @@ export const PaymentMethodSheet: React.FC<PaymentMethodSheetProps> = ({
         </Button>
 
         <p className="commerce-caption text-slate-400 text-center mt-3">
-          Giao dịch được bảo mật qua ZaloPay, VietQR và quy trình xác nhận đơn hàng.
+          Giao dịch được bảo mật qua {isZaloMiniApp ? "ZaloPay, " : ""}VietQR
+          và quy trình xác nhận đơn hàng.
         </p>
       </div>
     </Sheet>

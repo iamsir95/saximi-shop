@@ -5,6 +5,36 @@ import { Category, Product, ProductGiftProgram, ProductPromotionLabel, ProductVa
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 import { ImageField } from '../components/ImageField';
 
+type ProductEditorTab = 'sales' | 'media' | 'variants' | 'seo';
+
+const stripHtml = (value: string) =>
+  value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const slugify = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 140);
+
+const truncateText = (value: string, max: number) => {
+  const clean = value.replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const sliced = clean.slice(0, max - 1);
+  return `${sliced.slice(0, Math.max(0, sliced.lastIndexOf(' '))).trim()}…`;
+};
+
+const uniqueJoin = (items: Array<string | undefined>) =>
+  [...new Set(items.map((item) => item?.trim()).filter(Boolean) as string[])].join(', ');
+
 export const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -17,6 +47,7 @@ export const Products: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productEditorTab, setProductEditorTab] = useState<ProductEditorTab>('sales');
 
   // Form State
   const [name, setName] = useState('');
@@ -243,6 +274,7 @@ export const Products: React.FC = () => {
 
   const openCreateModal = () => {
     setEditingProduct(null);
+    setProductEditorTab('sales');
     setName('');
     setPrice('');
     setOriginalPrice('');
@@ -273,6 +305,7 @@ export const Products: React.FC = () => {
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
+    setProductEditorTab('sales');
     setName(product.name);
     setPrice(product.price.toString());
     setOriginalPrice(product.originalPrice ? product.originalPrice.toString() : '');
@@ -304,6 +337,8 @@ export const Products: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (uploads) { alert('Vui lòng đợi tải ảnh hoàn tất trước khi lưu.'); return; }
+    if (!name.trim()) { setProductEditorTab('sales'); alert('Vui lòng nhập tên sản phẩm.'); return; }
+    if (!price || Number.isNaN(Number(price))) { setProductEditorTab('sales'); alert('Vui lòng nhập giá bán hợp lệ.'); return; }
     const galleryUrls = imageUrls
       .split('\n')
       .map((url) => url.trim())
@@ -399,6 +434,50 @@ export const Products: React.FC = () => {
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
+  const productEditorTabs: Array<{ id: ProductEditorTab; label: string; hint: string }> = [
+    { id: 'sales', label: 'Bán hàng', hint: 'Giá, kho, danh mục' },
+    { id: 'media', label: 'Hình ảnh & ưu đãi', hint: 'Album, nhãn, quà tặng' },
+    { id: 'variants', label: 'Biến thể', hint: 'Size, màu, phiên bản' },
+    { id: 'seo', label: 'Nội dung SEO', hint: 'Meta, mô tả, bài viết' },
+  ];
+
+  const generateProductSeo = () => {
+    const categoryName = categories.find((item) => item.id === categoryId)?.name || 'sản phẩm';
+    const productName = name.trim() || 'Sản phẩm Saximi Shop';
+    const attributes = parseAttributes(attributesText);
+    const attributeSummary = attributes.slice(0, 4).map((item) => `${item.name} ${item.value}`);
+    const cleanDetail = stripHtml(detail);
+    const cleanArticle = stripHtml(seoArticle);
+    const promo = promoDescription.trim();
+    const labelNames = promotionLabels.map((label) => label.name);
+    const priceText = Number(price) > 0 ? formatMoney(Number(price)) : 'giá tốt';
+    const title = truncateText(`${productName} chính hãng tại Saximi Shop`, 60);
+    const descriptionSource =
+      promo ||
+      cleanDetail ||
+      `${productName} thuộc danh mục ${categoryName}, giá ${priceText}, hỗ trợ mua hàng nhanh và chính sách ưu đãi dành cho khách hàng Saximi Shop.`;
+
+    setSeoTitle(title);
+    setSeoSlug(slugify(productName));
+    setSeoDescription(truncateText(`${descriptionSource} Đặt mua dễ dàng, giao nhận linh hoạt và tư vấn nhanh.`, 158));
+    setSeoKeywords(
+      uniqueJoin([
+        productName,
+        categoryName,
+        'Saximi Shop',
+        'mua hàng online',
+        'sản phẩm khuyến mãi',
+        ...labelNames,
+        ...attributeSummary,
+      ])
+    );
+    if (!cleanArticle) {
+      setSeoArticle(
+        `<h2>${productName}</h2><p>${truncateText(descriptionSource, 220)}</p><h3>Điểm nổi bật</h3><ul><li>Thuộc danh mục ${categoryName}.</li><li>Giá bán ${priceText}.</li><li>Phù hợp mua lẻ, mua tặng hoặc đặt theo chương trình ưu đãi.</li></ul><h3>Thông tin sản phẩm</h3><p>${attributeSummary.length ? attributeSummary.join(', ') : 'Thông tin chi tiết được cập nhật theo từng chương trình bán hàng.'}</p>`
+      );
+    }
   };
 
   return (
@@ -559,20 +638,50 @@ export const Products: React.FC = () => {
       {/* Modal Form */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-5xl max-h-[92vh] overflow-y-auto rounded-3xl p-6 shadow-2xl space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-              <h3 className="text-xl font-bold text-white">
-                {editingProduct ? 'Chỉnh Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới'}
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
-              >
-                <X className="w-6 h-6" />
-              </button>
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-7xl max-h-[92vh] overflow-hidden rounded-3xl shadow-2xl">
+            <div className="sticky top-0 z-10 border-b border-slate-800 bg-slate-900/95 px-6 py-4 backdrop-blur-xl">
+              <div className="flex justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Saximi Shop</p>
+                  <h3 className="mt-1 text-xl font-bold text-white">
+                    {editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Quản lý bán hàng, hình ảnh, ưu đãi, biến thể và SEO trong một màn hình.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="h-10 w-10 rounded-xl border border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white"
+                  aria-label="Đóng"
+                >
+                  <X className="mx-auto h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-4 grid gap-2 md:grid-cols-4" role="tablist" aria-label="Nhóm chỉnh sửa sản phẩm">
+                {productEditorTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={productEditorTab === tab.id}
+                    onClick={() => setProductEditorTab(tab.id)}
+                    className={`rounded-2xl border px-4 py-3 text-left transition ${
+                      productEditorTab === tab.id
+                        ? 'border-cyan-400/60 bg-cyan-400/10 text-white shadow-lg shadow-cyan-950/20'
+                        : 'border-slate-800 bg-slate-950/40 text-slate-400 hover:border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-sm font-bold">{tab.label}</span>
+                    <span className="mt-1 block text-[11px] text-slate-500">{tab.hint}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
+            <div className="max-h-[calc(92vh-176px)] overflow-y-auto p-6">
             <form onSubmit={handleSave} className="space-y-4">
+              {productEditorTab === 'sales' && (
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                 <div className="flex items-center gap-2 text-sm font-bold text-white">
                   <Sparkles className="w-4 h-4 text-blue-400" />
@@ -665,7 +774,9 @@ export const Products: React.FC = () => {
                 </select>
               </div>
               </div>
+              )}
 
+              {productEditorTab === 'media' && (
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                   <div className="flex items-center gap-2 text-sm font-bold text-white">
@@ -897,7 +1008,9 @@ export const Products: React.FC = () => {
                   </div>
                 </div>
               </div>
+              )}
 
+              {productEditorTab === 'variants' && (
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -1000,11 +1113,28 @@ export const Products: React.FC = () => {
                   </div>
                 )}
               </div>
+              )}
 
+              {productEditorTab === 'seo' && (
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
-                  <FileText className="w-4 h-4 text-amber-400" />
-                  Editor nội dung chuẩn SEO
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-bold text-white">
+                      <FileText className="w-4 h-4 text-amber-400" />
+                      Editor nội dung chuẩn SEO
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Tự tạo nội dung SEO theo tên sản phẩm, danh mục, thuộc tính và chương trình ưu đãi.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={generateProductSeo}
+                    className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-400"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Tự tạo SEO sản phẩm
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -1067,6 +1197,7 @@ export const Products: React.FC = () => {
                   placeholder="Viết nội dung bán hàng chuẩn SEO, có heading, danh sách, hình ảnh và bảng thông số..."
                 />
               </div>
+              )}
 
               <div className="flex gap-6 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-300">
@@ -1106,6 +1237,7 @@ export const Products: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
           </div>
         </div>
       )}

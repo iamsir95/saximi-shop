@@ -1,11 +1,18 @@
 import { getConfig } from "./template";
+import { isZaloMiniAppRuntime } from "./platform";
 
 const CONFIG_API_URL = getConfig((config) => config.template.apiUrl);
 const ENV_API_URL = (import.meta as any).env?.VITE_API_URL;
+const OFFICIAL_API_URL = "https://hpn.saximi.com.vn/api";
 
 function getConfiguredApiUrl() {
   const configuredUrl = (ENV_API_URL || CONFIG_API_URL || "/api").trim();
   const isProductionBuild = Boolean((import.meta as any).env?.PROD);
+  const isRelativeApi = configuredUrl === "/api" || configuredUrl.startsWith("/api/");
+
+  if (isRelativeApi && isZaloMiniAppRuntime()) {
+    return OFFICIAL_API_URL;
+  }
 
   if (
     isProductionBuild &&

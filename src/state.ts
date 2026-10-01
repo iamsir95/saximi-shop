@@ -308,7 +308,6 @@ export const keywordState = atom("");
 export const searchResultState = atom(async (get) => {
   const keyword = get(keywordState);
   const products = await get(productsState);
-  await new Promise((resolve) => setTimeout(resolve, 1000));
   return products.filter((product) =>
     product.name.toLowerCase().includes(keyword.toLowerCase())
   );
@@ -316,7 +315,6 @@ export const searchResultState = atom(async (get) => {
 
 export const productsByCategoryState = atomFamily((id: String) =>
   atom(async (get) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const products = await get(productsState);
     return products.filter((product) => String(product.categoryId) === id);
   })

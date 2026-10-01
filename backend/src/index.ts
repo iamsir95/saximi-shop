@@ -187,6 +187,22 @@ publicApi.get('/settings', (_req: Request, res: Response) => {
   });
 });
 
+publicApi.get('/forms', (req: Request, res: Response) => {
+  const placement = typeof req.query.placement === 'string' ? req.query.placement : undefined;
+  res.json(Database.getDynamicForms({ activeOnly: true, placement: placement as any }));
+});
+
+publicApi.post('/forms/:id/submissions', (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  try {
+    const submission = Database.submitDynamicForm(id, req.body || {});
+    if (!submission) return res.status(404).json({ message: 'Form không tồn tại hoặc đã tắt.' });
+    res.status(201).json({ success: true, submission });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || 'Không thể gửi form.' });
+  }
+});
+
 publicApi.get('/affiliate/portal', (req: Request, res: Response) => {
   res.json(Database.getAffiliatePortalSummary());
 });
@@ -1077,6 +1093,40 @@ app.put('/api/admin/settings', authenticateAdmin, (req: Request, res: Response) 
     sepayWebhookUrl: PaymentService.getSepayWebhookUrl(paymentConfig),
     sepayWebhookConfigured: PaymentService.isSepayWebhookConfigured(paymentConfig),
   });
+});
+
+// Admin Dynamic Forms
+app.get('/api/admin/forms', authenticateAdmin, (_req: Request, res: Response) => {
+  res.json(Database.getDynamicForms());
+});
+
+app.post('/api/admin/forms', authenticateAdmin, (req: Request, res: Response) => {
+  res.status(201).json(Database.saveDynamicForm(req.body));
+});
+
+app.put('/api/admin/forms/:id', authenticateAdmin, (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  if (!Database.getDynamicForm(id)) return res.status(404).json({ message: 'Form not found' });
+  res.json(Database.saveDynamicForm(req.body, id));
+});
+
+app.delete('/api/admin/forms/:id', authenticateAdmin, (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const success = Database.deleteDynamicForm(id);
+  if (!success) return res.status(404).json({ message: 'Form not found' });
+  res.json({ message: 'Form deleted successfully' });
+});
+
+app.get('/api/admin/form-submissions', authenticateAdmin, (_req: Request, res: Response) => {
+  res.json(Database.getDynamicFormSubmissions());
+});
+
+app.patch('/api/admin/form-submissions/:id/status', authenticateAdmin, (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const status = ['new', 'reviewed', 'archived'].includes(req.body?.status) ? req.body.status : 'reviewed';
+  const submission = Database.updateDynamicFormSubmissionStatus(id, status);
+  if (!submission) return res.status(404).json({ message: 'Submission not found' });
+  res.json(submission);
 });
 
 // Admin Staff / Personnel

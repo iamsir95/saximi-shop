@@ -5,6 +5,44 @@ export interface Category {
   showOnHome?: boolean;
 }
 
+export type DynamicFormFieldType = 'text' | 'phone' | 'email' | 'textarea' | 'select' | 'checkbox';
+export type DynamicFormPlacement = 'home' | 'product-detail' | 'cart' | 'member' | 'profile' | 'affiliate' | 'shipping-address' | 'news';
+
+export interface DynamicFormField {
+  id: string;
+  label: string;
+  type: DynamicFormFieldType;
+  placeholder?: string;
+  required?: boolean;
+  options?: string[];
+  sortOrder: number;
+}
+
+export interface DynamicForm {
+  id: number;
+  title: string;
+  description?: string;
+  submitLabel: string;
+  placements: DynamicFormPlacement[];
+  fields: DynamicFormField[];
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DynamicFormSubmission {
+  id: number;
+  formId: number;
+  formTitle: string;
+  placement?: DynamicFormPlacement;
+  customerName?: string;
+  customerPhone?: string;
+  values: Record<string, string | boolean>;
+  createdAt: string;
+  status: 'new' | 'reviewed' | 'archived';
+}
+
 export type ProductImageKind = 'MAIN' | 'DETAIL' | 'COLLECTION';
 
 export interface ProductImage {

@@ -28,6 +28,7 @@ type RichTextEditorProps = {
   placeholder?: string;
   minHeight?: number;
   onUploadingChange?: (busy: boolean) => void;
+  snippets?: { id: string; label: string; html: string }[];
 };
 
 const BLOCKED_TAGS = ['script', 'style', 'iframe', 'object', 'embed', 'meta', 'link'];
@@ -67,6 +68,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder,
   minHeight = 240,
   onUploadingChange,
+  snippets = [],
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const imageRange = useRef<Range | null>(null);
@@ -122,6 +124,24 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     );
   };
 
+  const insertSnippet = (html: string) => {
+    runCommand('insertHTML', html);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    const html = event.dataTransfer.getData('text/x-saximi-editor-html');
+    if (!html) return;
+    event.preventDefault();
+    focusEditor();
+    const selection = window.getSelection();
+    const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
+    if (range) {
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+    insertSnippet(html);
+  };
+
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
     event.preventDefault();
     const html = event.clipboardData.getData('text/html');
@@ -150,6 +170,26 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/80">
+        {snippets.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 bg-slate-900 px-3 py-2">
+            <span className="text-[11px] font-bold uppercase text-slate-500">Kéo thả block</span>
+            {snippets.map((snippet) => (
+              <button
+                key={snippet.id}
+                type="button"
+                draggable
+                onDragStart={(event) => {
+                  event.dataTransfer.setData('text/x-saximi-editor-html', snippet.html);
+                  event.dataTransfer.effectAllowed = 'copy';
+                }}
+                onClick={() => insertSnippet(snippet.html)}
+                className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-xs font-bold text-blue-200 hover:bg-blue-500/20"
+              >
+                {snippet.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap gap-1.5 border-b border-slate-800 bg-slate-900/95 p-2" onMouseDown={event => event.preventDefault()}>
           {mode === 'visual' && <ImageUpload label="Tải ảnh chèn vào bài" onBusyChange={onUploadingChange} onBeforeSelect={() => {
             const selection = window.getSelection();
@@ -222,6 +262,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             aria-multiline="true"
             onInput={syncValue}
             onPaste={handlePaste}
+            onDrop={handleDrop}
             className="rich-text-editor min-h-[220px] w-full overflow-y-auto bg-slate-800 px-4 py-3 text-sm leading-7 text-white outline-none"
             style={{ minHeight }}
             data-placeholder={placeholder}

@@ -49,6 +49,38 @@ export interface FrontendNotification {
   actionPath?: string;
 }
 
+export type DynamicFormFieldType = "text" | "phone" | "email" | "textarea" | "select" | "checkbox";
+export type DynamicFormPlacement =
+  | "home"
+  | "product-detail"
+  | "cart"
+  | "member"
+  | "profile"
+  | "affiliate"
+  | "shipping-address"
+  | "news";
+
+export interface DynamicFormField {
+  id: string;
+  label: string;
+  type: DynamicFormFieldType;
+  placeholder?: string;
+  required?: boolean;
+  options?: string[];
+  sortOrder: number;
+}
+
+export interface DynamicForm {
+  id: number;
+  title: string;
+  description?: string;
+  submitLabel: string;
+  placements: DynamicFormPlacement[];
+  fields: DynamicFormField[];
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export interface PlatformSettings {
   shopName: string;
   logoUrl?: string;

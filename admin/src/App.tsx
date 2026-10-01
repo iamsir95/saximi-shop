@@ -21,6 +21,7 @@ import { OtpOutboxPage } from './pages/OtpOutbox';
 import { SettingsPage } from './pages/Settings';
 import { Login } from './pages/Login';
 import { PostsPage } from './pages/Posts';
+import { FormsPage } from './pages/Forms';
 import { getAuthToken } from './api';
 
 export function App() {
@@ -41,6 +42,7 @@ export function App() {
   const getTitle = () => {
     switch (activeTab) {
       case 'posts': return 'Bản tin & chính sách';
+      case 'forms': return 'Form bản tin';
       case 'dashboard':
         return 'Tổng quan';
       case 'analytics':
@@ -89,6 +91,7 @@ export function App() {
         <Header title={getTitle()} />
         <main className="admin-content flex-1 overflow-y-auto">
           {activeTab === 'posts' && <PostsPage />}
+          {activeTab === 'forms' && <FormsPage />}
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'analytics' && <AnalyticsPage />}
           {activeTab === 'orders' && <Orders />}

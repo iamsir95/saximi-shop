@@ -396,6 +396,113 @@
   color: var(--secondary-dark);
 }
 
+.dynamic-form-embed {
+  margin: 22px 0;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(var(--primary-rgb), 0.18);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.62)),
+    rgba(255, 255, 255, 0.58);
+  box-shadow: 0 18px 44px rgba(15, 42, 64, 0.1);
+  -webkit-backdrop-filter: blur(22px) saturate(1.22);
+  backdrop-filter: blur(22px) saturate(1.22);
+}
+
+.dynamic-form-embed__header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.dynamic-form-embed__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--brand-gradient);
+  color: #fff;
+}
+
+.dynamic-form-embed h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 23px;
+  color: #0f172a;
+}
+
+.dynamic-form-embed p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.dynamic-form-embed__fields {
+  display: grid;
+  gap: 12px;
+}
+
+.dynamic-form-embed__field {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dynamic-form-embed__field b {
+  color: var(--secondary-dark);
+  margin-left: 3px;
+}
+
+.dynamic-form-embed input,
+.dynamic-form-embed textarea,
+.dynamic-form-embed select {
+  width: 100%;
+  border: 1px solid rgba(203, 213, 225, 0.86);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 11px 12px;
+  color: #0f172a;
+  outline: none;
+  font-size: 14px;
+}
+
+.dynamic-form-embed textarea {
+  resize: vertical;
+}
+
+.dynamic-form-embed__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.dynamic-form-embed__check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.dynamic-form-embed > button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--brand-gradient);
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+}
+
 @media (max-width: 767px) {
   .news-layout {
     display: block;

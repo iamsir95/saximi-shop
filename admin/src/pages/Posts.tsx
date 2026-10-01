@@ -6,6 +6,7 @@ import { MediaAsset } from '../types';
 import { ImageField } from '../components/ImageField';
 import { VoucherPicker } from '../components/VoucherPicker';
 import { PostWall } from '../components/PostWall';
+import { DynamicForm } from '../types';
 
 export type Post = { voucherIds?: number[]; deletedAt?: string; id?: string; title: string; slug: string; category: string; status: string; excerpt: string; content: string; cover: string; coverAlt: string; author: string; seoTitle: string; seoDescription: string; publishedAt?: string | null; updatedAt?: string };
 const empty: Post = { title: '', slug: '', category: 'news', status: 'draft', excerpt: '', content: '', cover: '', coverAlt: '', author: 'Saximi Shop', seoTitle: '', seoDescription: '' };
@@ -17,6 +18,7 @@ const buttonClass = 'inline-flex min-h-10 items-center justify-center gap-2 roun
 export function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [media, setMedia] = useState<MediaAsset[]>([]);
+  const [dynamicForms, setDynamicForms] = useState<DynamicForm[]>([]);
   const [form, setForm] = useState<Post | null>(null);
   const [tab, setTab] = useState('content');
   const [trash, setTrash] = useState(false);
@@ -35,6 +37,7 @@ export function PostsPage() {
   }
   useEffect(() => { void reload(); }, [trash]);
   useEffect(() => { api.getMediaLibrary({ activeOnly: true }).then(setMedia).catch(() => {}); }, []);
+  useEffect(() => { api.getForms().then(setDynamicForms).catch(() => {}); }, []);
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
     window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn);
@@ -60,7 +63,7 @@ export function PostsPage() {
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
       <div className="min-w-0 space-y-5">{field('title', 'Tiêu đề', 200)}
         <div className="flex gap-2 border-b border-slate-700 pb-2" role="tablist" aria-label="Soạn bài">{[['content', 'Nội dung'], ['seo', 'SEO']].map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={`${buttonClass} ${tab === id ? 'bg-slate-700' : ''}`} onClick={() => setTab(id)}>{name}</button>)}</div>
-        {tab === 'content' ? <div className="space-y-5"><label className="grid gap-1.5 text-sm">Tóm tắt<textarea className={inputClass} rows={3} maxLength={500} value={form.excerpt} onChange={e => update('excerpt', e.target.value)} /></label><RichTextEditor onUploadingChange={uploadBusy} label="Nội dung bài viết" value={form.content} onChange={value => update('content', value)} minHeight={400} /></div> : <div className="space-y-5">{field('slug', 'Đường dẫn (để trống để tạo từ tiêu đề)', 160)}{field('seoTitle', 'Tiêu đề SEO', 200)}<label className="grid gap-1.5 text-sm">Mô tả SEO<textarea className={inputClass} rows={4} maxLength={320} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></label><p className="text-xs text-slate-400">{form.seoDescription.length}/320 ký tự</p><div className="border-t border-slate-700 pt-4"><p className="text-xs text-slate-400">Xem trước kết quả tìm kiếm</p><p className="text-lg text-cyan-300 mt-2 break-words">{form.seoTitle || form.title || 'Tiêu đề bài viết'}</p><p className="text-sm text-slate-400 break-all">/news/{form.slug || 'duong-dan-bai-viet'}</p><p className="text-sm mt-1 break-words">{form.seoDescription || form.excerpt}</p></div></div>}
+        {tab === 'content' ? <div className="space-y-5"><label className="grid gap-1.5 text-sm">Tóm tắt<textarea className={inputClass} rows={3} maxLength={500} value={form.excerpt} onChange={e => update('excerpt', e.target.value)} /></label><RichTextEditor onUploadingChange={uploadBusy} label="Nội dung bài viết" value={form.content} onChange={value => update('content', value)} minHeight={400} snippets={dynamicForms.filter(item => item.isActive && item.placements.includes('news')).map(item => ({ id: String(item.id), label: `Form: ${item.title}`, html: `<p>[[form:${item.id}]]</p><p><br></p>` }))} /></div> : <div className="space-y-5">{field('slug', 'Đường dẫn (để trống để tạo từ tiêu đề)', 160)}{field('seoTitle', 'Tiêu đề SEO', 200)}<label className="grid gap-1.5 text-sm">Mô tả SEO<textarea className={inputClass} rows={4} maxLength={320} value={form.seoDescription} onChange={e => update('seoDescription', e.target.value)} /></label><p className="text-xs text-slate-400">{form.seoDescription.length}/320 ký tự</p><div className="border-t border-slate-700 pt-4"><p className="text-xs text-slate-400">Xem trước kết quả tìm kiếm</p><p className="text-lg text-cyan-300 mt-2 break-words">{form.seoTitle || form.title || 'Tiêu đề bài viết'}</p><p className="text-sm text-slate-400 break-all">/news/{form.slug || 'duong-dan-bai-viet'}</p><p className="text-sm mt-1 break-words">{form.seoDescription || form.excerpt}</p></div></div>}
         <VoucherPicker value={form.voucherIds || []} onChange={voucherIds => { setForm(old => old ? { ...old, voucherIds } : old); setDirty(true); }} />
       </div>
       <aside className="space-y-5 min-w-0">

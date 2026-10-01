@@ -21,6 +21,7 @@ import {
   MessageCircle,
   Settings,
   FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { clearAuthToken } from '../api';
 
@@ -50,6 +51,7 @@ const menuGroups = [
     title: 'Nội dung',
     items: [
       { id: 'posts', label: 'Bản tin & chính sách', icon: FileText },
+      { id: 'forms', label: 'Form bản tin', icon: ClipboardList },
       { id: 'media-library', label: 'Kho ảnh', icon: Images },
       { id: 'banners', label: 'Banner', icon: ImageIcon },
     ],

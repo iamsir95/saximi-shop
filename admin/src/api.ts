@@ -142,6 +142,18 @@ export const api = {
   getSettings: () => request('/settings'),
   updateSettings: (data: any) =>
     request('/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  getForms: () => request('/forms'),
+  createForm: (data: any) =>
+    request('/forms', { method: 'POST', body: JSON.stringify(data) }),
+  updateForm: (id: number, data: any) =>
+    request(`/forms/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteForm: (id: number) => request(`/forms/${id}`, { method: 'DELETE' }),
+  getFormSubmissions: () => request('/form-submissions'),
+  updateFormSubmissionStatus: (id: number, status: string) =>
+    request(`/form-submissions/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   getOtpOutbox: () => request('/otp-outbox'),
   markOtpSent: (id: string) => request(`/otp-outbox/${id}/sent`, { method: 'PATCH' }),
   deleteOtpOutboxItem: (id: string) => request(`/otp-outbox/${id}`, { method: 'DELETE' }),

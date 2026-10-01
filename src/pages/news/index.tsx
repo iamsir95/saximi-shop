@@ -7,6 +7,8 @@ import { useAtomValue } from "jotai";
 import { platformSettingsState } from "@/state";
 import "./news.css";
 import { PostVouchers, PostVoucher } from './vouchers';
+import DynamicFormEmbed from "@/components/dynamic-form-embed";
+import { DynamicForm } from "@/types";
 
 type Post = {
   vouchers?: PostVoucher[];
@@ -75,6 +77,40 @@ function PostActions({ post }: { post: Post }) {
   return <div className="news-actions"><button type="button" onClick={toggle} aria-pressed={saved}><CommerceIcon name={saved ? "check" : "note"} size={18} />{saved ? "Đã lưu" : "Lưu bài"}</button><button type="button" onClick={share}><CommerceIcon name="link" size={18} />Chia sẻ</button></div>;
 }
 
+function normalizeFormTokens(content: string) {
+  return content.replace(/<p>\s*\[\[form:(\d+)\]\]\s*<\/p>/g, "[[form:$1]]");
+}
+
+function PostContentWithForms({
+  content,
+  forms,
+}: {
+  content: string;
+  forms: DynamicForm[];
+}) {
+  const parts = normalizeFormTokens(content || "").split(/(\[\[form:\d+\]\])/g);
+  return (
+    <>
+      {parts.map((part, index) => {
+        const match = part.match(/^\[\[form:(\d+)\]\]$/);
+        if (match) {
+          const form = forms.find((item) => item.id === Number(match[1]));
+          return form ? (
+            <DynamicFormEmbed key={`${part}-${index}`} form={form} placement="news" />
+          ) : null;
+        }
+        return part ? (
+          <div
+            key={index}
+            className="news-richtext"
+            dangerouslySetInnerHTML={{ __html: part }}
+          />
+        ) : null;
+      })}
+    </>
+  );
+}
+
 export default function NewsPage() {
   const [params, setParams] = useSearchParams();
   const category = params.get("category") || "";
@@ -134,6 +170,7 @@ export default function NewsPage() {
 export function NewsDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState<Post>();
+  const [forms, setForms] = useState<DynamicForm[]>([]);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   usePostSeo(post);
@@ -145,12 +182,18 @@ export function NewsDetailPage() {
     }).catch(err => { if (!controller.signal.aborted) setError(err.message); });
     return () => controller.abort();
   }, [slug, retry]);
+  useEffect(() => {
+    fetch(`${getApiBaseUrl()}/forms?placement=news`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setForms)
+      .catch(() => setForms([]));
+  }, []);
   return <div className="news-detail"><Link className="news-back" to="/news"><CommerceIcon name="arrow-left" size={18} />Bản tin</Link>{error ? <div role="alert"><p>{error}</p><button onClick={() => setRetry(n => n + 1)}>Thử lại</button></div> : !post ? <p role="status">Đang tải bài viết…</p> : <article>
     <Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link>
     <h1>{post.title}</h1><p className="news-byline">{post.author} · Đăng ngày <time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></p>
     <p className="news-intro">{post.excerpt}</p>{post.cover && <img className="news-cover" src={post.cover} alt={post.coverAlt} />}
     <PostVouchers vouchers={post.vouchers} />
-    <div className="news-richtext" dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+    <PostContentWithForms content={post.content || ''} forms={forms} />
     {post.updatedAt !== post.publishedAt && <p className="news-byline">Cập nhật: <time dateTime={post.updatedAt}>{date(post.updatedAt)}</time></p>}
     <PostActions key={post.id} post={post} /><Link className="news-back" to={`/news?category=${post.category}`}>Xem bài viết cùng chuyên mục<CommerceIcon name="chevron-right" size={18} /></Link>
   </article>}</div>;

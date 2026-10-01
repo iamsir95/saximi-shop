@@ -383,6 +383,52 @@ export interface WebPushSubscriptionRecord {
   updatedAt: string;
 }
 
+export type DynamicFormFieldType = 'text' | 'phone' | 'email' | 'textarea' | 'select' | 'checkbox';
+export type DynamicFormPlacement =
+  | 'home'
+  | 'product-detail'
+  | 'cart'
+  | 'member'
+  | 'profile'
+  | 'affiliate'
+  | 'shipping-address'
+  | 'news';
+
+export interface DynamicFormField {
+  id: string;
+  label: string;
+  type: DynamicFormFieldType;
+  placeholder?: string;
+  required?: boolean;
+  options?: string[];
+  sortOrder: number;
+}
+
+export interface DynamicForm {
+  id: number;
+  title: string;
+  description?: string;
+  submitLabel: string;
+  placements: DynamicFormPlacement[];
+  fields: DynamicFormField[];
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DynamicFormSubmission {
+  id: number;
+  formId: number;
+  formTitle: string;
+  placement?: DynamicFormPlacement;
+  customerName?: string;
+  customerPhone?: string;
+  values: Record<string, string | boolean>;
+  createdAt: string;
+  status: 'new' | 'reviewed' | 'archived';
+}
+
 const DATA_DIR = path.join(__dirname, '../data');
 const MOCK_DIR = path.join(__dirname, '../../src/mock');
 
@@ -524,6 +570,8 @@ export class Database {
   private static deliveries: InHouseDelivery[] = [];
   private static mediaLibrary: MediaAsset[] = [];
   private static webPushSubscriptions: WebPushSubscriptionRecord[] = [];
+  private static dynamicForms: DynamicForm[] = [];
+  private static dynamicFormSubmissions: DynamicFormSubmission[] = [];
   private static settings: PlatformSettings = {
     shopName: 'Saximi shop',
     logoUrl: 'https://photo-logo-mapps.zadn.vn/284fadf20bb7e2e9bba6.jpg',
@@ -804,6 +852,8 @@ export class Database {
     this.deliveries = ensureDataFile<InHouseDelivery[]>('deliveries.json');
     this.mediaLibrary = ensureDataFile<MediaAsset[]>('media_library.json');
     this.webPushSubscriptions = ensureDataFile<WebPushSubscriptionRecord[]>('web_push_subscriptions.json');
+    this.dynamicForms = ensureDataFile<DynamicForm[]>('dynamic_forms.json');
+    this.dynamicFormSubmissions = ensureDataFile<DynamicFormSubmission[]>('dynamic_form_submissions.json');
     this.settings = {
       ...this.settings,
       ...ensureDataFile<Partial<PlatformSettings>>('settings.json'),
@@ -826,6 +876,114 @@ export class Database {
     this.ensureStaffMembers();
 
     console.log('✅ Database initialized with Enterprise Audit & Financial Settlement Modules');
+  }
+
+  private static normalizeDynamicForm(data: Partial<DynamicForm>, existing?: DynamicForm): DynamicForm {
+    const now = new Date().toISOString();
+    const id = existing?.id || (this.dynamicForms.length > 0 ? Math.max(...this.dynamicForms.map((item) => item.id)) + 1 : 1);
+    const fields = (data.fields || existing?.fields || [])
+      .filter((field) => field.label?.trim())
+      .map((field, index) => ({
+        id: field.id || `${Date.now()}-${index}`,
+        label: String(field.label || '').trim(),
+        type: field.type || 'text',
+        placeholder: String(field.placeholder || '').trim(),
+        required: Boolean(field.required),
+        options: Array.isArray(field.options)
+          ? field.options.map((option) => String(option).trim()).filter(Boolean)
+          : [],
+        sortOrder: Number.isFinite(Number(field.sortOrder)) ? Number(field.sortOrder) : index + 1,
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((field, index) => ({ ...field, sortOrder: index + 1 }));
+
+    return {
+      id,
+      title: String(data.title || existing?.title || 'Form liên hệ').trim(),
+      description: String(data.description ?? existing?.description ?? '').trim(),
+      submitLabel: String(data.submitLabel || existing?.submitLabel || 'Gửi thông tin').trim(),
+      placements: Array.isArray(data.placements)
+        ? data.placements
+        : existing?.placements || ['home'],
+      fields,
+      isActive: data.isActive ?? existing?.isActive ?? true,
+      sortOrder: Number.isFinite(Number(data.sortOrder ?? existing?.sortOrder))
+        ? Number(data.sortOrder ?? existing?.sortOrder)
+        : id,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    };
+  }
+
+  public static getDynamicForms(options: { activeOnly?: boolean; placement?: DynamicFormPlacement } = {}): DynamicForm[] {
+    return this.dynamicForms
+      .filter((form) => !options.activeOnly || form.isActive)
+      .filter((form) => !options.placement || form.placements.includes(options.placement))
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+  }
+
+  public static getDynamicForm(id: number): DynamicForm | undefined {
+    return this.dynamicForms.find((form) => form.id === id);
+  }
+
+  public static saveDynamicForm(data: Partial<DynamicForm>, id?: number): DynamicForm {
+    const existing = id ? this.getDynamicForm(id) : undefined;
+    const form = this.normalizeDynamicForm(data, existing);
+    if (existing) {
+      this.dynamicForms = this.dynamicForms.map((item) => (item.id === id ? form : item));
+      this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_DYNAMIC_FORM', `Cập nhật form: ${form.title}`, String(form.id));
+    } else {
+      this.dynamicForms.push(form);
+      this.logAction('admin', 'SUPER_ADMIN', 'ADD_DYNAMIC_FORM', `Tạo form: ${form.title}`, String(form.id));
+    }
+    saveDataFile('dynamic_forms.json', this.dynamicForms);
+    return form;
+  }
+
+  public static deleteDynamicForm(id: number): boolean {
+    const initialLen = this.dynamicForms.length;
+    this.dynamicForms = this.dynamicForms.filter((form) => form.id !== id);
+    saveDataFile('dynamic_forms.json', this.dynamicForms);
+    this.logAction('admin', 'SUPER_ADMIN', 'DELETE_DYNAMIC_FORM', `Xóa form #${id}`, String(id));
+    return this.dynamicForms.length < initialLen;
+  }
+
+  public static submitDynamicForm(formId: number, data: Partial<DynamicFormSubmission>): DynamicFormSubmission | null {
+    const form = this.getDynamicForm(formId);
+    if (!form || !form.isActive) return null;
+    const values = data.values || {};
+    const missingField = form.fields.find((field) => field.required && !values[field.id]);
+    if (missingField) {
+      throw new Error(`Vui lòng nhập ${missingField.label}`);
+    }
+    const submission: DynamicFormSubmission = {
+      id: this.dynamicFormSubmissions.length > 0 ? Math.max(...this.dynamicFormSubmissions.map((item) => item.id)) + 1 : 1,
+      formId: form.id,
+      formTitle: form.title,
+      placement: data.placement,
+      customerName: data.customerName,
+      customerPhone: normalizeVietnamPhone(data.customerPhone),
+      values,
+      createdAt: new Date().toISOString(),
+      status: 'new',
+    };
+    this.dynamicFormSubmissions.unshift(submission);
+    saveDataFile('dynamic_form_submissions.json', this.dynamicFormSubmissions);
+    this.logAction('system', 'CUSTOMER', 'SUBMIT_DYNAMIC_FORM', `Khách gửi form ${form.title}`, String(form.id));
+    return submission;
+  }
+
+  public static getDynamicFormSubmissions(): DynamicFormSubmission[] {
+    return this.dynamicFormSubmissions;
+  }
+
+  public static updateDynamicFormSubmissionStatus(id: number, status: DynamicFormSubmission['status']): DynamicFormSubmission | null {
+    const submission = this.dynamicFormSubmissions.find((item) => item.id === id);
+    if (!submission) return null;
+    submission.status = status;
+    saveDataFile('dynamic_form_submissions.json', this.dynamicFormSubmissions);
+    this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_DYNAMIC_FORM_SUBMISSION', `Cập nhật phản hồi form #${id} thành ${status}`, String(id));
+    return submission;
   }
 
   private static ensureStaffMembers() {

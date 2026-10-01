@@ -56,11 +56,11 @@ export default function CartItem(props: CartItemProps) {
       <animated.div
         {...bind()}
         style={{ x }}
-        className="relative z-10 bg-white p-4 flex items-center gap-3 shadow-[0_1px_0_rgba(226,232,240,0.55)]"
+        className="cart-item-row relative z-10 bg-white p-4 flex items-center gap-3 shadow-[0_1px_0_rgba(226,232,240,0.55)]"
       >
         <img
           src={props.product.image}
-          className="w-16 h-16 rounded-[18px] object-cover bg-skeleton"
+          className="cart-item-image w-16 h-16 rounded-[18px] object-cover bg-skeleton"
           alt={props.product.name}
         />
         <div className="flex-1 min-w-0 space-y-1">
@@ -85,12 +85,12 @@ export default function CartItem(props: CartItemProps) {
           <button
             type="button"
             onClick={removeItem}
-            className="flex h-8 w-8 items-center justify-center rounded-2xl secondary-soft active:scale-95"
+            className="cart-item-remove flex h-8 w-8 items-center justify-center rounded-2xl secondary-soft active:scale-95"
             aria-label={`Xoá ${props.product.name} khỏi giỏ hàng`}
           >
             <CommerceIcon name="trash" size={17} />
           </button>
-          <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1 ring-1 ring-slate-200">
+          <div className="cart-quantity-control flex items-center gap-1 rounded-full bg-slate-100 p-1 ring-1 ring-slate-200">
             <button
               type="button"
               onClick={decreaseQuantity}

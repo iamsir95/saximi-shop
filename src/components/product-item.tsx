@@ -41,13 +41,13 @@ export default function ProductItem(props: ProductItemProps) {
 
   return (
     <div
-      className="flex flex-col cursor-pointer group liquid-card commerce-card transition-transform active:scale-[0.99]"
+      className="product-card flex flex-col cursor-pointer group liquid-card commerce-card transition-transform active:scale-[0.99]"
       onClick={() => setSelected(true)}
     >
       <TransitionLink
         to={`/product/${props.product.id}`}
         replace={props.replace}
-        className="relative block p-2.5 pb-0"
+        className="product-card__media relative block p-2.5 pb-0"
       >
         {({ isTransitioning }) => (
           <>
@@ -62,7 +62,7 @@ export default function ProductItem(props: ProductItemProps) {
               }}
               alt={props.product.name}
             />
-            <div className="absolute left-3 top-3 flex max-w-[calc(100%-24px)] flex-wrap gap-1">
+            <div className="product-card__tags absolute left-3 top-3 flex max-w-[calc(100%-24px)] flex-wrap gap-1">
               {hasDiscount && (
                 <span className="commerce-tag commerce-tag--danger">
                   -{discountPercent}%
@@ -106,7 +106,7 @@ export default function ProductItem(props: ProductItemProps) {
                 </span>
               )}
             </div>
-            <div className="pt-3 pb-1.5">
+            <div className="product-card__body pt-3 pb-1.5">
               <div className="pb-1">
                 <div className="text-sm leading-5 min-h-10 line-clamp-2 font-semibold text-slate-800">
                   {props.product.name}
@@ -135,7 +135,7 @@ export default function ProductItem(props: ProductItemProps) {
           </>
         )}
       </TransitionLink>
-      <div className="p-2.5 pt-1.5">
+      <div className="product-card__actions p-2.5 pt-1.5">
         {cartQuantity === 0 ? (
           <Button
             variant="secondary"

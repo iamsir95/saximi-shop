@@ -47,7 +47,7 @@ export function ProductGridSkeleton({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={"grid grid-cols-2 px-4 pt-2 pb-8 gap-4 ".concat(
+      className={"product-grid grid grid-cols-2 px-4 pt-2 pb-8 gap-4 ".concat(
         className ?? ""
       )}
       {...props}

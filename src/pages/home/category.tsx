@@ -7,7 +7,7 @@ export default function Category() {
 
   return (
     <div
-      className="liquid-card commerce-card grid gap-x-3 gap-y-4 py-4 px-4 overflow-x-auto"
+      className="home-category-strip liquid-card commerce-card grid gap-x-3 gap-y-4 py-4 px-4 overflow-x-auto"
       style={{
         gridTemplateColumns: `repeat(${Math.ceil(
           categories.length > 4 ? categories.length / 2 : categories.length

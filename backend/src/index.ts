@@ -26,6 +26,39 @@ function isValidVietnamPhone(phone: string) {
   return /^0\d{9}$/.test(phone);
 }
 
+function getZaloCallbackPayload(req: Request) {
+  return {
+    method: req.method,
+    query: req.query,
+    body: req.body || {},
+    receivedAt: new Date().toISOString(),
+  };
+}
+
+function getZaloEventName(req: Request) {
+  const payload = req.body || {};
+  return (
+    payload.event_name ||
+    payload.eventName ||
+    payload.event ||
+    payload.type ||
+    req.query.event_name ||
+    req.query.event ||
+    'unknown'
+  );
+}
+
+function sendZaloCallbackOk(req: Request, res: Response, callbackType: string) {
+  Logger.info(`💬 [Zalo ${callbackType}] ${req.method} event: ${getZaloEventName(req)}`);
+  res.json({
+    success: true,
+    provider: 'zalo',
+    callbackType,
+    received: true,
+    data: getZaloCallbackPayload(req),
+  });
+}
+
 app.use(cors());
 app.use('/api/admin/uploads', express.json({ limit: '8mb' }));
 app.use('/api/admin/posts', express.json({ limit: '256kb' }));
@@ -459,20 +492,56 @@ publicApi.get('/zalo/webhook', (_req: Request, res: Response) => {
 });
 
 publicApi.post('/zalo/webhook', (req: Request, res: Response) => {
-  const payload = req.body || {};
-  const eventName =
-    payload.event_name ||
-    payload.eventName ||
-    payload.event ||
-    payload.type ||
-    'unknown';
+  sendZaloCallbackOk(req, res, 'webhook');
+});
 
-  Logger.info(`💬 [Zalo Webhook] Event: ${eventName}`);
+publicApi.get('/zalo/status', (_req: Request, res: Response) => {
+  const settings = Database.getSettings();
+  const siteUrl = settings.publicSiteUrl.replace(/\/+$/, '') || 'https://hpn.saximi.com.vn';
   res.json({
     success: true,
     provider: 'zalo',
-    received: true,
+    status: 'ready',
+    callbacks: {
+      webhook: `${siteUrl}/api/zalo/webhook`,
+      callback: `${siteUrl}/api/zalo/callback`,
+      oauth: `${siteUrl}/api/zalo/oauth/callback`,
+      miniapp: `${siteUrl}/api/zalo/miniapp/callback`,
+      oa: `${siteUrl}/api/zalo/oa/callback`,
+    },
   });
+});
+
+publicApi.get('/zalo/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'general-callback');
+});
+
+publicApi.post('/zalo/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'general-callback');
+});
+
+publicApi.get('/zalo/oauth/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'oauth-callback');
+});
+
+publicApi.post('/zalo/oauth/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'oauth-callback');
+});
+
+publicApi.get('/zalo/miniapp/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'miniapp-callback');
+});
+
+publicApi.post('/zalo/miniapp/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'miniapp-callback');
+});
+
+publicApi.get('/zalo/oa/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'oa-callback');
+});
+
+publicApi.post('/zalo/oa/callback', (req: Request, res: Response) => {
+  sendZaloCallbackOk(req, res, 'oa-callback');
 });
 
 publicApi.get('/payment/status/:orderId', (req: Request, res: Response) => {

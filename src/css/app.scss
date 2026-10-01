@@ -437,6 +437,9 @@ html[data-platform="website"] .toast-container {
 
 .product-card {
   min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  box-shadow: 0 10px 26px rgba(15, 42, 64, 0.06);
 }
 
 .cart-item-row {
@@ -964,11 +967,13 @@ select {
     padding: 12px 10px !important;
     gap: 12px 10px !important;
     border-radius: 18px;
-    scroll-padding-inline: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    overflow-x: hidden !important;
   }
 
   .home-category-strip a {
-    min-width: 64px !important;
+    width: 100%;
+    min-width: 0 !important;
   }
 
   .home-category-strip img {
@@ -1048,5 +1053,9 @@ select {
   .app-footer a {
     min-height: 46px;
     padding-inline: 1px !important;
+  }
+
+  .home-category-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }

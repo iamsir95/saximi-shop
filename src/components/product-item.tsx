@@ -41,7 +41,7 @@ export default function ProductItem(props: ProductItemProps) {
 
   return (
     <div
-      className="product-card flex flex-col cursor-pointer group liquid-card commerce-card transition-transform active:scale-[0.99]"
+      className="product-card flex flex-col cursor-pointer group commerce-card bg-white transition-transform active:scale-[0.99]"
       onClick={() => setSelected(true)}
     >
       <TransitionLink

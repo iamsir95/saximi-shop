@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, Eye, CheckCircle, Truck, Clock, XCircle, X, CreditCard } from 'lucide-react';
+import { ShoppingCart, Eye, CheckCircle, Truck, Clock, XCircle, X, CreditCard, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { Order } from '../types';
 
@@ -60,6 +60,22 @@ export const Orders: React.FC = () => {
       loadOrders();
     } catch (err: any) {
       alert(err.message || 'Cập nhật thanh toán thất bại');
+    }
+  };
+
+  const handleDeleteOrder = async (order: Order) => {
+    const customer = order.delivery?.name || order.delivery?.phone || 'khách hàng';
+    const ok = window.confirm(`Xóa vĩnh viễn đơn #${order.id} của ${customer}? Thao tác này sẽ xóa cả dữ liệu vận chuyển và hoa hồng liên quan.`);
+    if (!ok) return;
+
+    try {
+      await api.deleteOrder(order.id);
+      setOrders((prev) => prev.filter((item) => item.id !== order.id));
+      if (selectedOrder?.id === order.id) {
+        setSelectedOrder(null);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Xóa đơn hàng thất bại');
     }
   };
 
@@ -192,6 +208,7 @@ export const Orders: React.FC = () => {
                       </select>
                     </td>
                     <td className="py-4 px-4 text-right">
+                      <div className="inline-flex items-center justify-end gap-2">
                       <button
                         onClick={() => setSelectedOrder(order)}
                         className="p-2 bg-slate-700/60 text-slate-200 hover:text-white hover:bg-slate-700 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-medium"
@@ -199,6 +216,14 @@ export const Orders: React.FC = () => {
                         <Eye className="w-4 h-4" />
                         Chi tiết
                       </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order)}
+                        className="p-2 bg-rose-500/10 text-rose-300 hover:text-white hover:bg-rose-500/80 rounded-lg transition-colors inline-flex items-center gap-1 text-xs font-medium"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Xóa
+                      </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -221,12 +246,21 @@ export const Orders: React.FC = () => {
                   Thời gian đặt: {new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}
                 </p>
               </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="text-slate-400 hover:text-white p-1"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDeleteOrder(selectedOrder)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-300 ring-1 ring-rose-400/20 transition hover:bg-rose-500 hover:text-white"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Xóa đơn
+                </button>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="text-slate-400 hover:text-white p-1"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             {/* Customer & Shipping Info */}

@@ -1419,6 +1419,14 @@ app.patch('/api/admin/orders/:id/status', authenticateAdmin, (req: Request, res:
   res.json(updated);
 });
 
+app.delete('/api/admin/orders/:id', authenticateAdmin, (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
+  const success = Database.deleteOrder(id);
+  if (!success) return res.status(404).json({ message: 'Order not found' });
+  Logger.info(`🗑️ [Admin Order] Deleted #${id}`);
+  res.json({ success: true, message: 'Order deleted successfully' });
+});
+
 // Admin Users
 app.get('/api/admin/users', authenticateAdmin, (req: Request, res: Response) => {
   res.json(Database.getUsers());

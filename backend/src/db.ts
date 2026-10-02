@@ -2913,6 +2913,27 @@ export class Database {
     return this.orders[idx];
   }
 
+  public static deleteOrder(id: number): boolean {
+    const existing = this.orders.find((order) => order.id === id);
+    if (!existing) return false;
+
+    this.orders = this.orders.filter((order) => order.id !== id);
+    this.deliveries = this.deliveries.filter((delivery) => delivery.orderId !== id);
+    this.commissions = this.commissions.filter((commission) => commission.orderId !== id);
+
+    this.persistOrders();
+    saveDataFile('deliveries.json', this.deliveries);
+    saveDataFile('commissions.json', this.commissions);
+    this.logAction(
+      'admin',
+      'SUPER_ADMIN',
+      'DELETE_ORDER',
+      `Xóa đơn #${id} của ${existing.delivery?.name || existing.delivery?.phone || 'khách hàng'}`,
+      String(id)
+    );
+    return true;
+  }
+
   public static getUsers(): User[] {
     return this.users;
   }

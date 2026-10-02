@@ -197,6 +197,7 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status, paymentStatus }),
     }),
+  deleteOrder: (id: number) => request(`/orders/${id}`, { method: 'DELETE' }),
   getUsers: () => request('/users'),
   updateUser: (id: string, data: any) =>
     request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

@@ -39,6 +39,66 @@ function isValidVietnamPhone(phone: string) {
   return /^0\d{9}$/.test(phone);
 }
 
+function wantsCompactView(req: Request) {
+  const view = String(req.query.view || req.query.mode || '').toLowerCase();
+  const platform = String(req.query.platform || req.headers['x-client-platform'] || '').toLowerCase();
+  return view === 'compact' || view === 'mobile' || platform === 'mobile' || platform === 'zalo-mini-app';
+}
+
+function setPublicMobileCache(res: Response, ttlSeconds = 300) {
+  res.setHeader('Cache-Control', `public, max-age=${ttlSeconds}, stale-while-revalidate=${ttlSeconds * 2}`);
+}
+
+function toCompactProduct(product: any) {
+  const giftPrograms = Array.isArray(product.giftPrograms)
+    ? product.giftPrograms
+        .filter((program: any) => program?.isActive !== false)
+        .map((program: any) => ({
+          id: program.id,
+          title: program.title,
+          badgeLabel: program.badgeLabel,
+          giftProductId: program.giftProductId,
+          minQuantity: program.minQuantity,
+          giftQuantity: program.giftQuantity,
+          isActive: program.isActive,
+          showOnProductPage: program.showOnProductPage,
+          startsAt: program.startsAt,
+          endsAt: program.endsAt,
+        }))
+    : undefined;
+
+  return {
+    id: product.id,
+    categoryId: product.categoryId,
+    name: product.name,
+    price: product.price,
+    originalPrice: product.originalPrice,
+    image: product.image || product.images?.[0]?.url || '/icon.png',
+    promoDescription: product.promoDescription,
+    promotionLabels: product.promotionLabels,
+    giftPrograms,
+    stockQuantity: product.stockQuantity,
+    minStockLevel: product.minStockLevel,
+    soldQuantity: product.soldQuantity,
+    isFlashSale: product.isFlashSale,
+    isRecommended: product.isRecommended,
+    enableVariants: product.enableVariants,
+    variants: Array.isArray(product.variants)
+      ? product.variants
+          .filter((variant: any) => variant?.isActive !== false)
+          .map((variant: any) => ({
+            id: variant.id,
+            name: variant.name,
+            price: variant.price,
+            originalPrice: variant.originalPrice,
+            stockQuantity: variant.stockQuantity,
+            imageUrl: variant.imageUrl,
+            isActive: variant.isActive,
+          }))
+      : undefined,
+  };
+}
+
 function getZaloCallbackPayload(req: Request) {
   return {
     method: req.method,
@@ -189,6 +249,7 @@ publicApi.get('/banners', async (req: Request, res: Response) => {
   const banners = await CacheService.getOrSet('banners:all', 300, async () => {
     return Database.getBanners();
   });
+  setPublicMobileCache(res, 300);
   res.json(banners);
 });
 
@@ -196,6 +257,7 @@ publicApi.get('/categories', async (req: Request, res: Response) => {
   const categories = await CacheService.getOrSet('categories:all', 300, async () => {
     return Database.getCategories();
   });
+  setPublicMobileCache(res, 300);
   res.json(categories);
 });
 
@@ -211,13 +273,18 @@ publicApi.get('/media-library', async (req: Request, res: Response) => {
       activeOnly: true,
     });
   });
+  setPublicMobileCache(res, 300);
   res.json(media);
 });
 
 publicApi.get('/products', async (req: Request, res: Response) => {
-  const products = await CacheService.getOrSet('products:all', 300, async () => {
-    return Database.getProducts();
+  const compact = wantsCompactView(req);
+  const products = await CacheService.getOrSet(`products:${compact ? 'compact' : 'all'}`, 300, async () => {
+    const data = Database.getProducts();
+    return compact ? data.map(toCompactProduct) : data;
   });
+  setPublicMobileCache(res, 180);
+  res.setHeader('X-Saximi-View', compact ? 'compact' : 'full');
   res.json(products);
 });
 
@@ -229,6 +296,7 @@ publicApi.get('/products/:id/gallery', async (req: Request, res: Response) => {
   if (!gallery) {
     return res.status(404).json({ message: 'Product gallery not found' });
   }
+  setPublicMobileCache(res, 300);
   res.json(gallery);
 });
 
@@ -240,6 +308,7 @@ publicApi.get('/products/:id', async (req: Request, res: Response) => {
   if (!product) {
     return res.status(404).json({ message: 'Product not found' });
   }
+  setPublicMobileCache(res, 180);
   res.json(product);
 });
 
@@ -248,15 +317,18 @@ publicApi.get('/stations', async (req: Request, res: Response) => {
   const stations = await CacheService.getOrSet(`stations:${referrerId || 'public'}`, 600, async () => {
     return Database.getPickupStations(referrerId);
   });
+  setPublicMobileCache(res, 600);
   res.json(stations);
 });
 
 publicApi.get('/coupons', (req: Request, res: Response) => {
+  setPublicMobileCache(res, 120);
   res.json(Database.getCoupons().filter((c) => c.isActive));
 });
 
 publicApi.get('/settings', (_req: Request, res: Response) => {
   const settings = Database.getSettings();
+  setPublicMobileCache(res, 300);
   res.json({
     shopName: settings.shopName,
     logoUrl: settings.logoUrl,
@@ -988,6 +1060,23 @@ app.post('/api/admin/web-push/subscribe', authenticateAdmin, (req: Request, res:
     Logger.error('Failed to register admin web push subscription', error);
     res.status(400).json({ message: 'Không thể bật thông báo đẩy cho admin.' });
   }
+});
+
+app.post('/api/admin/web-push/test', authenticateAdmin, async (req: Request, res: Response) => {
+  if (!WebPushService.isEnabled()) {
+    return res.status(400).json({ message: 'Máy chủ chưa cấu hình VAPID để gửi thông báo đẩy.' });
+  }
+
+  const result = await WebPushService.notifyAdminTest(
+    typeof req.body?.message === 'string' ? req.body.message : undefined
+  );
+  if (result.total === 0) {
+    return res.status(400).json({ message: 'Chưa có thiết bị admin nào đăng ký nhận thông báo đẩy.' });
+  }
+  res.json({
+    success: result.sent > 0,
+    ...result,
+  });
 });
 
 app.patch('/api/admin/otp-outbox/:id/sent', authenticateAdmin, (req: Request, res: Response) => {

@@ -230,6 +230,11 @@ export const api = {
         platform: navigator.platform,
       }),
     }),
+  testAdminWebPush: (message?: string) =>
+    request('/web-push/test', {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
   getStaff: () => request('/staff'),
   saveStaff: (data: any) =>
     request('/staff', { method: 'POST', body: JSON.stringify(data) }),

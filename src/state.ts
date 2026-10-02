@@ -237,7 +237,7 @@ export const productsState = atom(async (get) => {
   const categories = await get(categoriesState);
   const products = await requestWithFallback<
     (Product & { categoryId: number })[]
-  >("/products", []);
+  >("/products?view=compact", []);
   return products.map((product) => ({
     ...product,
     category: categories.find(
@@ -252,8 +252,19 @@ export const recommendedProductsState = atom((get) => get(productsState));
 
 export const productState = atomFamily((id: number) =>
   atom(async (get) => {
-    const products = await get(productsState);
-    return products.find((product) => product.id === id);
+    const categories = await get(categoriesState);
+    const compactProducts = await get(productsState);
+    const compactProduct = compactProducts.find((product) => product.id === id);
+    const product = await requestWithFallback<Product & { categoryId: number }>(
+      `/products/${id}`,
+      compactProduct as Product & { categoryId: number }
+    );
+    return {
+      ...product,
+      category:
+        categories.find((category) => category.id === product.categoryId) ||
+        compactProduct?.category,
+    };
   })
 );
 

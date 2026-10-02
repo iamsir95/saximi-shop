@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BellRing, CheckCircle2, Clipboard, ExternalLink, KeyRound, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
-import { api } from '../api';
+import { api, setupAdminWebPushNotifications } from '../api';
 import { OtpOutboxItem } from '../types';
 
 const STATUS_LABELS: Record<OtpOutboxItem['status'], string> = {
@@ -22,13 +22,6 @@ function formatTime(value: string) {
     day: '2-digit',
     month: '2-digit',
   });
-}
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = `${base64String}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
 export function OtpOutboxPage() {
@@ -77,40 +70,19 @@ export function OtpOutboxPage() {
   };
 
   const enableAdminPush = async () => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setMessage('Trình duyệt này chưa hỗ trợ thông báo đẩy.');
-      window.setTimeout(() => setMessage(''), 2200);
-      return;
-    }
-
     setIsEnablingPush(true);
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
+      const result = await setupAdminWebPushNotifications();
+      if (result === 'subscribed') {
+        await api.testAdminWebPush('Thông báo đẩy OTP đã sẵn sàng trên thiết bị admin này.');
+        setMessage('Đã bật và gửi thử thông báo đẩy OTP cho thiết bị admin này.');
+      } else if (result === 'permission-only') {
+        setMessage('Trình duyệt đã cho phép thông báo, nhưng máy chủ chưa cấu hình VAPID để gửi push nền.');
+      } else if (result === 'denied') {
         setMessage('Bạn chưa cấp quyền thông báo cho trình duyệt.');
-        window.setTimeout(() => setMessage(''), 2200);
-        return;
+      } else {
+        setMessage('Trình duyệt này chưa hỗ trợ thông báo đẩy.');
       }
-
-      const configResponse = await fetch('/api/web-push/config');
-      const config = (await configResponse.json()) as { enabled: boolean; publicKey?: string };
-      if (!config.enabled || !config.publicKey) {
-        setMessage('Máy chủ chưa cấu hình VAPID để gửi thông báo đẩy.');
-        window.setTimeout(() => setMessage(''), 2600);
-        return;
-      }
-
-      const registration = await navigator.serviceWorker.register('/saximi-sw.js');
-      await navigator.serviceWorker.ready;
-      const subscription =
-        (await registration.pushManager.getSubscription()) ||
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(config.publicKey),
-        }));
-
-      await api.subscribeAdminWebPush(subscription);
-      setMessage('Đã bật thông báo đẩy OTP cho thiết bị admin này.');
       window.setTimeout(() => setMessage(''), 2200);
     } catch (error) {
       console.error(error);

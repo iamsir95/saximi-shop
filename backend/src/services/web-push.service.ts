@@ -19,6 +19,7 @@ export class WebPushService {
     const publicKey = process.env.WEB_PUSH_PUBLIC_KEY;
     const privateKey = process.env.WEB_PUSH_PRIVATE_KEY;
     if (!publicKey || !privateKey) {
+      Logger.warn('Web push is disabled because WEB_PUSH_PUBLIC_KEY or WEB_PUSH_PRIVATE_KEY is missing.');
       return;
     }
 
@@ -36,7 +37,10 @@ export class WebPushService {
 
   private static async send(subscription: WebPushSubscriptionRecord, payload: PushPayload) {
     this.configure();
-    if (!this.configured) return false;
+    if (!this.configured) {
+      Logger.warn('Skipped web push send because VAPID is not configured.');
+      return false;
+    }
 
     try {
       await webpush.sendNotification(subscription.subscription as PushSubscription, JSON.stringify(payload));
@@ -53,13 +57,26 @@ export class WebPushService {
 
   public static async sendToAdmins(payload: PushPayload) {
     const subscriptions = Database.getWebPushSubscriptions().filter((item) => item.audience === 'ADMIN');
-    if (subscriptions.length === 0) return { sent: 0, total: 0 };
+    if (subscriptions.length === 0) {
+      Logger.warn(`Skipped admin web push "${payload.title}" because no admin devices are subscribed.`);
+      return { sent: 0, total: 0 };
+    }
 
     const results = await Promise.all(subscriptions.map((subscription) => this.send(subscription, payload)));
     return {
       sent: results.filter(Boolean).length,
       total: subscriptions.length,
     };
+  }
+
+  public static async notifyAdminTest(message?: string) {
+    return this.sendToAdmins({
+      title: 'Kiểm tra thông báo Saximi',
+      body: message || 'Backend đã gửi thành công thông báo đẩy đến thiết bị admin.',
+      url: '/admin',
+      icon: '/icon.png',
+      badge: '/icon.png',
+    });
   }
 
   public static async notifyAdminOtp(phone: string, otp: string) {

@@ -110,25 +110,28 @@ export default function PhoneLoginPage() {
   };
 
   return (
-    <div className="min-h-full p-4 space-y-3">
-      <div className="auth-glass-card rounded-[28px] p-5 space-y-2">
-        <div className="h-12 w-12 rounded-2xl bg-white/34 text-primary flex items-center justify-center ring-1 ring-white/60 shadow-[0_14px_30px_rgba(0,204,247,0.18)] backdrop-blur-xl">
-          <CommerceIcon name="user" size={23} />
+    <div className="auth-page min-h-full p-4">
+      <section className="auth-glass-card auth-mobile-card rounded-[28px] p-4">
+        <div className="auth-mobile-hero">
+          <div className="auth-mobile-icon h-12 w-12 rounded-2xl bg-white/34 text-primary flex items-center justify-center ring-1 ring-white/60 shadow-[0_14px_30px_rgba(0,204,247,0.18)] backdrop-blur-xl">
+            <CommerceIcon name="user" size={23} />
+          </div>
+          <div className="min-w-0">
+            <div className="commerce-eyebrow text-primary">
+              Tài khoản Saximi shop
+            </div>
+            <div className="auth-mobile-title text-2xl font-black text-slate-900 leading-7">
+              Đăng nhập bằng số điện thoại
+            </div>
+          </div>
         </div>
-        <div className="commerce-eyebrow text-primary">
-          Tài khoản Saximi shop
-        </div>
-        <div className="text-2xl font-black text-slate-900 leading-7">
-          Đăng nhập bằng số điện thoại
-        </div>
-        <div className="commerce-caption text-subtitle">
+        <div className="auth-mobile-desc commerce-caption text-subtitle">
           Dùng một số điện thoại cho website và Zalo Mini App để theo dõi đơn
           hàng, địa chỉ giao hàng và tuyến Hội LHPN.
         </div>
-      </div>
 
-      {step === "phone" ? (
-        <form className="auth-glass-card rounded-[28px] p-4 space-y-4" onSubmit={requestOtp}>
+        {step === "phone" ? (
+          <form className="auth-mobile-form space-y-4" onSubmit={requestOtp}>
           <label className="grid gap-2 text-sm">
             <span className="font-semibold text-slate-800">
               Số điện thoại <span className="text-danger">*</span>
@@ -142,21 +145,12 @@ export default function PhoneLoginPage() {
               required
             />
           </label>
-          <label className="grid gap-2 text-sm">
-            <span className="font-semibold text-slate-800">Tên của bạn</span>
-            <input
-              className={inputClass}
-              placeholder="Nhập tên để tạo tài khoản mới"
-              value={name}
-              onChange={(event) => setName(event.currentTarget.value)}
-            />
-          </label>
           <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
             {isSubmitting ? "Đang gửi OTP..." : "Tiếp tục"}
           </Button>
-        </form>
-      ) : (
-        <form className="auth-glass-card rounded-[28px] p-4 space-y-4" onSubmit={verifyOtp}>
+          </form>
+        ) : (
+          <form className="auth-mobile-form space-y-4" onSubmit={verifyOtp}>
           <div className="rounded-2xl bg-cyan-50/54 px-3 py-2 commerce-caption text-primary ring-1 ring-white/60 backdrop-blur-xl">
             Vui lòng kiểm tra tin nhắn Zalo OA gửi đến số <strong>{phone}</strong>
             {demoOtp && (
@@ -190,8 +184,9 @@ export default function PhoneLoginPage() {
           >
             Đổi số điện thoại
           </button>
-        </form>
-      )}
+          </form>
+        )}
+      </section>
     </div>
   );
 }

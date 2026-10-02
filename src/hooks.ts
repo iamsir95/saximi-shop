@@ -19,6 +19,7 @@ import {
   userInfoState,
 } from "@/state";
 import { FrontendNotification, Product } from "@/types";
+import { rememberOrderAccess } from "@/utils/order-access";
 import { getConfig } from "@/utils/template";
 import { getApiBaseUrl } from "@/utils/request";
 import { authorize, openChat } from "zmp-sdk/apis";
@@ -387,6 +388,7 @@ export function useCheckout() {
       }
 
       const order = await response.json();
+      rememberOrderAccess(order.id, order.accessToken);
       setCart([]);
       setCartNote("");
       setSelectedCoupon(undefined);

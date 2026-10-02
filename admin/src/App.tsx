@@ -24,6 +24,29 @@ import { PostsPage } from './pages/Posts';
 import { FormsPage } from './pages/Forms';
 import { getAuthToken } from './api';
 
+const ADMIN_TABS = new Set([
+  'posts',
+  'forms',
+  'dashboard',
+  'analytics',
+  'orders',
+  'products',
+  'media-library',
+  'categories',
+  'affiliates',
+  'consignments',
+  'settlements',
+  'deliveries',
+  'audit-logs',
+  'banners',
+  'stations',
+  'coupons',
+  'users',
+  'otp-outbox',
+  'staff',
+  'settings',
+]);
+
 export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -33,6 +56,19 @@ export function App() {
     if (token) {
       setIsAuthenticated(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const syncTabFromUrl = () => {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab && ADMIN_TABS.has(tab)) {
+        setActiveTab(tab);
+      }
+    };
+
+    syncTabFromUrl();
+    window.addEventListener('popstate', syncTabFromUrl);
+    return () => window.removeEventListener('popstate', syncTabFromUrl);
   }, []);
 
   if (!isAuthenticated) {

@@ -4,6 +4,7 @@ import { Logger } from './logger.service.js';
 type OtpDeliveryChannel = 'zalo-oa-manual' | 'development';
 type OtpDeliveryStatus = 'pending_manual' | 'sent';
 type OtpOutboxStatus = 'pending' | 'sent' | 'expired';
+type OtpOutboxPurpose = 'login';
 
 interface OtpRecord {
   phone: string;
@@ -16,6 +17,9 @@ interface OtpRecord {
 export interface OtpOutboxItem {
   id: string;
   phone: string;
+  otpPreview: string;
+  purpose: OtpOutboxPurpose;
+  title: string;
   message: string;
   zaloOaUrl: string;
   status: OtpOutboxStatus;
@@ -76,6 +80,10 @@ export class OtpService {
     return String(crypto.randomInt(100000, 1000000));
   }
 
+  private static redactOtpMessage(message: string) {
+    return message.replace(/(\bOTP Saximi Shop của bạn là )\d{6}/, '$1******');
+  }
+
   private static cleanup(phone?: string) {
     const now = this.now();
 
@@ -97,7 +105,12 @@ export class OtpService {
 
     this.outbox.forEach((item, id) => {
       if (new Date(item.expiresAt).getTime() <= now && item.status === 'pending') {
-        this.outbox.set(id, { ...item, status: 'expired' });
+        this.outbox.set(id, {
+          ...item,
+          otpPreview: '',
+          message: this.redactOtpMessage(item.message),
+          status: 'expired',
+        });
       }
     });
   }
@@ -124,10 +137,13 @@ export class OtpService {
     }
   }
 
-  private static createOutboxItem(phone: string, message: string, expiresAt: number): OtpOutboxItem {
+  private static createOutboxItem(phone: string, otp: string, message: string, expiresAt: number): OtpOutboxItem {
     const item: OtpOutboxItem = {
       id: crypto.randomUUID(),
       phone,
+      otpPreview: otp,
+      purpose: 'login',
+      title: 'Khách vừa yêu cầu OTP đăng nhập',
       message,
       zaloOaUrl: this.zaloOaUrl,
       status: 'pending',
@@ -154,7 +170,7 @@ export class OtpService {
     this.registerSend(phone);
 
     const message = `Mã OTP Saximi Shop của bạn là ${otp}. Mã có hiệu lực trong ${Math.round(this.ttlSeconds / 60)} phút. Không chia sẻ mã này cho bất kỳ ai.`;
-    const outboxItem = this.createOutboxItem(phone, message, expiresAt);
+    const outboxItem = this.createOutboxItem(phone, otp, message, expiresAt);
 
     Logger.info(`🔐 [OTP] Generated for ${phone} and added to Zalo OA outbox`);
     return {
@@ -215,6 +231,8 @@ export class OtpService {
     if (!item) return null;
     const updated: OtpOutboxItem = {
       ...item,
+      otpPreview: item.status === 'expired' ? '' : '',
+      message: item.status === 'expired' ? item.message : this.redactOtpMessage(item.message),
       status: item.status === 'expired' ? 'expired' : 'sent',
       sentAt: item.status === 'expired' ? item.sentAt : new Date().toISOString(),
     };

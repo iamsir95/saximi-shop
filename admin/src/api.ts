@@ -1,5 +1,11 @@
 const API_BASE = (((import.meta as any).env?.VITE_ADMIN_API_URL as string | undefined) || '/api/admin').replace(/\/$/, '');
 
+export type AdminPushSetupResult =
+  | 'unsupported'
+  | 'denied'
+  | 'permission-only'
+  | 'subscribed';
+
 export function getAuthToken(): string | null {
   return localStorage.getItem('admin_token');
 }
@@ -39,6 +45,58 @@ async function request(endpoint: string, options: RequestInit = {}) {
   }
 
   return res.json();
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = `${base64String}${padding}`.replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+export async function setupAdminWebPushNotifications(): Promise<AdminPushSetupResult> {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    return 'unsupported';
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    return permission === 'denied' ? 'denied' : 'permission-only';
+  }
+
+  const registration = await navigator.serviceWorker.register('/saximi-sw.js');
+  await navigator.serviceWorker.ready;
+
+  if (!('PushManager' in window)) {
+    registration.showNotification('Saximi shop Admin', {
+      body: 'Trình duyệt đã bật thông báo, nhưng chưa hỗ trợ push nền.',
+      icon: '/icon.png',
+    });
+    return 'permission-only';
+  }
+
+  const config = await request('/web-push/config') as {
+    enabled: boolean;
+    publicKey?: string;
+  };
+
+  if (!config.enabled || !config.publicKey) {
+    registration.showNotification('Saximi shop Admin', {
+      body: 'Máy chủ chưa cấu hình VAPID để gửi thông báo đẩy.',
+      icon: '/icon.png',
+    });
+    return 'permission-only';
+  }
+
+  const subscription =
+    (await registration.pushManager.getSubscription()) ||
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(config.publicKey),
+    }));
+
+  await api.subscribeAdminWebPush(subscription);
+  return 'subscribed';
 }
 
 export const api = {
@@ -146,6 +204,8 @@ export const api = {
   getSettings: () => request('/settings'),
   updateSettings: (data: any) =>
     request('/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  getAuthSessions: () => request('/auth-sessions'),
+  revokeAuthSession: (id: string) => request(`/auth-sessions/${id}`, { method: 'DELETE' }),
   getForms: () => request('/forms'),
   createForm: (data: any) =>
     request('/forms', { method: 'POST', body: JSON.stringify(data) }),
@@ -161,6 +221,15 @@ export const api = {
   getOtpOutbox: () => request('/otp-outbox'),
   markOtpSent: (id: string) => request(`/otp-outbox/${id}/sent`, { method: 'PATCH' }),
   deleteOtpOutboxItem: (id: string) => request(`/otp-outbox/${id}`, { method: 'DELETE' }),
+  subscribeAdminWebPush: (subscription: PushSubscription) =>
+    request('/web-push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({
+        subscription,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+      }),
+    }),
   getStaff: () => request('/staff'),
   saveStaff: (data: any) =>
     request('/staff', { method: 'POST', body: JSON.stringify(data) }),

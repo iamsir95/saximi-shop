@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 export interface Category {
   id: number;
@@ -324,6 +325,8 @@ export interface Order {
   referrerId?: string;
   couponCode?: string;
   note?: string;
+  accessToken?: string;
+  accessTokenHash?: string;
 }
 
 export interface DeliveryTrackingEvent {
@@ -395,6 +398,7 @@ export interface WebPushSubscriptionRecord {
       auth?: string;
     };
   };
+  audience?: 'CUSTOMER' | 'ADMIN';
   userId?: string;
   userName?: string;
   userPhone?: string;
@@ -402,6 +406,22 @@ export interface WebPushSubscriptionRecord {
   platform?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type AuthSessionRole = 'CUSTOMER' | 'SUPER_ADMIN';
+
+export interface AuthSession {
+  id: string;
+  role: AuthSessionRole;
+  subjectId: string;
+  username?: string;
+  phone?: string;
+  deviceName: string;
+  userAgent?: string;
+  ip?: string;
+  createdAt: string;
+  lastActiveAt: string;
+  revokedAt?: string;
 }
 
 export type DynamicFormFieldType = 'text' | 'phone' | 'email' | 'textarea' | 'select' | 'checkbox';
@@ -485,6 +505,48 @@ function saveDataFile<T>(filename: string, data: T) {
   }
   const filePath = path.join(DATA_DIR, filename);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+const ENCRYPTED_VALUE_PREFIX = 'enc:v1:';
+
+function encryptionKey() {
+  const secret =
+    process.env.DATA_ENCRYPTION_KEY ||
+    process.env.JWT_SECRET ||
+    process.env.OTP_SECRET ||
+    'saximi-local-development-encryption-key';
+  return crypto.createHash('sha256').update(secret).digest();
+}
+
+function encryptSensitiveValue(value?: string): string {
+  if (!value || value.startsWith(ENCRYPTED_VALUE_PREFIX)) return value || '';
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${ENCRYPTED_VALUE_PREFIX}${Buffer.concat([iv, tag, encrypted]).toString('base64url')}`;
+}
+
+function decryptSensitiveValue(value?: string): string {
+  if (!value || !value.startsWith(ENCRYPTED_VALUE_PREFIX)) return value || '';
+  const payload = Buffer.from(value.slice(ENCRYPTED_VALUE_PREFIX.length), 'base64url');
+  const iv = payload.subarray(0, 12);
+  const tag = payload.subarray(12, 28);
+  const encrypted = payload.subarray(28);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey(), iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+}
+
+function hashSensitiveToken(value: string): string {
+  return crypto.createHmac('sha256', encryptionKey()).update(value).digest('base64url');
+}
+
+function secureCompare(left?: string, right?: string) {
+  if (!left || !right) return false;
+  const a = Buffer.from(left);
+  const b = Buffer.from(right);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150';
@@ -592,6 +654,7 @@ export class Database {
   private static deliveries: InHouseDelivery[] = [];
   private static mediaLibrary: MediaAsset[] = [];
   private static webPushSubscriptions: WebPushSubscriptionRecord[] = [];
+  private static authSessions: AuthSession[] = [];
   private static dynamicForms: DynamicForm[] = [];
   private static dynamicFormSubmissions: DynamicFormSubmission[] = [];
   private static settings: PlatformSettings = {
@@ -614,6 +677,72 @@ export class Database {
     maintenanceMessage: 'Hệ thống đang bảo trì, vui lòng quay lại sau.',
     updatedAt: new Date().toISOString(),
   };
+
+  private static persistSettings() {
+    saveDataFile('settings.json', {
+      ...this.settings,
+      sepayWebhookApiKey: encryptSensitiveValue(this.settings.sepayWebhookApiKey),
+    });
+  }
+
+  private static persistOrders() {
+    saveDataFile('orders.json', this.orders.map((order) => {
+      if (!order.accessToken) return order;
+      const { accessToken, ...safeOrder } = order;
+      return {
+        ...safeOrder,
+        accessTokenHash: order.accessTokenHash || hashSensitiveToken(accessToken),
+      };
+    }));
+  }
+
+  private static persistWebPushSubscriptions() {
+    saveDataFile('web_push_subscriptions.json', this.webPushSubscriptions.map((item) => ({
+      ...item,
+      subscription: {
+        ...item.subscription,
+        keys: item.subscription.keys
+          ? {
+              p256dh: encryptSensitiveValue(item.subscription.keys.p256dh),
+              auth: encryptSensitiveValue(item.subscription.keys.auth),
+            }
+          : item.subscription.keys,
+      },
+    })));
+  }
+
+  private static decryptWebPushSubscription(item: WebPushSubscriptionRecord): WebPushSubscriptionRecord {
+    return {
+      ...item,
+      subscription: {
+        ...item.subscription,
+        keys: item.subscription.keys
+          ? {
+              p256dh: decryptSensitiveValue(item.subscription.keys.p256dh),
+              auth: decryptSensitiveValue(item.subscription.keys.auth),
+            }
+          : item.subscription.keys,
+      },
+    };
+  }
+
+  private static persistAuthSessions() {
+    saveDataFile('auth_sessions.json', this.authSessions.map((session) => ({
+      ...session,
+      phone: encryptSensitiveValue(session.phone),
+      userAgent: encryptSensitiveValue(session.userAgent),
+      ip: encryptSensitiveValue(session.ip),
+    })));
+  }
+
+  private static decryptAuthSession(session: AuthSession): AuthSession {
+    return {
+      ...session,
+      phone: decryptSensitiveValue(session.phone),
+      userAgent: decryptSensitiveValue(session.userAgent),
+      ip: decryptSensitiveValue(session.ip),
+    };
+  }
 
   private static buildProductImageLibrary(product: Product): ProductImage[] {
     const category = this.categories.find((item) => item.id === product.categoryId);
@@ -867,6 +996,17 @@ export class Database {
     this.stations = ensureDataFile<Station[]>('stations.json', 'stations.json');
     this.coupons = ensureDataFile<Coupon[]>('coupons.json');
     this.orders = ensureDataFile<Order[]>('orders.json', 'orders.json');
+    let ordersNeedSecurePersist = false;
+    this.orders = this.orders.map((order) => {
+      if (order.accessToken && !order.accessTokenHash) {
+        ordersNeedSecurePersist = true;
+        return {
+          ...order,
+          accessTokenHash: hashSensitiveToken(order.accessToken),
+        };
+      }
+      return order;
+    });
     this.users = ensureDataFile<User[]>('users.json');
     this.affiliates = ensureDataFile<AffiliateProfile[]>('affiliates.json');
     this.consignmentStocks = ensureDataFile<ConsignmentStock[]>('consignments.json');
@@ -890,7 +1030,10 @@ export class Database {
     this.commissions = ensureDataFile<CommissionRecord[]>('commissions.json');
     this.deliveries = ensureDataFile<InHouseDelivery[]>('deliveries.json');
     this.mediaLibrary = ensureDataFile<MediaAsset[]>('media_library.json');
-    this.webPushSubscriptions = ensureDataFile<WebPushSubscriptionRecord[]>('web_push_subscriptions.json');
+    this.webPushSubscriptions = ensureDataFile<WebPushSubscriptionRecord[]>('web_push_subscriptions.json')
+      .map((item) => this.decryptWebPushSubscription(item));
+    this.authSessions = ensureDataFile<AuthSession[]>('auth_sessions.json')
+      .map((session) => this.decryptAuthSession(session));
     this.dynamicForms = ensureDataFile<DynamicForm[]>('dynamic_forms.json');
     this.dynamicFormSubmissions = ensureDataFile<DynamicFormSubmission[]>('dynamic_form_submissions.json');
     this.settings = {
@@ -903,13 +1046,16 @@ export class Database {
       vietQrAccountName: this.settings.vietQrAccountName || process.env.VIETQR_ACCOUNT_NAME || 'SAXIMI SHOP',
       sepayWebhookEnabled: this.settings.sepayWebhookEnabled ?? true,
       sepayWebhookApiKey:
-        this.settings.sepayWebhookApiKey ||
+        decryptSensitiveValue(this.settings.sepayWebhookApiKey) ||
         process.env.SEPAY_WEBHOOK_API_KEY ||
         process.env.SEPAY_WEBHOOK_SECRET ||
         '',
       commissionSettlementMode: this.settings.commissionSettlementMode || 'ORDER_DISCOUNT',
     };
-    saveDataFile('settings.json', this.settings);
+    this.persistSettings();
+    if (ordersNeedSecurePersist) this.persistOrders();
+    this.persistWebPushSubscriptions();
+    this.persistAuthSessions();
 
     this.hydrateMissingBusinessData();
     this.ensureStaffMembers();
@@ -1447,7 +1593,7 @@ export class Database {
     });
 
     if (changed) {
-      saveDataFile('orders.json', this.orders);
+      this.persistOrders();
     }
   }
 
@@ -2427,6 +2573,15 @@ export class Database {
     return this.orders.find((o) => o.id === id);
   }
 
+  public static verifyOrderAccessToken(order: Order | undefined, token?: string): boolean {
+    if (!order || !token) return false;
+    if (order.accessTokenHash && secureCompare(order.accessTokenHash, hashSensitiveToken(token))) {
+      return true;
+    }
+    // Backward compatibility for legacy in-memory/plaintext orders during migration.
+    return Boolean(order.accessToken && secureCompare(order.accessToken, token));
+  }
+
   public static createOrder(orderData: Omit<Order, 'id' | 'createdAt' | 'status' | 'paymentStatus'>): Order {
     const fallbackCustomer: User = {
       id: 'order-customer',
@@ -2455,6 +2610,7 @@ export class Database {
         : 0;
     const total = Math.max(0, subtotalAfterCoupon - commissionDiscountAmount);
     const newId = this.orders.length > 0 ? Math.max(...this.orders.map((o) => o.id)) + 1 : 10001;
+    const rawAccessToken = crypto.randomBytes(24).toString('base64url');
     const newOrder: Order = {
       id: newId,
       status: 'pending',
@@ -2464,13 +2620,15 @@ export class Database {
       items: normalizedItems,
       delivery,
       total,
+      accessToken: rawAccessToken,
+      accessTokenHash: hashSensitiveToken(rawAccessToken),
       paymentMethod,
       commissionSettlementMode,
       commissionDiscountAmount,
       commissionDiscountBeneficiaryId: commissionDiscountAmount > 0 ? referrer?.userId : undefined,
     };
     this.orders.unshift(newOrder);
-    saveDataFile('orders.json', this.orders);
+    this.persistOrders();
 
     // Deduct main stock
     normalizedItems.forEach((item) => {
@@ -2563,7 +2721,7 @@ export class Database {
       order.paymentStatus = 'success';
       order.paymentProvider = 'DEMO_AUTO_CONFIRM';
       order.paymentCheckedAt = new Date().toISOString();
-      saveDataFile('orders.json', this.orders);
+      this.persistOrders();
       this.logAction('system', 'PAYMENT_BOT', 'AUTO_PAYMENT_CONFIRMED', `Tự động xác nhận thanh toán ${method} cho đơn #${id}`, String(id));
     }
 
@@ -2591,7 +2749,7 @@ export class Database {
       paymentCheckedAt: now,
     };
 
-    saveDataFile('orders.json', this.orders);
+    this.persistOrders();
     if (wasPending) {
       this.logAction(
         'system',
@@ -2750,7 +2908,7 @@ export class Database {
       saveDataFile('commissions.json', this.commissions);
       saveDataFile('affiliates.json', this.affiliates);
     }
-    saveDataFile('orders.json', this.orders);
+    this.persistOrders();
     this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_ORDER_STATUS', `Đổi trạng thái đơn #${id} thành ${status}`);
     return this.orders[idx];
   }
@@ -2818,7 +2976,7 @@ export class Database {
       updatedAt: new Date().toISOString(),
     };
     this.settings = nextSettings;
-    saveDataFile('settings.json', this.settings);
+    this.persistSettings();
     this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_SETTINGS', 'Cập nhật cài đặt nền tảng');
     return this.settings;
   }
@@ -3065,6 +3223,16 @@ export class Database {
     return this.webPushSubscriptions;
   }
 
+  public static deleteWebPushSubscription(endpoint: string): boolean {
+    const initialLength = this.webPushSubscriptions.length;
+    this.webPushSubscriptions = this.webPushSubscriptions.filter((item) => item.endpoint !== endpoint);
+    if (this.webPushSubscriptions.length !== initialLength) {
+      this.persistWebPushSubscriptions();
+      return true;
+    }
+    return false;
+  }
+
   public static upsertWebPushSubscription(data: Omit<WebPushSubscriptionRecord, 'id' | 'endpoint' | 'createdAt' | 'updatedAt'>): WebPushSubscriptionRecord {
     const endpoint = data.subscription?.endpoint;
     if (!endpoint) {
@@ -3080,7 +3248,7 @@ export class Database {
         endpoint,
         updatedAt: now,
       };
-      saveDataFile('web_push_subscriptions.json', this.webPushSubscriptions);
+      this.persistWebPushSubscriptions();
       return this.webPushSubscriptions[existingIndex];
     }
 
@@ -3092,7 +3260,90 @@ export class Database {
       updatedAt: now,
     };
     this.webPushSubscriptions.unshift(record);
-    saveDataFile('web_push_subscriptions.json', this.webPushSubscriptions);
+    this.persistWebPushSubscriptions();
     return record;
+  }
+
+  private static detectDeviceName(userAgent?: string) {
+    const ua = String(userAgent || '');
+    const browser = /Edg\//.test(ua)
+      ? 'Edge'
+      : /Chrome\//.test(ua)
+        ? 'Chrome'
+        : /Safari\//.test(ua)
+          ? 'Safari'
+          : /Firefox\//.test(ua)
+            ? 'Firefox'
+            : 'Trình duyệt';
+    const os = /iPhone|iPad|iPod/.test(ua)
+      ? 'iOS'
+      : /Android/.test(ua)
+        ? 'Android'
+        : /Mac OS X/.test(ua)
+          ? 'macOS'
+          : /Windows/.test(ua)
+            ? 'Windows'
+            : /Linux/.test(ua)
+              ? 'Linux'
+              : 'Thiết bị';
+    return `${browser} trên ${os}`;
+  }
+
+  public static createAuthSession(data: {
+    role: AuthSessionRole;
+    subjectId: string;
+    username?: string;
+    phone?: string;
+    userAgent?: string;
+    ip?: string;
+  }): AuthSession {
+    const now = new Date().toISOString();
+    const session: AuthSession = {
+      id: crypto.randomUUID(),
+      role: data.role,
+      subjectId: data.subjectId,
+      username: data.username,
+      phone: data.phone,
+      userAgent: data.userAgent,
+      ip: data.ip,
+      deviceName: this.detectDeviceName(data.userAgent),
+      createdAt: now,
+      lastActiveAt: now,
+    };
+    this.authSessions.unshift(session);
+    this.persistAuthSessions();
+    return session;
+  }
+
+  public static getAuthSession(id?: string): AuthSession | undefined {
+    if (!id) return undefined;
+    return this.authSessions.find((session) => session.id === id && !session.revokedAt);
+  }
+
+  public static touchAuthSession(id?: string) {
+    const session = this.getAuthSession(id);
+    if (!session) return;
+    session.lastActiveAt = new Date().toISOString();
+    this.persistAuthSessions();
+  }
+
+  public static listAuthSessions(filter: { role?: AuthSessionRole; subjectId?: string; activeOnly?: boolean } = {}) {
+    return this.authSessions
+      .filter((session) => !filter.role || session.role === filter.role)
+      .filter((session) => !filter.subjectId || session.subjectId === filter.subjectId)
+      .filter((session) => !filter.activeOnly || !session.revokedAt)
+      .sort((a, b) => b.lastActiveAt.localeCompare(a.lastActiveAt));
+  }
+
+  public static revokeAuthSession(id: string, filter: { role?: AuthSessionRole; subjectId?: string } = {}) {
+    const session = this.authSessions.find((item) => item.id === id);
+    if (!session) return null;
+    if (filter.role && session.role !== filter.role) return null;
+    if (filter.subjectId && session.subjectId !== filter.subjectId) return null;
+    if (!session.revokedAt) {
+      session.revokedAt = new Date().toISOString();
+      this.persistAuthSessions();
+    }
+    return session;
   }
 }

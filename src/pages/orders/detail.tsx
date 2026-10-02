@@ -5,6 +5,7 @@ import OrderSummary from "./order-summary";
 import OrderInfo from "./order-info";
 import TrackingTimeline from "./tracking";
 import { getApiBaseUrl } from "@/utils/request";
+import { orderAccessHeaders } from "@/utils/order-access";
 
 function OrderDetailPage() {
   const { id } = useParams();
@@ -20,7 +21,9 @@ function OrderDetailPage() {
     let mounted = true;
     const loadTracking = async () => {
       try {
-        const response = await fetch(`${getApiBaseUrl()}/orders/${orderId}/tracking`);
+        const response = await fetch(`${getApiBaseUrl()}/orders/${orderId}/tracking`, {
+          headers: orderAccessHeaders(orderId),
+        });
         if (!response.ok) return;
         const data = (await response.json()) as OrderTracking;
         if (mounted) {

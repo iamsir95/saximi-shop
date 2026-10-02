@@ -8,15 +8,18 @@ import {
   CheckCircle2,
   Truck,
   TrendingUp,
+  BellRing,
 } from 'lucide-react';
 import { StatsCard } from '../components/StatsCard';
-import { api } from '../api';
+import { api, setupAdminWebPushNotifications } from '../api';
 import { Order, Stats } from '../types';
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pushStatus, setPushStatus] = useState<'idle' | 'loading' | 'enabled' | 'permission-only' | 'denied' | 'unsupported' | 'error'>('idle');
+  const [pushMessage, setPushMessage] = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -35,6 +38,27 @@ export const Dashboard: React.FC = () => {
     }
     loadData();
   }, []);
+
+  const enableAdminPush = async () => {
+    setPushStatus('loading');
+    setPushMessage('');
+    try {
+      const result = await setupAdminWebPushNotifications();
+      setPushStatus(result === 'subscribed' ? 'enabled' : result);
+      if (result === 'subscribed') {
+        setPushMessage('Đã bật thông báo đẩy cho thiết bị admin này.');
+      } else if (result === 'permission-only') {
+        setPushMessage('Trình duyệt đã cho phép thông báo, nhưng máy chủ chưa sẵn sàng gửi push nền.');
+      } else if (result === 'denied') {
+        setPushMessage('Trình duyệt đang chặn quyền thông báo. Hãy mở quyền trong cài đặt trình duyệt.');
+      } else {
+        setPushMessage('Thiết bị hoặc trình duyệt này chưa hỗ trợ thông báo đẩy.');
+      }
+    } catch (error: any) {
+      setPushStatus('error');
+      setPushMessage(error?.message || 'Không thể bật thông báo đẩy cho admin.');
+    }
+  };
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -82,6 +106,59 @@ export const Dashboard: React.FC = () => {
           icon={Users}
           gradient="from-amber-500 to-orange-700"
         />
+      </div>
+
+      {(stats?.pendingOtpCount || 0) > 0 && (
+        <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 p-5 shadow-xl shadow-cyan-950/20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300 text-slate-950">
+                <BellRing className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-base font-black text-white">Có OTP đăng nhập đang chờ gửi</div>
+                <div className="mt-1 text-sm text-slate-300">
+                  {stats?.pendingOtpCount} khách vừa yêu cầu đăng nhập/đăng ký. Vào mục OTP Zalo để copy mã và gửi cho khách.
+                </div>
+              </div>
+            </div>
+            <span className="inline-flex w-fit rounded-full bg-cyan-300 px-3 py-1 text-xs font-black text-slate-950">
+              Cần xử lý
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-slate-700/60 bg-slate-800/80 p-5 shadow-xl">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-300">
+              <BellRing className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-base font-black text-white">Thông báo đẩy cho admin</div>
+              <div className="mt-1 max-w-2xl text-sm leading-6 text-slate-300">
+                Nhận cảnh báo khi có đơn hàng mới, OTP đăng nhập, phản hồi form khách hàng và lượt đăng nhập quản trị.
+              </div>
+              {pushMessage && (
+                <div className={`mt-2 text-sm font-semibold ${
+                  pushStatus === 'enabled' ? 'text-emerald-300' : pushStatus === 'error' || pushStatus === 'denied' ? 'text-rose-300' : 'text-amber-300'
+                }`}>
+                  {pushMessage}
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={enableAdminPush}
+            disabled={pushStatus === 'loading'}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <BellRing className="h-4 w-4" />
+            {pushStatus === 'loading' ? 'Đang bật...' : pushStatus === 'enabled' ? 'Đã bật thông báo' : 'Bật thông báo'}
+          </button>
+        </div>
       </div>
 
       {/* Order Status Breakdown */}

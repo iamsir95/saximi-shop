@@ -38,6 +38,7 @@ import { formatDistant } from "./utils/format";
 import CONFIG from "./config";
 import { isZaloMiniAppRuntime } from "./utils/platform";
 import { getApiBaseUrl } from "./utils/request";
+import { orderAccessHeaders } from "./utils/order-access";
 
 const guestUserInfo: UserInfo = {
   id: "web-customer",
@@ -67,6 +68,10 @@ const sessionStorageJson = createJSONStorage<string | undefined>(
 
 async function loginWithZaloUser(userInfo: UserInfo) {
   if (!userInfo.phone) return userInfo;
+  const phoneToken =
+    typeof window === "undefined"
+      ? ""
+      : window.sessionStorage.getItem(CONFIG.STORAGE_KEYS.ZALO_PHONE_TOKEN) || "";
 
   const response = await fetch(`${getApiBaseUrl()}/auth/zalo-login`, {
     method: "POST",
@@ -78,6 +83,7 @@ async function loginWithZaloUser(userInfo: UserInfo) {
       name: userInfo.name,
       avatar: userInfo.avatar,
       phone: userInfo.phone,
+      phoneToken,
     }),
   });
 
@@ -91,6 +97,7 @@ async function loginWithZaloUser(userInfo: UserInfo) {
   };
   localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN, result.token);
   localStorage.setItem(CONFIG.STORAGE_KEYS.USER_INFO, JSON.stringify(result.user));
+  window.sessionStorage.removeItem(CONFIG.STORAGE_KEYS.ZALO_PHONE_TOKEN);
   return result.user;
 }
 
@@ -199,6 +206,9 @@ export const phoneState = atom(async () => {
 
   try {
     const { token } = await getPhoneNumber({});
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(CONFIG.STORAGE_KEYS.ZALO_PHONE_TOKEN, token);
+    }
     phone = await decodeZaloPhoneToken(token);
   } catch (error) {
     console.warn(error);
@@ -375,22 +385,45 @@ export const ordersState = atomFamily((status: OrderStatus) =>
     const phone = userInfo?.phone?.trim();
     if (!phone) return [];
 
-    const params = new URLSearchParams({ status, phone });
-    return requestWithFallback<Order[]>(`/orders?${params.toString()}`, []);
+    try {
+      const params = new URLSearchParams({ status });
+      const response = await fetch(`${getApiBaseUrl()}/orders?${params.toString()}`, {
+        headers: orderAccessHeaders(),
+      });
+      if (!response.ok) return [];
+      return (await response.json()) as Order[];
+    } catch {
+      return [];
+    }
   })
 );
 
 export const orderState = atomFamily((id: number) =>
-  atom(() => requestWithFallback<Order | undefined>(`/orders/${id}`, undefined))
+  atom(async () => {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/orders/${id}`, {
+        headers: orderAccessHeaders(id),
+      });
+      if (!response.ok) return undefined;
+      return (await response.json()) as Order;
+    } catch {
+      return undefined;
+    }
+  })
 );
 
 export const orderTrackingState = atomFamily((id: number) =>
-  atom(() =>
-    requestWithFallback<OrderTracking | undefined>(
-      `/orders/${id}/tracking`,
-      undefined
-    )
-  )
+  atom(async () => {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/orders/${id}/tracking`, {
+        headers: orderAccessHeaders(id),
+      });
+      if (!response.ok) return undefined;
+      return (await response.json()) as OrderTracking;
+    } catch {
+      return undefined;
+    }
+  })
 );
 
 export const deliveryModeState = atomWithStorage<Delivery["type"]>(

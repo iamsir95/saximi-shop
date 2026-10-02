@@ -78,9 +78,17 @@ function ProfileEditorPage() {
 
         setSaving(true);
         try {
+          const token = localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+          if (!token) {
+            toast.error("Vui lòng đăng nhập để lưu hồ sơ.");
+            return;
+          }
           const profileResponse = await fetch(`${getApiBaseUrl()}/user/profile`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify(newUserInfo),
           });
           if (!profileResponse.ok) throw new Error(`Profile ${profileResponse.status}`);
@@ -88,7 +96,10 @@ function ProfileEditorPage() {
 
           const addressResponse = await fetch(`${getApiBaseUrl()}/user/addresses`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify({
               phone,
               address: defaultShippingAddress,

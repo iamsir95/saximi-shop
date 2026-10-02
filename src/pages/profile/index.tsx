@@ -3,6 +3,8 @@ import FollowOA from "./follow-oa";
 import Points from "./points";
 import UserInfo from "./user-info";
 import WebCapabilitiesCard from "./web-capabilities";
+import LoginDevices from "./login-devices";
+import InstallAppGuide from "./install-app-guide";
 import { useNavigate } from "react-router-dom";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -257,7 +259,9 @@ export default function ProfilePage() {
       </UserInfo>
 
       <AccountRoleCard />
+      <LoginDevices />
       <WebCapabilitiesCard />
+      <InstallAppGuide />
 
       <ProfileActions />
       <FollowOA />

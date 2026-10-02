@@ -7,6 +7,7 @@ import { ZaloService } from './services/zalo.service.js';
 import { Logger } from './services/logger.service.js';
 import { PaymentService, PaymentMethod } from './services/payment.service.js';
 import { OtpError, OtpService } from './services/otp.service.js';
+import { WebPushService } from './services/web-push.service.js';
 import { mountPostRoutes } from './post-routes.js';
 import { mountUploads } from './uploads.js';
 
@@ -16,6 +17,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'zaui-market-secret-key-2026';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const publicApi = express.Router();
+const DEFAULT_JWT_SECRET = 'zaui-market-secret-key-2026';
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
+const adminLoginAttempts = new Map<string, { count: number; firstAttemptAt: number; blockedUntil?: number }>();
+
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET || JWT_SECRET === DEFAULT_JWT_SECRET) {
+    throw new Error('JWT_SECRET must be set to a strong value in production.');
+  }
+  if (!process.env.ADMIN_PASSWORD || ADMIN_PASSWORD === DEFAULT_ADMIN_PASSWORD) {
+    throw new Error('ADMIN_PASSWORD must be changed in production.');
+  }
+}
 
 function normalizePhone(phone: string) {
   const digits = String(phone || '').replace(/\D/g, '');
@@ -59,6 +72,42 @@ function sendZaloCallbackOk(req: Request, res: Response, callbackType: string) {
   });
 }
 
+function assertAdminLoginAllowed(key: string) {
+  const now = Date.now();
+  const record = adminLoginAttempts.get(key);
+  if (!record) return;
+  if (record.blockedUntil && record.blockedUntil > now) {
+    const waitSeconds = Math.ceil((record.blockedUntil - now) / 1000);
+    throw new Error(`Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${waitSeconds} giây.`);
+  }
+  if (record.blockedUntil && record.blockedUntil <= now) {
+    adminLoginAttempts.delete(key);
+  }
+}
+
+function registerAdminLoginFailure(key: string) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const existing = adminLoginAttempts.get(key);
+  const record = existing && now - existing.firstAttemptAt < windowMs
+    ? existing
+    : { count: 0, firstAttemptAt: now };
+  record.count += 1;
+  if (record.count >= 8) {
+    record.blockedUntil = now + windowMs;
+  }
+  adminLoginAttempts.set(key, record);
+}
+
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), payment=()');
+  next();
+});
 app.use(cors());
 app.use('/api/admin/uploads', express.json({ limit: '8mb' }));
 app.use('/api/admin/posts', express.json({ limit: '256kb' }));
@@ -82,13 +131,49 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
   }
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+    if (typeof decoded === 'string' || decoded.role !== 'SUPER_ADMIN') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    const session = Database.getAuthSession(String(decoded.sid || ''));
+    if (!session || session.role !== 'SUPER_ADMIN' || session.subjectId !== String(decoded.username || 'admin')) {
+      return res.status(401).json({ message: 'Phiên đăng nhập đã bị đăng xuất khỏi thiết bị này.' });
+    }
+    Database.touchAuthSession(session.id);
     (req as any).admin = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+function authenticateCustomer(req: Request): jwt.JwtPayload | null {
+  try {
+    const token = req.headers.authorization?.replace(/^Bearer /, '');
+    const decoded = jwt.verify(token || '', JWT_SECRET) as jwt.JwtPayload;
+    if (typeof decoded === 'string' || decoded.role !== 'CUSTOMER') return null;
+    const session = Database.getAuthSession(String(decoded.sid || ''));
+    if (!session || session.role !== 'CUSTOMER' || session.subjectId !== String(decoded.sub || '')) return null;
+    Database.touchAuthSession(session.id);
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
+function canAccessOrder(req: Request, order: ReturnType<typeof Database.getOrderById>) {
+  if (!order) return false;
+  const providedToken = String(req.headers['x-order-access-token'] || req.query.accessToken || '');
+  if (Database.verifyOrderAccessToken(order, providedToken)) {
+    return true;
+  }
+
+  const identity = authenticateCustomer(req);
+  if (!identity) return false;
+  const identityPhone = normalizePhone(String(identity.phone || ''));
+  const orderPhone = normalizePhone(String(order.delivery?.phone || ''));
+  return Boolean(identityPhone && orderPhone && identityPhone === orderPhone);
+}
 
 mountPostRoutes(app, authenticateAdmin, () => Database.getSettings().publicSiteUrl, undefined, () => Database.getCoupons(), () => Database.getProducts());
 mountUploads(app, authenticateAdmin, (url, title) => {
@@ -197,6 +282,11 @@ publicApi.post('/forms/:id/submissions', (req: Request, res: Response) => {
   try {
     const submission = Database.submitDynamicForm(id, req.body || {});
     if (!submission) return res.status(404).json({ message: 'Form không tồn tại hoặc đã tắt.' });
+    WebPushService.notifyAdminFormSubmission(submission)
+      .then(({ sent, total }) => {
+        if (total > 0) Logger.info(`🔔 [Admin Push] Form submission notification sent to ${sent}/${total} admin devices`);
+      })
+      .catch((pushError) => Logger.error('Failed to notify admin form submission by web push', pushError));
     res.status(201).json({ success: true, submission });
   } catch (error: any) {
     res.status(400).json({ message: error.message || 'Không thể gửi form.' });
@@ -243,6 +333,14 @@ publicApi.post('/auth/request-otp', (req: Request, res: Response) => {
     }
 
     const result = OtpService.requestOtp(phone);
+    const latestOutboxItem = OtpService.getOutbox().find((item) => item.id === result.delivery.outboxId);
+    if (latestOutboxItem?.otpPreview) {
+      WebPushService.notifyAdminOtp(phone, latestOutboxItem.otpPreview)
+        .then(({ sent, total }) => {
+          if (total > 0) Logger.info(`🔔 [Admin Push] OTP notification sent to ${sent}/${total} admin devices`);
+        })
+        .catch((pushError) => Logger.error('Failed to notify admin OTP by web push', pushError));
+    }
     res.json({
       ...result,
       message: result.delivery.message,
@@ -272,10 +370,17 @@ publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
 
     OtpService.verifyOtp(phone, otp);
     const user = Database.upsertPhoneUser({ phone, name, email });
-    const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER' }, JWT_SECRET, { expiresIn: '30d' });
+    const session = Database.createAuthSession({
+      role: 'CUSTOMER',
+      subjectId: user.id,
+      phone: user.phone,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+    });
+    const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER', sid: session.id }, JWT_SECRET);
 
     Logger.info(`✅ [Auth] User ${user.phone} logged in`);
-    res.json({ token, user });
+    res.json({ token, user, session });
   } catch (error) {
     if (error instanceof OtpError) {
       return res.status(error.statusCode).json({ message: error.message });
@@ -285,8 +390,9 @@ publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
   }
 });
 
-publicApi.post('/auth/zalo-login', (req: Request, res: Response) => {
-  const phone = normalizePhone(req.body.phone);
+publicApi.post('/auth/zalo-login', async (req: Request, res: Response) => {
+  let phone = normalizePhone(req.body.phone);
+  const phoneToken = typeof req.body.phoneToken === 'string' ? req.body.phoneToken : '';
   const zaloUserId = typeof req.body.zaloUserId === 'string' ? req.body.zaloUserId : undefined;
   const name = typeof req.body.name === 'string' ? req.body.name : undefined;
   const avatar = typeof req.body.avatar === 'string' ? req.body.avatar : undefined;
@@ -295,8 +401,19 @@ publicApi.post('/auth/zalo-login', (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Thiếu Zalo user id' });
   }
 
-  if (!isValidVietnamPhone(phone)) {
-    return res.status(400).json({ message: 'Cần số điện thoại hợp lệ để tự đăng nhập Zalo Mini App' });
+  try {
+    if (phoneToken) {
+      const decoded = await ZaloService.decodePhoneToken(phoneToken);
+      phone = normalizePhone(decoded.phone);
+    } else if (process.env.NODE_ENV === 'production') {
+      return res.status(400).json({ message: 'Thiếu token xác thực số điện thoại Zalo.' });
+    }
+
+    if (!isValidVietnamPhone(phone)) {
+      return res.status(400).json({ message: 'Cần số điện thoại hợp lệ để tự đăng nhập Zalo Mini App' });
+    }
+  } catch (error: any) {
+    return res.status(400).json({ message: error?.message || 'Không xác minh được số điện thoại Zalo.' });
   }
 
   const user = Database.upsertPhoneUser({
@@ -305,10 +422,17 @@ publicApi.post('/auth/zalo-login', (req: Request, res: Response) => {
     name,
     avatar,
   });
-  const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER', provider: 'zalo' }, JWT_SECRET, { expiresIn: '30d' });
+  const session = Database.createAuthSession({
+    role: 'CUSTOMER',
+    subjectId: user.id,
+    phone: user.phone,
+    userAgent: req.headers['user-agent'],
+    ip: req.ip,
+  });
+  const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER', provider: 'zalo', sid: session.id }, JWT_SECRET);
 
   Logger.info(`✅ [Zalo Auth] User ${user.phone} logged in from Mini App`);
-  res.json({ token, user });
+  res.json({ token, user, session });
 });
 
 publicApi.get('/web-push/config', (_req: Request, res: Response) => {
@@ -328,6 +452,7 @@ publicApi.post('/web-push/subscribe', (req: Request, res: Response) => {
 
     const record = Database.upsertWebPushSubscription({
       subscription,
+      audience: 'CUSTOMER',
       userId,
       userName,
       userPhone,
@@ -349,7 +474,9 @@ publicApi.post('/web-push/subscribe', (req: Request, res: Response) => {
 
 publicApi.get('/orders', (req: Request, res: Response) => {
   const status = req.query.status as string;
-  const phone = typeof req.query.phone === 'string' ? normalizePhone(req.query.phone) : undefined;
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để xem danh sách đơn hàng.' });
+  const phone = normalizePhone(String(identity.phone || ''));
   res.json(Database.getOrders(status, phone));
 });
 
@@ -415,6 +542,11 @@ publicApi.post('/orders', (req: Request, res: Response) => {
     }
 
     Logger.info(`🛒 [New Order] Created #${newOrder.id} Total: ${newOrder.total} VND (Method: ${paymentMethod})`);
+    WebPushService.notifyAdminNewOrder(newOrder)
+      .then(({ sent, total }) => {
+        if (total > 0) Logger.info(`🔔 [Admin Push] New order notification sent to ${sent}/${total} admin devices`);
+      })
+      .catch((pushError) => Logger.error('Failed to notify admin new order by web push', pushError));
     res.status(201).json({ ...newOrder, paymentDetails });
   } catch (error) {
     Logger.error('Failed to create order', error);
@@ -428,6 +560,7 @@ publicApi.get('/payment/details/:orderId', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.orderId);
   const order = Database.getOrderById(orderId);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  if (!canAccessOrder(req, order)) return res.status(403).json({ message: 'Bạn không có quyền xem thông tin thanh toán đơn này.' });
 
   const paymentConfig = Database.getPaymentConfig();
   const bankInfo = PaymentService.getBankInfo(paymentConfig);
@@ -564,6 +697,7 @@ publicApi.get('/payment/status/:orderId', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.orderId);
   const order = Database.checkAndUpdatePaymentStatus(orderId);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  if (!canAccessOrder(req, order)) return res.status(403).json({ message: 'Bạn không có quyền xem trạng thái thanh toán đơn này.' });
 
   res.json({
     orderId: order.id,
@@ -581,6 +715,7 @@ publicApi.get('/orders/:id', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.id);
   const order = Database.checkAndUpdatePaymentStatus(orderId);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  if (!canAccessOrder(req, order)) return res.status(403).json({ message: 'Bạn không có quyền xem đơn hàng này.' });
   res.json(order);
 });
 
@@ -588,45 +723,51 @@ publicApi.get('/orders/:id/tracking', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.id);
   const tracking = Database.getOrderTracking(orderId);
   if (!tracking) return res.status(404).json({ message: 'Order not found' });
+  if (!canAccessOrder(req, tracking.order)) return res.status(403).json({ message: 'Bạn không có quyền theo dõi đơn hàng này.' });
   res.json(tracking);
 });
 
 publicApi.get('/user/addresses', (req: Request, res: Response) => {
-  const phone = normalizePhone(String(req.query.phone || ''));
-  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để xem sổ địa chỉ.' });
+  const phone = normalizePhone(String(identity.phone || ''));
   res.json(Database.getUserAddresses(phone));
 });
 
 publicApi.post('/user/addresses', (req: Request, res: Response) => {
-  const phone = normalizePhone(req.body.phone);
-  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
-  const address = Database.upsertUserAddress(phone, req.body.address || req.body);
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để lưu địa chỉ.' });
+  const phone = normalizePhone(String(identity.phone || ''));
+  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại tài khoản không hợp lệ' });
+  const address = Database.upsertUserAddress(phone, {
+    ...(req.body.address || req.body),
+    phone,
+  });
   res.status(201).json(address);
 });
 
 publicApi.put('/user/addresses/:id', (req: Request, res: Response) => {
-  const phone = normalizePhone(req.body.phone);
-  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
-  const address = Database.upsertUserAddress(phone, { ...(req.body.address || req.body), id: req.params.id });
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để sửa địa chỉ.' });
+  const phone = normalizePhone(String(identity.phone || ''));
+  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại tài khoản không hợp lệ' });
+  const address = Database.upsertUserAddress(phone, { ...(req.body.address || req.body), id: req.params.id, phone });
   res.json(address);
 });
 
 publicApi.delete('/user/addresses/:id', (req: Request, res: Response) => {
-  const phone = normalizePhone(String(req.query.phone || req.body?.phone || ''));
-  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để xóa địa chỉ.' });
+  const phone = normalizePhone(String(identity.phone || ''));
+  if (!isValidVietnamPhone(phone)) return res.status(400).json({ message: 'Số điện thoại tài khoản không hợp lệ' });
   const ok = Database.deleteUserAddress(phone, req.params.id);
   if (!ok) return res.status(404).json({ message: 'Address not found' });
   res.json({ success: true });
 });
 
 publicApi.put('/user/avatar', (req: Request, res: Response) => {
-  let identity: jwt.JwtPayload;
-  try {
-    const token = req.headers.authorization?.replace(/^Bearer /, '');
-    const decoded = jwt.verify(token || '', JWT_SECRET);
-    if (typeof decoded === 'string' || decoded.role !== 'CUSTOMER') throw new Error('Unauthorized');
-    identity = decoded;
-  } catch {
+  const identity = authenticateCustomer(req);
+  if (!identity) {
     return res.status(401).json({ message: 'Vui lòng đăng nhập lại để đổi ảnh đại diện.' });
   }
   const user = Database.findUserByPhone(String(identity.phone || ''));
@@ -643,13 +784,44 @@ publicApi.put('/user/avatar', (req: Request, res: Response) => {
   res.json({ avatar });
 });
 
+publicApi.get('/auth/sessions', (req: Request, res: Response) => {
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập lại.' });
+  const currentSessionId = String(identity.sid || '');
+  const sessions = Database.listAuthSessions({
+    role: 'CUSTOMER',
+    subjectId: String(identity.sub || ''),
+    activeOnly: true,
+  }).map((session) => ({
+    ...session,
+    isCurrent: session.id === currentSessionId,
+  }));
+  res.json(sessions);
+});
+
+publicApi.delete('/auth/sessions/:id', (req: Request, res: Response) => {
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập lại.' });
+  const revoked = Database.revokeAuthSession(req.params.id, {
+    role: 'CUSTOMER',
+    subjectId: String(identity.sub || ''),
+  });
+  if (!revoked) return res.status(404).json({ message: 'Không tìm thấy thiết bị đăng nhập.' });
+  res.json({ success: true, revokedId: revoked.id });
+});
+
 publicApi.put('/user/profile', (req: Request, res: Response) => {
-  const phone = normalizePhone(req.body.phone);
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để cập nhật hồ sơ.' });
+  const phone = normalizePhone(String(identity.phone || ''));
   if (!isValidVietnamPhone(phone)) {
-    return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+    return res.status(400).json({ message: 'Số điện thoại tài khoản không hợp lệ' });
   }
 
   const existing = Database.findUserByPhone(phone);
+  if (existing && existing.id !== identity.sub) {
+    return res.status(403).json({ message: 'Bạn không có quyền cập nhật hồ sơ này.' });
+  }
   const user = existing
     ? Database.updateUser(existing.id, {
         name: req.body.name,
@@ -689,12 +861,32 @@ app.use('/api', publicApi);
 
 app.post('/api/admin/login', (req: Request, res: Response) => {
   const { username, password } = req.body;
+  const loginKey = `${req.ip}:${String(username || '').toLowerCase()}`;
+  try {
+    assertAdminLoginAllowed(loginKey);
+  } catch (error: any) {
+    return res.status(429).json({ message: error.message || 'Vui lòng thử lại sau.' });
+  }
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-    const token = jwt.sign({ username, role: 'SUPER_ADMIN' }, JWT_SECRET, { expiresIn: '1d' });
+    adminLoginAttempts.delete(loginKey);
+    const session = Database.createAuthSession({
+      role: 'SUPER_ADMIN',
+      subjectId: username,
+      username,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+    });
+    const token = jwt.sign({ username, role: 'SUPER_ADMIN', sid: session.id }, JWT_SECRET);
     Logger.info(`🔑 [Admin Auth] Admin logged in: ${username}`);
     Database.logAction('admin', 'SUPER_ADMIN', 'ADMIN_LOGIN', 'Đăng nhập trang quản trị thành công', undefined, req.ip);
-    return res.json({ token, user: { username, name: 'System Admin', role: 'SUPER_ADMIN' } });
+    WebPushService.notifyAdminLogin(username, req.ip)
+      .then(({ sent, total }) => {
+        if (total > 0) Logger.info(`🔔 [Admin Push] Admin login notification sent to ${sent}/${total} admin devices`);
+      })
+      .catch((pushError) => Logger.error('Failed to notify admin login by web push', pushError));
+    return res.json({ token, user: { username, name: 'System Admin', role: 'SUPER_ADMIN' }, session });
   }
+  registerAdminLoginFailure(loginKey);
   return res.status(401).json({ message: 'Tên đăng nhập hoặc mật khẩu không chính xác' });
 });
 
@@ -713,6 +905,7 @@ app.get('/api/admin/stats', authenticateAdmin, (req: Request, res: Response) => 
   const totalDebt = consignment.reduce((sum, c) => sum + c.debtAmount, 0);
 
   const lowStockCount = products.filter((p) => (p.stockQuantity ?? 0) <= (p.minStockLevel ?? 15)).length;
+  const pendingOtpCount = OtpService.getOutbox().filter((item) => item.status === 'pending').length;
 
   res.json({
     totalRevenue,
@@ -726,11 +919,75 @@ app.get('/api/admin/stats', authenticateAdmin, (req: Request, res: Response) => 
     totalAffiliates: affiliates.length,
     totalConsignmentDebt: totalDebt,
     lowStockCount,
+    pendingOtpCount,
   });
 });
 
 app.get('/api/admin/otp-outbox', authenticateAdmin, (_req: Request, res: Response) => {
   res.json(OtpService.getOutbox());
+});
+
+app.get('/api/admin/auth-sessions', authenticateAdmin, (req: Request, res: Response) => {
+  const admin = (req as any).admin || {};
+  const currentSessionId = String(admin.sid || '');
+  const sessions = Database.listAuthSessions({
+    role: 'SUPER_ADMIN',
+    subjectId: String(admin.username || 'admin'),
+    activeOnly: true,
+  }).map((session) => ({
+    ...session,
+    isCurrent: session.id === currentSessionId,
+  }));
+  res.json(sessions);
+});
+
+app.delete('/api/admin/auth-sessions/:id', authenticateAdmin, (req: Request, res: Response) => {
+  const admin = (req as any).admin || {};
+  const revoked = Database.revokeAuthSession(req.params.id, {
+    role: 'SUPER_ADMIN',
+    subjectId: String(admin.username || 'admin'),
+  });
+  if (!revoked) return res.status(404).json({ message: 'Không tìm thấy thiết bị đăng nhập.' });
+  res.json({ success: true, revokedId: revoked.id });
+});
+
+app.get('/api/admin/web-push/config', authenticateAdmin, (_req: Request, res: Response) => {
+  const subscriptions = Database.getWebPushSubscriptions().filter((item) => item.audience === 'ADMIN');
+  res.json({
+    enabled: WebPushService.isEnabled(),
+    publicKey: process.env.WEB_PUSH_PUBLIC_KEY || '',
+    devices: subscriptions.length,
+  });
+});
+
+app.post('/api/admin/web-push/subscribe', authenticateAdmin, (req: Request, res: Response) => {
+  try {
+    if (!WebPushService.isEnabled()) {
+      return res.status(400).json({ message: 'Máy chủ chưa cấu hình VAPID để gửi thông báo đẩy.' });
+    }
+
+    const subscription = req.body.subscription;
+    if (!subscription?.endpoint) {
+      return res.status(400).json({ message: 'Thiếu thông tin thiết bị nhận thông báo.' });
+    }
+
+    const admin = (req as any).admin || {};
+    const record = Database.upsertWebPushSubscription({
+      subscription,
+      audience: 'ADMIN',
+      userId: admin.username || 'admin',
+      userName: admin.username || 'Admin',
+      userPhone: '',
+      userAgent: req.body.userAgent,
+      platform: req.body.platform,
+    });
+
+    Logger.info(`🔔 [Admin Push] Registered admin browser subscription #${record.id}`);
+    res.status(201).json({ id: record.id, endpoint: record.endpoint, enabled: true });
+  } catch (error) {
+    Logger.error('Failed to register admin web push subscription', error);
+    res.status(400).json({ message: 'Không thể bật thông báo đẩy cho admin.' });
+  }
 });
 
 app.patch('/api/admin/otp-outbox/:id/sent', authenticateAdmin, (req: Request, res: Response) => {

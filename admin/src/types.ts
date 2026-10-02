@@ -348,12 +348,30 @@ export interface CustomerAddress {
 export interface OtpOutboxItem {
   id: string;
   phone: string;
+  otpPreview?: string;
+  purpose?: 'login';
+  title?: string;
   message: string;
   zaloOaUrl: string;
   status: 'pending' | 'sent' | 'expired';
   createdAt: string;
   expiresAt: string;
   sentAt?: string;
+}
+
+export interface AuthSession {
+  id: string;
+  role: 'CUSTOMER' | 'SUPER_ADMIN';
+  subjectId: string;
+  username?: string;
+  phone?: string;
+  deviceName: string;
+  userAgent?: string;
+  ip?: string;
+  createdAt: string;
+  lastActiveAt: string;
+  revokedAt?: string;
+  isCurrent?: boolean;
 }
 
 export interface PlatformSettings {
@@ -409,4 +427,5 @@ export interface Stats {
   totalAffiliates?: number;
   totalConsignmentDebt?: number;
   lowStockCount?: number;
+  pendingOtpCount?: number;
 }

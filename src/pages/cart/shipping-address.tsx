@@ -1,4 +1,5 @@
 import { useFrontendNotification } from "@/hooks";
+import CONFIG from "@/config";
 import { browserLocationState, loadableUserInfoState, shippingAddressState } from "@/state";
 import { Location, ShippingAddress } from "@/types";
 import {
@@ -52,6 +53,7 @@ function ShippingAddressPage() {
     setForm((current) => ({ ...current, [key]: value }));
   };
   const userInfo = userInfoLoadable.state === "hasData" ? userInfoLoadable.data : undefined;
+  const authToken = typeof window !== "undefined" ? localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN) : "";
   const ownerPhone = form.phone || address?.phone || userInfo?.phone || "";
   const applySavedAddress = (savedAddress: ShippingAddress) => {
     setAddress(savedAddress);
@@ -69,13 +71,14 @@ function ShippingAddressPage() {
     );
   };
   const refreshAddressBook = async (phone = ownerPhone) => {
+    if (!authToken) return;
     const normalizedPhone = phone.replace(/\D/g, "");
     if (!/^0\d{9}$/.test(normalizedPhone)) return;
     setLoadingAddressBook(true);
     try {
-      const response = await fetch(
-        `${getApiBaseUrl()}/user/addresses?phone=${encodeURIComponent(normalizedPhone)}`
-      );
+      const response = await fetch(`${getApiBaseUrl()}/user/addresses`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       if (!response.ok) throw new Error(`Address book ${response.status}`);
       const data = (await response.json()) as ShippingAddress[];
       setAddressBook(data);
@@ -90,11 +93,14 @@ function ShippingAddressPage() {
     }
   };
   const deleteSavedAddress = async (savedAddress: ShippingAddress) => {
-    if (!savedAddress.id || !ownerPhone) return;
+    if (!savedAddress.id || !ownerPhone || !authToken) return;
     try {
       const response = await fetch(
-        `${getApiBaseUrl()}/user/addresses/${encodeURIComponent(savedAddress.id)}?phone=${encodeURIComponent(ownerPhone)}`,
-        { method: "DELETE" }
+        `${getApiBaseUrl()}/user/addresses/${encodeURIComponent(savedAddress.id)}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
       );
       if (!response.ok) throw new Error(`Delete address ${response.status}`);
       if (address?.id === savedAddress.id) {
@@ -208,10 +214,13 @@ function ShippingAddressPage() {
         };
         setAddress(newAddress as typeof address);
         const savePhone = phone;
-        if (/^0\d{9}$/.test(savePhone)) {
+        if (/^0\d{9}$/.test(savePhone) && authToken) {
           fetch(`${getApiBaseUrl()}/user/addresses`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
             body: JSON.stringify({
               phone: savePhone,
               address: newAddress,

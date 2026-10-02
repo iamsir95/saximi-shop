@@ -8,7 +8,7 @@ import {
 } from "@/state";
 import { Order } from "@/types";
 import { formatPrice } from "@/utils/format";
-import { requestWithFallback } from "@/utils/request";
+import { getApiBaseUrl, requestWithFallback } from "@/utils/request";
 import {
   findAffiliateByReferrer,
   findAffiliateForUser,
@@ -19,6 +19,7 @@ import { loadable } from "jotai/utils";
 import { useNavigate } from "react-router-dom";
 import CommerceIcon, { CommerceIconName } from "@/components/commerce-icon";
 import PersonalMarketingLink from "@/components/personal-marketing-link";
+import { orderAccessHeaders } from "@/utils/order-access";
 import Points from "@/pages/profile/points";
 import FollowOA from "@/pages/profile/follow-oa";
 import WebCapabilitiesCard from "@/pages/profile/web-capabilities";
@@ -85,10 +86,10 @@ export default function MemberPage() {
       };
     }
 
-    requestWithFallback<Order[]>(
-      `/orders?${new URLSearchParams({ phone }).toString()}`,
-      []
-    )
+    fetch(`${getApiBaseUrl()}/orders`, {
+      headers: orderAccessHeaders(),
+    })
+      .then((response) => (response.ok ? response.json() : []))
       .then((data) => {
         if (!mounted) return;
         setOrders(data);

@@ -7,6 +7,7 @@ services:
       NODE_ENV: production
       PORT: 5001
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env before starting production}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:-}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env before starting production}
       PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://hpn.saximi.com.vn}
@@ -16,6 +17,7 @@ services:
       SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY:-}
       WEB_PUSH_PUBLIC_KEY: ${WEB_PUSH_PUBLIC_KEY:-}
       WEB_PUSH_PRIVATE_KEY: ${WEB_PUSH_PRIVATE_KEY:-}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-mailto:admin@saximi.com.vn}
       OTP_SECRET: ${OTP_SECRET:-}
       OTP_TTL_SECONDS: ${OTP_TTL_SECONDS:-300}
       OTP_RESEND_COOLDOWN_SECONDS: ${OTP_RESEND_COOLDOWN_SECONDS:-60}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Link2, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
-import { api } from '../api';
-import { PlatformSettings } from '../types';
+import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Laptop, Link2, LogOut, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
+import { api, clearAuthToken } from '../api';
+import { AuthSession, PlatformSettings } from '../types';
 import { ImageField } from '../components/ImageField';
 
 const emptySettings: PlatformSettings = {
@@ -54,6 +54,7 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [uploads, setUploads] = useState(0);
+  const [sessions, setSessions] = useState<AuthSession[]>([]);
   const onUploadingChange = (busy: boolean) => setUploads((count) => Math.max(0, count + (busy ? 1 : -1)));
 
   const inputClass =
@@ -63,7 +64,9 @@ export function SettingsPage() {
     setLoading(true);
     try {
       const data = await api.getSettings();
+      const sessionData = await api.getAuthSessions().catch(() => []);
       setSettings({ ...emptySettings, ...data });
+      setSessions(sessionData);
     } finally {
       setLoading(false);
     }
@@ -104,6 +107,19 @@ export function SettingsPage() {
   const copyWebhookUrl = async () => {
     await navigator.clipboard.writeText(webhookUrl);
     setNotice('Đã sao chép URL webhook SePay.');
+    window.setTimeout(() => setNotice(''), 1800);
+  };
+
+  const revokeSession = async (id: string) => {
+    const isCurrent = sessions.some((item) => item.id === id && item.isCurrent);
+    await api.revokeAuthSession(id);
+    setSessions((items) => items.filter((item) => item.id !== id));
+    if (isCurrent) {
+      clearAuthToken();
+      window.location.reload();
+      return;
+    }
+    setNotice('Đã đăng xuất thiết bị quản trị.');
     window.setTimeout(() => setNotice(''), 1800);
   };
 
@@ -338,6 +354,48 @@ export function SettingsPage() {
         </div>
 
         <aside className="space-y-5">
+          <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
+            <div className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
+              <Laptop className="h-5 w-5 text-cyan-300" />
+              Thiết bị quản trị
+            </div>
+            <div className="space-y-3">
+              {sessions.length === 0 ? (
+                <div className="rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-400 ring-1 ring-white/10">
+                  Chưa có dữ liệu thiết bị đăng nhập.
+                </div>
+              ) : (
+                sessions.map((session) => (
+                  <div key={session.id} className="rounded-2xl bg-slate-950/70 p-4 ring-1 ring-white/10">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-black text-white">
+                          {session.deviceName}
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-slate-400">
+                          Hoạt động: {new Date(session.lastActiveAt).toLocaleString('vi-VN')}
+                        </div>
+                        {session.isCurrent && (
+                          <span className="mt-2 inline-flex rounded-full bg-cyan-400/12 px-2 py-1 text-[10px] font-black text-cyan-200 ring-1 ring-cyan-300/20">
+                            Thiết bị hiện tại
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => revokeSession(session.id)}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-rose-500/12 px-3 py-2 text-xs font-black text-rose-200 ring-1 ring-rose-300/20"
+                      >
+                        <LogOut className="h-3.5 w-3.5" />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
           <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
             <div className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
               <Wrench className="h-5 w-5 text-cyan-300" />

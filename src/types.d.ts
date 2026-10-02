@@ -28,6 +28,21 @@ export interface UserInfo {
   province?: string;
 }
 
+export interface AuthSession {
+  id: string;
+  role: "CUSTOMER" | "SUPER_ADMIN";
+  subjectId: string;
+  username?: string;
+  phone?: string;
+  deviceName: string;
+  userAgent?: string;
+  ip?: string;
+  createdAt: string;
+  lastActiveAt: string;
+  revokedAt?: string;
+  isCurrent?: boolean;
+}
+
 export type FrontendNotificationKind = "success" | "info" | "warning" | "error";
 export type FrontendNotificationTopic =
   | "account"
@@ -427,4 +442,5 @@ export interface Order {
   delivery: Delivery;
   total: number;
   note: string;
+  accessToken?: string;
 }

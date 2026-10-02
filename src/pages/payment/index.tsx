@@ -7,6 +7,7 @@ import CommerceIcon, { CommerceIconName } from "@/components/commerce-icon";
 import type { PaymentMethod, OrderPaymentDetails, PaymentStatus } from "@/types";
 import { getApiBaseUrl } from "@/utils/request";
 import { useFrontendNotification } from "@/hooks";
+import { orderAccessHeaders } from "@/utils/order-access";
 
 const API_BASE = getApiBaseUrl();
 
@@ -70,6 +71,36 @@ function VietQRView({ details }: { details: OrderPaymentDetails }) {
     });
   };
 
+  const handleDownloadQr = async () => {
+    const fileName = `saximi-vietqr-don-${details.orderId}.png`;
+
+    try {
+      const response = await fetch(details.vietQrUrl, { mode: "cors" });
+      if (!response.ok) throw new Error("Không tải được ảnh QR");
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      toast.success("Đã tải ảnh QR thanh toán");
+    } catch {
+      const anchor = document.createElement("a");
+      anchor.href = details.vietQrUrl;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      toast("Đã mở ảnh QR, bạn có thể lưu ảnh về máy.");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* QR Code */}
@@ -77,22 +108,31 @@ function VietQRView({ details }: { details: OrderPaymentDetails }) {
         <p className="text-sm font-bold text-slate-700">Quét mã QR để chuyển khoản</p>
         <p className="text-xs text-slate-400">Hỗ trợ tất cả app ngân hàng Việt Nam</p>
 
-        <div className="relative inline-block">
+        <div className="relative mx-auto aspect-square w-56 max-w-full overflow-visible">
           {!imgLoaded && (
-            <div className="w-56 h-56 bg-slate-100 rounded-2xl animate-pulse flex items-center justify-center mx-auto">
+            <div className="absolute inset-0 bg-slate-100 rounded-2xl animate-pulse flex items-center justify-center">
               <span className="text-slate-400 text-xs">Đang tải QR...</span>
             </div>
           )}
           <img
             src={details.vietQrUrl}
             alt="VietQR"
-            className={`w-56 h-56 mx-auto rounded-2xl shadow-inner border border-slate-200 ${imgLoaded ? "block" : "hidden"}`}
+            className={`h-full w-full rounded-2xl border border-slate-200 bg-white object-contain p-2 shadow-inner ${imgLoaded ? "block" : "invisible"}`}
             onLoad={() => setImgLoaded(true)}
           />
           <div className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
             NAPAS 247
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleDownloadQr}
+          className="mx-auto flex min-h-11 w-full max-w-[224px] items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-black text-white shadow-sm active:scale-[0.98]"
+        >
+          <CommerceIcon name="qr" size={17} />
+          Tải ảnh QR
+        </button>
 
         <CountdownTimer seconds={900} />
       </div>
@@ -253,7 +293,9 @@ export default function PaymentPage() {
   useEffect(() => {
     if (!orderId) return;
     setLoading(true);
-    fetch(`${API_BASE}/payment/details/${orderId}`)
+    fetch(`${API_BASE}/payment/details/${orderId}`, {
+      headers: orderAccessHeaders(Number(orderId)),
+    })
       .then((r) => r.json())
       .then((data) => {
         setDetails(data);
@@ -283,7 +325,9 @@ export default function PaymentPage() {
     let mounted = true;
     const checkPaymentStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE}/payment/status/${orderId}`);
+        const response = await fetch(`${API_BASE}/payment/status/${orderId}`, {
+          headers: orderAccessHeaders(Number(orderId)),
+        });
         if (!response.ok) return;
         const data = await response.json();
         if (!mounted) return;

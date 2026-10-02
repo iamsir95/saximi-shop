@@ -26,6 +26,7 @@ export interface UserInfo {
   streetAddress?: string;
   ward?: string;
   province?: string;
+  hasPin?: boolean;
 }
 
 export interface AuthSession {

@@ -364,6 +364,9 @@ export interface User {
   email?: string;
   address?: string;
   addresses?: CustomerAddress[];
+  pinHash?: string;
+  pinUpdatedAt?: string;
+  hasPin?: boolean;
   createdAt?: string;
   lastLoginAt?: string;
 }
@@ -2934,8 +2937,16 @@ export class Database {
     return true;
   }
 
+  private static toSafeUser(user: User): User {
+    const { pinHash, ...safeUser } = user;
+    return {
+      ...safeUser,
+      hasPin: Boolean(pinHash),
+    };
+  }
+
   public static getUsers(): User[] {
-    return this.users;
+    return this.users.map((user) => this.toSafeUser(user));
   }
 
   public static getSettings(): PlatformSettings {
@@ -3100,12 +3111,17 @@ export class Database {
     return this.users.find((user) => user.phone === phone);
   }
 
+  public static getSafeUser(user: User): User {
+    return this.toSafeUser(user);
+  }
+
   public static updateUser(id: string, data: Partial<User>): User | null {
     const idx = this.users.findIndex((user) => user.id === id);
     if (idx === -1) return null;
+    const { pinHash: _pinHash, pinUpdatedAt: _pinUpdatedAt, hasPin: _hasPin, ...safeData } = data;
     this.users[idx] = {
       ...this.users[idx],
-      ...data,
+      ...safeData,
       id,
       phone: data.phone ? normalizeVietnamPhone(data.phone) || data.phone : this.users[idx].phone,
       name: data.name?.trim() || this.users[idx].name,
@@ -3122,7 +3138,47 @@ export class Database {
       }
       saveDataFile('affiliates.json', this.affiliates);
     }
-    return this.users[idx];
+    return this.toSafeUser(this.users[idx]);
+  }
+
+  private static hashCustomerPin(pin: string, salt = crypto.randomBytes(16).toString('hex')) {
+    const hash = crypto.pbkdf2Sync(pin, salt, 120000, 32, 'sha256').toString('hex');
+    return `pbkdf2_sha256$120000$${salt}$${hash}`;
+  }
+
+  public static setUserPin(userId: string, pin: string): User | null {
+    const idx = this.users.findIndex((user) => user.id === userId);
+    if (idx === -1) return null;
+    this.users[idx] = {
+      ...this.users[idx],
+      pinHash: this.hashCustomerPin(pin),
+      pinUpdatedAt: new Date().toISOString(),
+    };
+    saveDataFile('users.json', this.users);
+    this.logAction(this.users[idx].name, 'CUSTOMER', 'SET_LOGIN_PIN', 'Thiết lập mã PIN đăng nhập', userId);
+    return this.toSafeUser(this.users[idx]);
+  }
+
+  public static verifyUserPin(phone: string, pin: string): User | null {
+    const user = this.findUserByPhone(phone);
+    const storedHash = user?.pinHash || '';
+    const [scheme, iterations, salt, hash] = storedHash.split('$');
+
+    if (!user || scheme !== 'pbkdf2_sha256' || !iterations || !salt || !hash) {
+      return null;
+    }
+
+    const candidate = crypto.pbkdf2Sync(pin, salt, Number(iterations), 32, 'sha256').toString('hex');
+    const storedBuffer = Buffer.from(hash, 'hex');
+    const candidateBuffer = Buffer.from(candidate, 'hex');
+
+    if (storedBuffer.length !== candidateBuffer.length || !crypto.timingSafeEqual(storedBuffer, candidateBuffer)) {
+      return null;
+    }
+
+    user.lastLoginAt = new Date().toISOString();
+    saveDataFile('users.json', this.users);
+    return this.toSafeUser(user);
   }
 
   public static deleteUser(id: string): boolean {
@@ -3221,7 +3277,7 @@ export class Database {
         lastLoginAt: now,
       };
       saveDataFile('users.json', this.users);
-      return this.users[existingIndex];
+      return this.toSafeUser(this.users[existingIndex]);
     }
 
     const name = data.name?.trim() || `Khách hàng ${data.phone.slice(-4)}`;
@@ -3237,7 +3293,7 @@ export class Database {
     };
     this.users.unshift(user);
     saveDataFile('users.json', this.users);
-    return user;
+    return this.toSafeUser(user);
   }
 
   public static getWebPushSubscriptions(): WebPushSubscriptionRecord[] {

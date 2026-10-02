@@ -39,6 +39,22 @@ function isValidVietnamPhone(phone: string) {
   return /^0\d{9}$/.test(phone);
 }
 
+function isValidLoginPin(pin: string) {
+  return /^\d{4,6}$/.test(pin);
+}
+
+function createCustomerAuthResponse(user: ReturnType<typeof Database.upsertPhoneUser>, req: Request) {
+  const session = Database.createAuthSession({
+    role: 'CUSTOMER',
+    subjectId: user.id,
+    phone: user.phone,
+    userAgent: req.headers['user-agent'],
+    ip: req.ip,
+  });
+  const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER', sid: session.id }, JWT_SECRET);
+  return { token, user: Database.getSafeUser(user), session };
+}
+
 function wantsCompactView(req: Request) {
   const view = String(req.query.view || req.query.mode || '').toLowerCase();
   const platform = String(req.query.platform || req.headers['x-client-platform'] || '').toLowerCase();
@@ -426,6 +442,19 @@ publicApi.post('/auth/request-otp', (req: Request, res: Response) => {
   }
 });
 
+publicApi.post('/auth/pin-status', (req: Request, res: Response) => {
+  const phone = normalizePhone(req.body.phone);
+  if (!isValidVietnamPhone(phone)) {
+    return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+  }
+
+  const user = Database.findUserByPhone(phone);
+  res.json({
+    phone,
+    hasPin: Boolean(user?.pinHash),
+  });
+});
+
 publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
   try {
     const phone = normalizePhone(req.body.phone);
@@ -442,17 +471,10 @@ publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
 
     OtpService.verifyOtp(phone, otp);
     const user = Database.upsertPhoneUser({ phone, name, email });
-    const session = Database.createAuthSession({
-      role: 'CUSTOMER',
-      subjectId: user.id,
-      phone: user.phone,
-      userAgent: req.headers['user-agent'],
-      ip: req.ip,
-    });
-    const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER', sid: session.id }, JWT_SECRET);
+    const auth = createCustomerAuthResponse(user, req);
 
     Logger.info(`✅ [Auth] User ${user.phone} logged in`);
-    res.json({ token, user, session });
+    res.json(auth);
   } catch (error) {
     if (error instanceof OtpError) {
       return res.status(error.statusCode).json({ message: error.message });
@@ -460,6 +482,46 @@ publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
     Logger.error('Failed to verify OTP', error);
     res.status(500).json({ message: 'Không thể xác minh OTP. Vui lòng thử lại sau.' });
   }
+});
+
+publicApi.post('/auth/login-pin', (req: Request, res: Response) => {
+  try {
+    const phone = normalizePhone(req.body.phone);
+    const pin = String(req.body.pin || '').trim();
+
+    if (!isValidVietnamPhone(phone)) {
+      return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+    }
+    if (!isValidLoginPin(pin)) {
+      return res.status(400).json({ message: 'Mã PIN cần có 4-6 chữ số' });
+    }
+
+    const user = Database.verifyUserPin(phone, pin);
+    if (!user) {
+      return res.status(401).json({ message: 'Số điện thoại hoặc mã PIN không đúng' });
+    }
+
+    const auth = createCustomerAuthResponse(user, req);
+    Logger.info(`✅ [Auth PIN] User ${user.phone} logged in`);
+    res.json(auth);
+  } catch (error) {
+    Logger.error('Failed to login with PIN', error);
+    res.status(500).json({ message: 'Không thể đăng nhập bằng PIN. Vui lòng thử lại sau.' });
+  }
+});
+
+publicApi.post('/auth/set-pin', (req: Request, res: Response) => {
+  const identity = authenticateCustomer(req);
+  if (!identity) return res.status(401).json({ message: 'Vui lòng đăng nhập để thiết lập mã PIN.' });
+
+  const pin = String(req.body.pin || '').trim();
+  if (!isValidLoginPin(pin)) {
+    return res.status(400).json({ message: 'Mã PIN cần có 4-6 chữ số' });
+  }
+
+  const user = Database.setUserPin(String(identity.sub || ''), pin);
+  if (!user) return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
+  res.json({ user, message: 'Đã thiết lập mã PIN đăng nhập.' });
 });
 
 publicApi.post('/auth/zalo-login', async (req: Request, res: Response) => {

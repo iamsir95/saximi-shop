@@ -23,6 +23,7 @@ import { Login } from './pages/Login';
 import { PostsPage } from './pages/Posts';
 import { FormsPage } from './pages/Forms';
 import { getAuthToken } from './api';
+import { PullToRefresh } from './components/PullToRefresh';
 
 const ADMIN_TABS = new Set([
   'posts',
@@ -147,6 +148,7 @@ export function App() {
           {activeTab === 'staff' && <StaffPage />}
           {activeTab === 'settings' && <SettingsPage />}
         </main>
+        <PullToRefresh targetSelector=".admin-content" />
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { ScrollRestoration } from "./scroll-restoration";
 import FloatingCartPreview from "./floating-cart-preview";
 import { useAtomValue, useSetAtom } from "jotai";
 import { affiliateReferrerIdState, platformSettingsState } from "@/state";
+import PullToRefresh from "./pull-to-refresh";
 
 export default function Layout() {
   const setAffiliateReferrerId = useSetAtom(affiliateReferrerIdState);
@@ -80,6 +81,7 @@ export default function Layout() {
           <Outlet />
         </Suspense>
       </main>
+      <PullToRefresh targetSelector=".app-scroll" />
       <Footer />
       <Toaster
         containerClassName="toast-container"

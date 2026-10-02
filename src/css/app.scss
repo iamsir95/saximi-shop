@@ -116,6 +116,60 @@ html[data-platform="website"] {
   overflow: hidden;
 }
 
+.app-scroll {
+  overscroll-behavior-y: contain;
+}
+
+.pull-refresh {
+  position: fixed;
+  top: calc(var(--safe-top) + 54px);
+  left: 50%;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 14px 36px rgba(15, 42, 64, 0.14);
+  color: #102033;
+  font-size: var(--commerce-font-xs);
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  backdrop-filter: blur(22px) saturate(1.3);
+}
+
+.pull-refresh--visible {
+  opacity: 1;
+}
+
+.pull-refresh__spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background:
+    conic-gradient(var(--primary) calc(var(--pull-progress, 0) * 1turn), rgba(15, 42, 64, 0.12) 0),
+    rgba(255, 255, 255, 0.86);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0);
+}
+
+.pull-refresh__spinner--active {
+  animation: pull-refresh-spin 0.82s linear infinite;
+  background: conic-gradient(var(--primary), var(--secondary), var(--primary));
+}
+
+@keyframes pull-refresh-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 .app-header,
 .app-footer {
   flex: none;

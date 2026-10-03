@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Laptop, Link2, LogOut, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
+import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Laptop, Link2, LogOut, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
 import { api, clearAuthToken } from '../api';
 import { AuthSession, PlatformSettings } from '../types';
 import { ImageField } from '../components/ImageField';

@@ -5,8 +5,6 @@ import { Category, MediaAsset, Product, ProductAttribute, ProductGiftProgram, Pr
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 import { ImageField } from '../components/ImageField';
 
-type ProductEditorTab = 'sales' | 'media' | 'variants' | 'seo';
-
 const stripHtml = (value: string) =>
   value
     .replace(/<[^>]+>/g, ' ')
@@ -48,7 +46,6 @@ export const Products: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [productEditorTab, setProductEditorTab] = useState<ProductEditorTab>('sales');
 
   // Form State
   const [name, setName] = useState('');
@@ -330,7 +327,6 @@ export const Products: React.FC = () => {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setProductEditorTab('sales');
     setName('');
     setPrice('');
     setOriginalPrice('');
@@ -361,7 +357,6 @@ export const Products: React.FC = () => {
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
-    setProductEditorTab('sales');
     setName(product.name);
     setPrice(product.price.toString());
     setOriginalPrice(product.originalPrice ? product.originalPrice.toString() : '');
@@ -399,8 +394,8 @@ export const Products: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (uploads) { alert('Vui lòng đợi tải ảnh hoàn tất trước khi lưu.'); return; }
-    if (!name.trim()) { setProductEditorTab('sales'); alert('Vui lòng nhập tên sản phẩm.'); return; }
-    if (!price || Number.isNaN(Number(price))) { setProductEditorTab('sales'); alert('Vui lòng nhập giá bán hợp lệ.'); return; }
+    if (!name.trim()) { alert('Vui lòng nhập tên sản phẩm.'); return; }
+    if (!price || Number.isNaN(Number(price))) { alert('Vui lòng nhập giá bán hợp lệ.'); return; }
     const galleryUrls = imageUrls
       .split('\n')
       .map((url) => url.trim())
@@ -513,13 +508,6 @@ export const Products: React.FC = () => {
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
-
-  const productEditorTabs: Array<{ id: ProductEditorTab; label: string; hint: string }> = [
-    { id: 'sales', label: 'Bán hàng', hint: 'Giá, kho, danh mục' },
-    { id: 'media', label: 'Hình ảnh & ưu đãi', hint: 'Album, nhãn, quà tặng' },
-    { id: 'variants', label: 'Biến thể', hint: 'Size, màu, phiên bản' },
-    { id: 'seo', label: 'Nội dung SEO', hint: 'Meta, mô tả, bài viết' },
-  ];
 
   const generateProductSeo = () => {
     const categoryName = categories.find((item) => item.id === categoryId)?.name || 'sản phẩm';
@@ -764,7 +752,7 @@ export const Products: React.FC = () => {
                     {editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
                   </h3>
                   <p className="mt-1 text-sm text-slate-400">
-                    Quản lý bán hàng, hình ảnh, ưu đãi, biến thể và SEO trong một màn hình.
+                    Nhập sản phẩm bằng một biểu mẫu duy nhất, đầy đủ bán hàng, hình ảnh, ưu đãi, biến thể và SEO.
                   </p>
                 </div>
                 <button
@@ -775,30 +763,14 @@ export const Products: React.FC = () => {
                   <X className="mx-auto h-5 w-5" />
                 </button>
               </div>
-              <div className="mt-4 grid gap-2 md:grid-cols-4" role="tablist" aria-label="Nhóm chỉnh sửa sản phẩm">
-                {productEditorTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={productEditorTab === tab.id}
-                    onClick={() => setProductEditorTab(tab.id)}
-                    className={`rounded-2xl border px-4 py-3 text-left transition ${
-                      productEditorTab === tab.id
-                        ? 'border-cyan-400/60 bg-cyan-400/10 text-white shadow-lg shadow-cyan-950/20'
-                        : 'border-slate-800 bg-slate-950/40 text-slate-400 hover:border-slate-700 hover:text-white'
-                    }`}
-                  >
-                    <span className="block text-sm font-bold">{tab.label}</span>
-                    <span className="mt-1 block text-[11px] text-slate-500">{tab.hint}</span>
-                  </button>
-                ))}
+              <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-50">
+                Một bản đăng sản phẩm duy nhất. Các phần nâng cao có thể bỏ trống nếu chưa cần dùng.
               </div>
             </div>
 
-            <div className="max-h-[calc(92vh-176px)] overflow-y-auto p-6">
+            <div className="max-h-[calc(92vh-140px)] overflow-y-auto p-6">
             <form onSubmit={handleSave} className="space-y-4">
-              {productEditorTab === 'sales' && (
+              {(
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                 <div className="flex items-center gap-2 text-sm font-bold text-white">
                   <Sparkles className="w-4 h-4 text-blue-400" />
@@ -893,7 +865,7 @@ export const Products: React.FC = () => {
               </div>
               )}
 
-              {productEditorTab === 'media' && (
+              {(
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                   <div className="flex items-center gap-2 text-sm font-bold text-white">
@@ -1218,7 +1190,7 @@ export const Products: React.FC = () => {
               </div>
               )}
 
-              {productEditorTab === 'variants' && (
+              {(
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -1323,7 +1295,7 @@ export const Products: React.FC = () => {
               </div>
               )}
 
-              {productEditorTab === 'seo' && (
+              {(
               <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>

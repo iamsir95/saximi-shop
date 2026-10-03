@@ -227,6 +227,7 @@ export interface BannerItem {
   mobileAspectRatio?: "wide" | "mobile-4-6";
   title?: string;
   linkUrl?: string;
+  linkEnabled?: boolean;
   isActive: boolean;
 }
 

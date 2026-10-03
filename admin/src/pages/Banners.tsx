@@ -27,6 +27,7 @@ export const BannersPage: React.FC = () => {
   const [mobileAspectRatio, setMobileAspectRatio] = useState<'wide' | 'mobile-4-6'>('wide');
   const [title, setTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [linkEnabled, setLinkEnabled] = useState(true);
   const [isActive, setIsActive] = useState(true);
 
   const onUploadingChange = (busy: boolean) => setUploads((count) => Math.max(0, count + (busy ? 1 : -1)));
@@ -56,6 +57,7 @@ export const BannersPage: React.FC = () => {
     setMobileAspectRatio('wide');
     setTitle('');
     setLinkUrl('');
+    setLinkEnabled(true);
     setIsActive(true);
     setIsModalOpen(true);
   };
@@ -67,6 +69,7 @@ export const BannersPage: React.FC = () => {
     setMobileAspectRatio(banner.mobileAspectRatio || 'wide');
     setTitle(banner.title || '');
     setLinkUrl(banner.linkUrl || '');
+    setLinkEnabled(banner.linkEnabled !== false);
     setIsActive(banner.isActive !== false);
     setIsModalOpen(true);
   };
@@ -86,6 +89,7 @@ export const BannersPage: React.FC = () => {
       mobileAspectRatio,
       title: title.trim() || 'Banner khuyến mãi',
       linkUrl: linkUrl.trim() || undefined,
+      linkEnabled,
       isActive,
     };
 
@@ -189,9 +193,10 @@ export const BannersPage: React.FC = () => {
                   <p className="mt-1 truncate text-xs text-slate-400">{banner.imageUrl}</p>
                   {banner.mobileImageUrl && <p className="mt-1 text-xs font-semibold text-cyan-300">Có ảnh mobile {banner.mobileAspectRatio === 'mobile-4-6' ? '4:6' : 'ngang'}</p>}
                   {banner.linkUrl && (
-                    <a href={banner.linkUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full items-center gap-1 text-xs font-semibold text-cyan-300">
+                    <a href={banner.linkUrl} target="_blank" rel="noreferrer" className={`mt-2 inline-flex max-w-full items-center gap-1 text-xs font-semibold ${banner.linkEnabled === false ? 'text-slate-500' : 'text-cyan-300'}`}>
                       <LinkIcon className="h-3.5 w-3.5 flex-none" />
                       <span className="truncate">{banner.linkUrl}</span>
+                      {banner.linkEnabled === false && <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] text-slate-300">Tắt chuyển hướng</span>}
                       <ExternalLink className="h-3.5 w-3.5 flex-none" />
                     </a>
                   )}
@@ -293,6 +298,14 @@ export const BannersPage: React.FC = () => {
                   placeholder="https://... hoặc /product/5, /news"
                 />
               </div>
+
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <span>
+                  <span className="block text-sm font-bold text-white">Bật chuyển hướng khi bấm banner</span>
+                  <span className="mt-1 block text-xs text-slate-400">Tắt mục này nếu chỉ muốn banner là hình ảnh, không dẫn đến trang khác.</span>
+                </span>
+                <input type="checkbox" checked={linkEnabled} onChange={(e) => setLinkEnabled(e.target.checked)} className="h-5 w-5 accent-cyan-400" />
+              </label>
 
               <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                 <span>

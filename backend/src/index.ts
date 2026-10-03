@@ -52,7 +52,7 @@ function createCustomerAuthResponse(user: ReturnType<typeof Database.upsertPhone
     ip: req.ip,
   });
   const token = jwt.sign({ sub: user.id, phone: user.phone, role: 'CUSTOMER', sid: session.id }, JWT_SECRET);
-  return { token, user: Database.getSafeUser(user), session };
+  return { token, user, session };
 }
 
 function wantsCompactView(req: Request) {

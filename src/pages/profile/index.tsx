@@ -4,6 +4,7 @@ import Points from "./points";
 import UserInfo from "./user-info";
 import WebCapabilitiesCard from "./web-capabilities";
 import LoginDevices from "./login-devices";
+import LoginPinCard from "./login-pin";
 import InstallAppGuide from "./install-app-guide";
 import { useNavigate } from "react-router-dom";
 import { useAtomValue, useSetAtom } from "jotai";
@@ -259,6 +260,7 @@ export default function ProfilePage() {
       </UserInfo>
 
       <AccountRoleCard />
+      <LoginPinCard />
       <LoginDevices />
       <WebCapabilitiesCard />
       <InstallAppGuide />

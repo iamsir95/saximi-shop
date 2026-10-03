@@ -814,6 +814,11 @@ html[data-platform="website"] .toast-container {
   padding: 10px 0 4px;
 }
 
+.pin-code-input {
+  display: grid;
+  gap: 8px;
+}
+
 .pin-dot {
   width: 12px;
   height: 12px;

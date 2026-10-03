@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "zmp-ui";
 import CommerceIcon from "@/components/commerce-icon";
 import { useFrontendNotification } from "@/hooks";
+import PinCodeInput from "@/components/pin-code-input";
 
 function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, "").replace(/^84/, "0");
@@ -185,46 +186,6 @@ export default function PhoneLoginPage() {
     }
   };
 
-  const addPinDigit = (digit: string, setter: (value: string) => void, value: string) => {
-    if (value.length >= 6) return;
-    setter(`${value}${digit}`);
-  };
-
-  const removePinDigit = (setter: (value: string) => void, value: string) => {
-    setter(value.slice(0, -1));
-  };
-
-  const PinDots = ({ value }: { value: string }) => (
-    <div className="pin-dots" aria-label={`${value.length} chữ số đã nhập`}>
-      {Array.from({ length: 6 }).map((_, index) => (
-        <span key={index} className={index < value.length ? "pin-dot pin-dot--filled" : "pin-dot"} />
-      ))}
-    </div>
-  );
-
-  const NumberPad = ({
-    value,
-    onChange,
-  }: {
-    value: string;
-    onChange: (value: string) => void;
-  }) => (
-    <div className="number-pad">
-      {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => (
-        <button key={digit} type="button" className="number-key" onClick={() => addPinDigit(digit, onChange, value)}>
-          {digit}
-        </button>
-      ))}
-      <span />
-      <button type="button" className="number-key" onClick={() => addPinDigit("0", onChange, value)}>
-        0
-      </button>
-      <button type="button" className="number-key number-key--muted" onClick={() => removePinDigit(onChange, value)}>
-        Xóa
-      </button>
-    </div>
-  );
-
   return (
     <div className="auth-page min-h-full p-4">
       <section className="auth-glass-card auth-mobile-card rounded-[28px] p-4">
@@ -251,16 +212,14 @@ export default function PhoneLoginPage() {
             <div className="rounded-2xl bg-cyan-50/54 px-3 py-2 commerce-caption text-primary ring-1 ring-white/60 backdrop-blur-xl">
               Tạo mã PIN 4-6 số để lần sau đăng nhập nhanh hơn trên thiết bị của bạn.
             </div>
-            <label className="grid gap-2 text-sm">
+            <div className="grid gap-2 text-sm">
               <span className="font-semibold text-slate-800">Mã PIN mới</span>
-              <PinDots value={newPin} />
-              <NumberPad value={newPin} onChange={setNewPin} />
-            </label>
-            <label className="grid gap-2 text-sm">
+              <PinCodeInput value={newPin} onChange={setNewPin} />
+            </div>
+            <div className="grid gap-2 text-sm">
               <span className="font-semibold text-slate-800">Nhập lại mã PIN</span>
-              <PinDots value={confirmPin} />
-              <NumberPad value={confirmPin} onChange={setConfirmPin} />
-            </label>
+              <PinCodeInput value={confirmPin} onChange={setConfirmPin} />
+            </div>
             <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
               {isSubmitting ? "Đang lưu PIN..." : "Lưu mã PIN"}
             </Button>
@@ -361,11 +320,10 @@ export default function PhoneLoginPage() {
                 required
               />
             </label>
-            <label className="grid gap-2 text-sm">
+            <div className="grid gap-2 text-sm">
               <span className="font-semibold text-slate-800">Mã PIN</span>
-              <PinDots value={pin} />
-              <NumberPad value={pin} onChange={setPin} />
-            </label>
+              <PinCodeInput value={pin} onChange={setPin} />
+            </div>
             <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
               {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập bằng PIN"}
             </Button>

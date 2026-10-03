@@ -25,7 +25,7 @@ import {
   Station,
   UserInfo,
 } from "@/types";
-import { requestWithFallback } from "@/utils/request";
+import { requestWithFallback, requestWithPost } from "@/utils/request";
 import {
   authorize,
   getLocation,
@@ -302,6 +302,46 @@ export const cartTotalState = atom((get) => {
     selectedCoupon,
     isCouponApplied: Boolean(canApplyCoupon),
   };
+});
+
+export const shippingFeeEstimateState = atom(async (get) => {
+  const { totalAmount } = get(cartTotalState);
+  const deliveryMode = get(deliveryModeState);
+  const shippingAddress = get(shippingAddressState);
+  const selectedStation = await get(selectedStationState);
+  try {
+    return await requestWithPost<
+      {
+        subtotal: number;
+        delivery: {
+          type: "shipping" | "pickup";
+          address?: string;
+          province?: string;
+          ward?: string;
+          stationId?: number;
+        };
+      },
+      { fee: number; label: string }
+    >("/shipping/estimate", {
+      subtotal: totalAmount,
+      delivery:
+        deliveryMode === "pickup"
+          ? {
+              type: "pickup",
+              stationId: selectedStation?.id,
+              address: selectedStation?.address,
+            }
+          : {
+              type: "shipping",
+              address: shippingAddress?.address,
+              province: shippingAddress?.province,
+              ward: shippingAddress?.ward,
+            },
+    });
+  } catch (error) {
+    console.warn("Cannot estimate shipping fee", error);
+    return { fee: 0, label: "Phí vận chuyển" };
+  }
 });
 
 export const couponsState = atom(() =>

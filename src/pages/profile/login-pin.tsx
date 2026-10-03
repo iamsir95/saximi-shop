@@ -17,21 +17,18 @@ export default function LoginPinCard() {
     userInfo.state === "hasData" && userInfo.data ? userInfo.data : undefined;
   const isLoggedIn = Boolean(currentUser?.phone);
   const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
+  const [changePin, setChangePin] = useState("");
+  const [showChangePin, setShowChangePin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const savePin = async (event: FormEvent) => {
+  const savePin = async (event: FormEvent, nextPin = pin) => {
     event.preventDefault();
     if (!isLoggedIn) {
       toast.error("Vui lòng đăng nhập bằng OTP trước khi đặt mã PIN.");
       return;
     }
-    if (!/^\d{4,6}$/.test(pin)) {
+    if (!/^\d{4,6}$/.test(nextPin)) {
       toast.error("Mã PIN cần có 4-6 chữ số.");
-      return;
-    }
-    if (pin !== confirmPin) {
-      toast.error("Mã PIN nhập lại chưa khớp.");
       return;
     }
 
@@ -44,7 +41,7 @@ export default function LoginPinCard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ pin }),
+        body: JSON.stringify({ pin: nextPin }),
       });
       const result = (await response.json().catch(() => ({}))) as {
         user?: UserInfo;
@@ -57,7 +54,8 @@ export default function LoginPinCard() {
       localStorage.setItem(CONFIG.STORAGE_KEYS.USER_INFO, JSON.stringify(result.user));
       refreshUserInfo((key) => key + 1);
       setPin("");
-      setConfirmPin("");
+      setChangePin("");
+      setShowChangePin(false);
       notify({
         title: currentUser?.hasPin ? "Đã đổi mã PIN" : "Đã đặt mã PIN",
         message: "Bạn có thể dùng mã PIN để đăng nhập nhanh ở lần sau.",
@@ -76,29 +74,67 @@ export default function LoginPinCard() {
       <div>
         <div className="commerce-eyebrow text-primary">Bảo mật đăng nhập</div>
         <div className="commerce-title mt-0.5">
-          {currentUser?.hasPin ? "Đổi mã PIN đăng nhập" : "Đặt mã PIN đăng nhập"}
+          {currentUser?.hasPin ? "Mã PIN đã được bật" : "Đặt mã PIN đăng nhập"}
         </div>
         <div className="commerce-caption text-subtitle mt-1">
-          {isLoggedIn
-            ? "Mã PIN dùng để đăng nhập nhanh sau khi bạn đã xác thực OTP lần đầu."
+          {currentUser?.hasPin
+            ? "Bạn có thể dùng mã PIN để đăng nhập nhanh trên thiết bị cá nhân."
+            : isLoggedIn
+            ? "Mã PIN dùng để đăng nhập nhanh sau khi bạn đã xác thực OTP lần đầu. Chỉ cần nhập một lần để thiết lập."
             : "Đăng nhập bằng số điện thoại để thiết lập mã PIN cho tài khoản."}
         </div>
       </div>
 
-      {isLoggedIn ? (
-        <form className="space-y-3" onSubmit={savePin}>
+      {isLoggedIn && !currentUser?.hasPin ? (
+        <form className="space-y-3" onSubmit={(event) => savePin(event)}>
           <div className="grid gap-2 text-sm">
-            <span className="font-semibold text-slate-800">Mã PIN mới</span>
+            <span className="font-semibold text-slate-800">Mã PIN đăng nhập</span>
             <PinCodeInput value={pin} onChange={setPin} />
           </div>
-          <div className="grid gap-2 text-sm">
-            <span className="font-semibold text-slate-800">Nhập lại mã PIN</span>
-            <PinCodeInput value={confirmPin} onChange={setConfirmPin} />
-          </div>
           <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
-            {isSubmitting ? "Đang lưu..." : currentUser?.hasPin ? "Đổi mã PIN" : "Lưu mã PIN"}
+            {isSubmitting ? "Đang lưu..." : "Lưu mã PIN"}
           </Button>
         </form>
+      ) : isLoggedIn ? (
+        <div className="space-y-3">
+          <div className="rounded-2xl bg-emerald-50/80 border border-white/70 px-3 py-2 commerce-caption text-emerald-700">
+            Tài khoản này đã có mã PIN. Khu vực thiết lập ban đầu đã được ẩn để tránh thao tác nhầm.
+          </div>
+          {!showChangePin ? (
+            <Button
+              htmlType="button"
+              fullWidth
+              variant="secondary"
+              className="!rounded-2xl"
+              onClick={() => setShowChangePin(true)}
+            >
+              Đổi mã PIN
+            </Button>
+          ) : (
+            <form className="space-y-3" onSubmit={(event) => savePin(event, changePin)}>
+              <div className="grid gap-2 text-sm">
+                <span className="font-semibold text-slate-800">Mã PIN mới</span>
+                <PinCodeInput value={changePin} onChange={setChangePin} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  htmlType="button"
+                  variant="secondary"
+                  className="!rounded-2xl"
+                  onClick={() => {
+                    setShowChangePin(false);
+                    setChangePin("");
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button htmlType="submit" disabled={isSubmitting} className="!rounded-2xl">
+                  {isSubmitting ? "Đang lưu..." : "Lưu PIN mới"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       ) : (
         <div className="rounded-2xl bg-white/54 border border-white/70 px-3 py-2 commerce-caption text-slate-500">
           Khu vực này sẽ mở sau khi bạn đăng nhập bằng OTP.

@@ -354,6 +354,8 @@ export function useCheckout() {
               name: shippingAddress?.name || fallbackCustomer.name,
               phone: shippingAddress?.phone || fallbackCustomer.phone,
               address: shippingAddress?.address || fallbackCustomer.address,
+              province: shippingAddress?.province,
+              ward: shippingAddress?.ward,
               location: shippingAddress?.location,
               locationSource: shippingAddress?.locationSource,
             };

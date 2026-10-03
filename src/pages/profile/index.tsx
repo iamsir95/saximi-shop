@@ -254,19 +254,52 @@ function AccountRoleCard() {
 
 export default function ProfilePage() {
   return (
-    <div className="min-h-full p-4 space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-      <UserInfo>
-        <Points />
-      </UserInfo>
+    <div className="min-h-full p-4 space-y-4 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0">
+      <section className="space-y-3">
+        <div className="px-1">
+          <div className="commerce-eyebrow text-primary">Thông tin cá nhân</div>
+          <div className="commerce-caption text-subtitle">
+            Hồ sơ mua hàng, ảnh đại diện và điểm hoa hồng cá nhân.
+          </div>
+        </div>
+        <UserInfo>
+          <Points />
+        </UserInfo>
+      </section>
 
-      <AccountRoleCard />
-      <LoginPinCard />
-      <LoginDevices />
-      <WebCapabilitiesCard />
-      <InstallAppGuide />
+      <section className="space-y-3">
+        <div className="px-1">
+          <div className="commerce-eyebrow text-primary">Bảo mật đăng nhập</div>
+          <div className="commerce-caption text-subtitle">
+            Quản lý mã PIN, thiết bị đăng nhập và thông báo.
+          </div>
+        </div>
+        <LoginPinCard />
+        <LoginDevices />
+        <WebCapabilitiesCard />
+      </section>
 
-      <ProfileActions />
-      <FollowOA />
+      <section className="space-y-3">
+        <div className="px-1">
+          <div className="commerce-eyebrow text-primary">Địa chỉ & đơn hàng</div>
+          <div className="commerce-caption text-subtitle">
+            Lưu địa chỉ mặc định, theo dõi đơn và nhận hỗ trợ nhanh.
+          </div>
+        </div>
+        <ProfileActions />
+        <InstallAppGuide />
+      </section>
+
+      <section className="space-y-3">
+        <div className="px-1">
+          <div className="commerce-eyebrow text-primary">Hội viên / đại lý</div>
+          <div className="commerce-caption text-subtitle">
+            Nhận diện tuyến, link tiếp thị và thông tin OA.
+          </div>
+        </div>
+        <AccountRoleCard />
+        <FollowOA />
+      </section>
     </div>
   );
 }

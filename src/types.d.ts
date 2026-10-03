@@ -108,8 +108,33 @@ export interface PlatformSettings {
   businessAddress: string;
   publicSiteUrl: string;
   zaloOaUrl: string;
+  shippingFee?: ShippingFeeSettings;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+}
+
+export interface ShippingAreaRule {
+  id: string;
+  label: string;
+  province?: string;
+  wardKeyword?: string;
+  fee: number;
+  isActive: boolean;
+}
+
+export interface ShippingStationRule {
+  id: string;
+  stationId: number;
+  fee: number;
+  isActive: boolean;
+}
+
+export interface ShippingFeeSettings {
+  mode: "FIXED" | "AREA" | "STATION";
+  fixedFee: number;
+  freeShippingMinOrder: number;
+  areaRules: ShippingAreaRule[];
+  stationRules: ShippingStationRule[];
 }
 
 export type ProductImageKind = "MAIN" | "DETAIL" | "COLLECTION";
@@ -264,6 +289,9 @@ export interface Station {
   phone?: string;
   levelName?: string;
   presidentId?: string;
+  branchName?: string;
+  branchPhone?: string;
+  assignedAffiliateIds?: string[];
 }
 
 export type Delivery =
@@ -441,6 +469,10 @@ export interface Order {
   receivedAt?: string;
   items: CartItem[];
   delivery: Delivery;
+  subtotal?: number;
+  couponDiscountAmount?: number;
+  shippingFee?: number;
+  shippingFeeLabel?: string;
   total: number;
   note: string;
   accessToken?: string;

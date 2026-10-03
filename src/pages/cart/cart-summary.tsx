@@ -1,10 +1,12 @@
 import { useAtomValue } from "jotai";
-import { cartTotalState, productsState } from "@/state";
+import { cartTotalState, productsState, shippingFeeEstimateState } from "@/state";
 import { formatPrice } from "@/utils/format";
 import Section from "@/components/section";
 import HorizontalDivider from "@/components/horizontal-divider";
 import { cartState } from "@/state";
 import { getEligibleGiftItems, getSavedAmount } from "@/utils/commerce";
+import { loadable } from "jotai/utils";
+import { useMemo } from "react";
 
 export default function CartSummary() {
   const {
@@ -16,6 +18,15 @@ export default function CartSummary() {
   } = useAtomValue(cartTotalState);
   const cart = useAtomValue(cartState);
   const products = useAtomValue(productsState);
+  const shippingEstimate = useAtomValue(
+    useMemo(() => loadable(shippingFeeEstimateState), [])
+  );
+  const shippingFee =
+    shippingEstimate.state === "hasData" ? shippingEstimate.data.fee : 0;
+  const shippingLabel =
+    shippingEstimate.state === "hasData"
+      ? shippingEstimate.data.label
+      : "Đang tính phí vận chuyển";
   const giftItems = getEligibleGiftItems(cart, products);
   const productSavings = cart.reduce(
     (total, item) => total + getSavedAmount(item.product) * item.quantity,
@@ -47,8 +58,8 @@ export default function CartSummary() {
               </tr>
             )}
             <tr>
-              <th>Phí vận chuyển</th>
-              <td>0 VND</td>
+              <th>{shippingLabel}</th>
+              <td>{shippingFee > 0 ? formatPrice(shippingFee) : "0 VND"}</td>
             </tr>
             {productSavings > 0 && (
               <tr>
@@ -82,7 +93,7 @@ export default function CartSummary() {
         )}
         <div className="flex justify-between font-medium text-sm">
           <div>Tổng thanh toán</div>
-          <div>{formatPrice(totalAmount)}</div>
+          <div>{formatPrice(totalAmount + shippingFee)}</div>
         </div>
       </div>
     </Section>

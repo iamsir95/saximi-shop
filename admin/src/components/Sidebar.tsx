@@ -23,7 +23,7 @@ import {
   FileText,
   ClipboardList,
 } from 'lucide-react';
-import { clearAuthToken } from '../api';
+import { clearAuthToken, getAdminUser } from '../api';
 
 interface SidebarProps {
   activeTab: string;
@@ -79,6 +79,9 @@ const menuGroups = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const adminUser = getAdminUser();
+  const permissions = Array.isArray(adminUser?.permissions) ? adminUser.permissions : undefined;
+  const canView = (id: string) => !permissions || permissions.includes(id);
   const handleLogout = () => {
     clearAuthToken();
     window.location.reload();
@@ -106,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 {group.title}
               </div>
               <div className="space-y-1">
-                {group.items.map((item) => {
+                {group.items.filter((item) => canView(item.id)).map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
                   return (

@@ -142,6 +142,33 @@ export interface Station {
   phone?: string;
   levelName?: string;
   presidentId?: string;
+  branchName?: string;
+  branchPhone?: string;
+  assignedAffiliateIds?: string[];
+}
+
+export interface ShippingAreaRule {
+  id: string;
+  label: string;
+  province?: string;
+  wardKeyword?: string;
+  fee: number;
+  isActive: boolean;
+}
+
+export interface ShippingStationRule {
+  id: string;
+  stationId: number;
+  fee: number;
+  isActive: boolean;
+}
+
+export interface ShippingFeeSettings {
+  mode: 'FIXED' | 'AREA' | 'STATION';
+  fixedFee: number;
+  freeShippingMinOrder: number;
+  areaRules: ShippingAreaRule[];
+  stationRules: ShippingStationRule[];
 }
 
 export interface Location {
@@ -393,6 +420,7 @@ export interface PlatformSettings {
   sepayWebhookUrl?: string;
   sepayWebhookConfigured?: boolean;
   commissionSettlementMode: 'ORDER_DISCOUNT' | 'MANUAL_PAYOUT';
+  shippingFee: ShippingFeeSettings;
   maintenanceMode: boolean;
   maintenanceMessage: string;
   updatedAt: string;
@@ -400,6 +428,27 @@ export interface PlatformSettings {
 
 export type StaffRole = 'ADMIN' | 'MANAGER' | 'WAREHOUSE' | 'DELIVERY' | 'ACCOUNTANT' | 'SUPPORT';
 export type StaffStatus = 'active' | 'inactive';
+export type StaffPermission =
+  | 'dashboard'
+  | 'analytics'
+  | 'orders'
+  | 'products'
+  | 'media-library'
+  | 'categories'
+  | 'affiliates'
+  | 'consignments'
+  | 'settlements'
+  | 'deliveries'
+  | 'audit-logs'
+  | 'banners'
+  | 'stations'
+  | 'coupons'
+  | 'users'
+  | 'otp-outbox'
+  | 'staff'
+  | 'settings'
+  | 'posts'
+  | 'forms';
 
 export interface StaffMember {
   id: number;
@@ -411,6 +460,9 @@ export interface StaffMember {
   department: string;
   managerId?: number | null;
   note?: string;
+  username?: string;
+  permissions?: StaffPermission[];
+  canLogin?: boolean;
   createdAt: string;
   updatedAt: string;
 }

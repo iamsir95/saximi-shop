@@ -13,7 +13,6 @@ import {
 import { getBrowserLocation } from "@/utils/web-capabilities";
 import { getApiBaseUrl } from "@/utils/request";
 import { useAtom, useAtomValue } from "jotai";
-import { useResetAtom } from "jotai/utils";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +25,6 @@ function ShippingAddressPage() {
   const [address, setAddress] = useAtom(shippingAddressState);
   const [browserLocation, setBrowserLocation] = useAtom(browserLocationState);
   const userInfoLoadable = useAtomValue(loadableUserInfoState);
-  const resetAddress = useResetAtom(shippingAddressState);
   const navigate = useNavigate();
   const notify = useFrontendNotification();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -90,27 +88,6 @@ function ShippingAddressPage() {
       console.warn(error);
     } finally {
       setLoadingAddressBook(false);
-    }
-  };
-  const deleteSavedAddress = async (savedAddress: ShippingAddress) => {
-    if (!savedAddress.id || !ownerPhone || !authToken) return;
-    try {
-      const response = await fetch(
-        `${getApiBaseUrl()}/user/addresses/${encodeURIComponent(savedAddress.id)}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      if (!response.ok) throw new Error(`Delete address ${response.status}`);
-      if (address?.id === savedAddress.id) {
-        resetAddress();
-      }
-      await refreshAddressBook();
-      toast.success("Đã xóa địa chỉ giao nhận");
-    } catch (error) {
-      console.warn(error);
-      toast.error("Chưa xóa được địa chỉ này");
     }
   };
   const applyLocationToForm = async (
@@ -308,13 +285,6 @@ function ShippingAddressPage() {
                       {savedAddress.name} · {savedAddress.phone}
                     </div>
                   </button>
-                  <button
-                    type="button"
-                    className="mt-2 text-xs font-bold text-danger"
-                    onClick={() => deleteSavedAddress(savedAddress)}
-                  >
-                    Xóa địa chỉ
-                  </button>
                 </div>
               ))}
             </div>
@@ -482,24 +452,6 @@ function ShippingAddressPage() {
           </label>
         </div>
 
-        <Button
-          htmlType="button"
-          fullWidth
-          className="!bg-white/70 !text-danger !rounded-2xl md:col-span-12"
-          type="danger"
-          onClick={() => {
-            resetAddress();
-            notify({
-              title: "Đã xóa địa chỉ",
-              message: "Bạn có thể thêm địa chỉ mới trước khi đặt hàng.",
-              kind: "info",
-              topic: "delivery",
-            });
-            navigate(-1);
-          }}
-        >
-          Xóa địa chỉ này
-        </Button>
       </div>
       <div className="liquid-bar border-t border-white/70 p-4 pb-sb">
         <div className="mx-auto w-full max-w-6xl">

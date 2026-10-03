@@ -16,6 +16,19 @@ export function setAuthToken(token: string) {
 
 export function clearAuthToken() {
   localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_user');
+}
+
+export function setAdminUser(user: unknown) {
+  localStorage.setItem('admin_user', JSON.stringify(user || null));
+}
+
+export function getAdminUser(): any | null {
+  try {
+    return JSON.parse(localStorage.getItem('admin_user') || 'null');
+  } catch {
+    return null;
+  }
 }
 
 async function request(endpoint: string, options: RequestInit = {}) {

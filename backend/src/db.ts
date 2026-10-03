@@ -105,6 +105,33 @@ export interface Station {
   phone?: string;
   levelName?: string;
   presidentId?: string;
+  branchName?: string;
+  branchPhone?: string;
+  assignedAffiliateIds?: string[];
+}
+
+export interface ShippingAreaRule {
+  id: string;
+  label: string;
+  province?: string;
+  wardKeyword?: string;
+  fee: number;
+  isActive: boolean;
+}
+
+export interface ShippingStationRule {
+  id: string;
+  stationId: number;
+  fee: number;
+  isActive: boolean;
+}
+
+export interface ShippingFeeSettings {
+  mode: 'FIXED' | 'AREA' | 'STATION';
+  fixedFee: number;
+  freeShippingMinOrder: number;
+  areaRules: ShippingAreaRule[];
+  stationRules: ShippingStationRule[];
 }
 
 export interface BannerItem {
@@ -157,6 +184,7 @@ export interface PlatformSettings {
   sepayWebhookEnabled: boolean;
   sepayWebhookApiKey: string;
   commissionSettlementMode: 'ORDER_DISCOUNT' | 'MANUAL_PAYOUT';
+  shippingFee: ShippingFeeSettings;
   maintenanceMode: boolean;
   maintenanceMessage: string;
   updatedAt: string;
@@ -224,6 +252,27 @@ export interface AuditLog {
 
 export type StaffRole = 'ADMIN' | 'MANAGER' | 'WAREHOUSE' | 'DELIVERY' | 'ACCOUNTANT' | 'SUPPORT';
 export type StaffStatus = 'active' | 'inactive';
+export type StaffPermission =
+  | 'dashboard'
+  | 'analytics'
+  | 'orders'
+  | 'products'
+  | 'media-library'
+  | 'categories'
+  | 'affiliates'
+  | 'consignments'
+  | 'settlements'
+  | 'deliveries'
+  | 'audit-logs'
+  | 'banners'
+  | 'stations'
+  | 'coupons'
+  | 'users'
+  | 'otp-outbox'
+  | 'staff'
+  | 'settings'
+  | 'posts'
+  | 'forms';
 
 export interface StaffMember {
   id: number;
@@ -235,6 +284,11 @@ export interface StaffMember {
   department: string;
   managerId?: number | null;
   note?: string;
+  username?: string;
+  passwordHash?: string;
+  passwordUpdatedAt?: string;
+  permissions?: StaffPermission[];
+  canLogin?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -314,6 +368,8 @@ export interface Order {
     name?: string;
     phone?: string;
     address?: string;
+    province?: string;
+    ward?: string;
     location?: {
       lat: number;
       lng: number;
@@ -321,6 +377,10 @@ export interface Order {
     locationSource?: 'CURRENT_LOCATION' | 'MAP_PICKER';
     stationId?: number;
   };
+  subtotal?: number;
+  couponDiscountAmount?: number;
+  shippingFee?: number;
+  shippingFeeLabel?: string;
   total: number;
   referrerId?: string;
   couponCode?: string;
@@ -412,12 +472,14 @@ export interface WebPushSubscriptionRecord {
 }
 
 export type AuthSessionRole = 'CUSTOMER' | 'SUPER_ADMIN';
+export type AdminSubjectType = 'SUPER_ADMIN' | 'STAFF';
 
 export interface AuthSession {
   id: string;
   role: AuthSessionRole;
   subjectId: string;
   username?: string;
+  subjectType?: AdminSubjectType;
   phone?: string;
   deviceName: string;
   userAgent?: string;
@@ -573,6 +635,96 @@ function defaultTierConfig(tierLevel: number) {
   return { levelName: 'Bậc 2 - Chi hội trưởng', commissionLabel: 'Hoa hồng chi hội', rate: 25 };
 }
 
+function defaultShippingFeeSettings(): ShippingFeeSettings {
+  return {
+    mode: 'FIXED',
+    fixedFee: 0,
+    freeShippingMinOrder: 0,
+    areaRules: [],
+    stationRules: [],
+  };
+}
+
+function normalizeShippingFeeSettings(data?: Partial<ShippingFeeSettings>): ShippingFeeSettings {
+  const source = data || {};
+  const mode = source.mode === 'AREA' || source.mode === 'STATION' ? source.mode : 'FIXED';
+  return {
+    mode,
+    fixedFee: Math.max(0, Number(source.fixedFee || 0)),
+    freeShippingMinOrder: Math.max(0, Number(source.freeShippingMinOrder || 0)),
+    areaRules: Array.isArray(source.areaRules)
+      ? source.areaRules.map((rule, index) => ({
+          id: rule.id || `area-${Date.now()}-${index}`,
+          label: String(rule.label || rule.province || 'Khu vực giao hàng').trim(),
+          province: String(rule.province || '').trim(),
+          wardKeyword: String(rule.wardKeyword || '').trim(),
+          fee: Math.max(0, Number(rule.fee || 0)),
+          isActive: rule.isActive !== false,
+        }))
+      : [],
+    stationRules: Array.isArray(source.stationRules)
+      ? source.stationRules.map((rule, index) => ({
+          id: rule.id || `station-${Date.now()}-${index}`,
+          stationId: Number(rule.stationId || 0),
+          fee: Math.max(0, Number(rule.fee || 0)),
+          isActive: rule.isActive !== false,
+        })).filter((rule) => rule.stationId > 0)
+      : [],
+  };
+}
+
+const ALL_STAFF_PERMISSIONS: StaffPermission[] = [
+  'dashboard',
+  'analytics',
+  'orders',
+  'products',
+  'media-library',
+  'categories',
+  'affiliates',
+  'consignments',
+  'settlements',
+  'deliveries',
+  'audit-logs',
+  'banners',
+  'stations',
+  'coupons',
+  'users',
+  'otp-outbox',
+  'staff',
+  'settings',
+  'posts',
+  'forms',
+];
+
+function defaultPermissionsForStaffRole(role?: StaffRole): StaffPermission[] {
+  if (role === 'ADMIN' || role === 'MANAGER') return ALL_STAFF_PERMISSIONS;
+  if (role === 'WAREHOUSE') return ['dashboard', 'orders', 'products', 'media-library', 'categories', 'consignments'];
+  if (role === 'DELIVERY') return ['dashboard', 'orders', 'deliveries', 'stations'];
+  if (role === 'ACCOUNTANT') return ['dashboard', 'orders', 'settlements'];
+  return ['dashboard', 'orders', 'users', 'otp-outbox'];
+}
+
+function normalizeStaffPermissions(permissions?: StaffPermission[], role?: StaffRole): StaffPermission[] {
+  const source = Array.isArray(permissions) && permissions.length > 0
+    ? permissions
+    : defaultPermissionsForStaffRole(role);
+  return [...new Set(source.filter((permission) => ALL_STAFF_PERMISSIONS.includes(permission)))];
+}
+
+function hashPassword(value: string, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto.pbkdf2Sync(value, salt, 160000, 32, 'sha256').toString('hex');
+  return `pbkdf2_sha256$160000$${salt}$${hash}`;
+}
+
+function verifyPassword(value: string, storedHash?: string) {
+  const [scheme, iterations, salt, hash] = String(storedHash || '').split('$');
+  if (scheme !== 'pbkdf2_sha256' || !iterations || !salt || !hash) return false;
+  const candidate = crypto.pbkdf2Sync(value, salt, Number(iterations), 32, 'sha256').toString('hex');
+  const storedBuffer = Buffer.from(hash, 'hex');
+  const candidateBuffer = Buffer.from(candidate, 'hex');
+  return storedBuffer.length === candidateBuffer.length && crypto.timingSafeEqual(storedBuffer, candidateBuffer);
+}
+
 function normalizeVietnamPhone(value?: string): string {
   const digits = String(value || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -676,6 +828,7 @@ export class Database {
     sepayWebhookEnabled: true,
     sepayWebhookApiKey: process.env.SEPAY_WEBHOOK_API_KEY || process.env.SEPAY_WEBHOOK_SECRET || '',
     commissionSettlementMode: 'ORDER_DISCOUNT',
+    shippingFee: defaultShippingFeeSettings(),
     maintenanceMode: false,
     maintenanceMessage: 'Hệ thống đang bảo trì, vui lòng quay lại sau.',
     updatedAt: new Date().toISOString(),
@@ -815,6 +968,43 @@ export class Database {
     return Math.max(0, subtotal - this.getCouponDiscountAmount(subtotal, couponCode));
   }
 
+  private static calculateShippingFeeFromSettings(
+    subtotalAfterDiscount: number,
+    delivery?: Partial<Order['delivery']>
+  ): { fee: number; label: string } {
+    const settings = normalizeShippingFeeSettings(this.settings.shippingFee);
+    if (delivery?.type === 'pickup') {
+      const stationRule = settings.stationRules.find(
+        (rule) => rule.isActive && rule.stationId === Number(delivery.stationId || 0)
+      );
+      return {
+        fee: stationRule ? stationRule.fee : 0,
+        label: stationRule ? 'Phí xử lý tại điểm nhận' : 'Tự đến lấy',
+      };
+    }
+
+    if (settings.freeShippingMinOrder > 0 && subtotalAfterDiscount >= settings.freeShippingMinOrder) {
+      return { fee: 0, label: 'Miễn phí vận chuyển' };
+    }
+
+    if (settings.mode === 'AREA') {
+      const province = String((delivery as any)?.province || delivery?.address || '').toLowerCase();
+      const ward = String((delivery as any)?.ward || delivery?.address || '').toLowerCase();
+      const areaRule = settings.areaRules.find((rule) => {
+        if (!rule.isActive) return false;
+        const provinceMatch = !rule.province || province.includes(rule.province.toLowerCase());
+        const wardMatch = !rule.wardKeyword || ward.includes(rule.wardKeyword.toLowerCase());
+        return provinceMatch && wardMatch;
+      });
+      if (areaRule) return { fee: areaRule.fee, label: areaRule.label || 'Phí ship theo khu vực' };
+    }
+
+    return {
+      fee: settings.fixedFee,
+      label: settings.fixedFee > 0 ? 'Phí vận chuyển cố định' : 'Miễn phí vận chuyển',
+    };
+  }
+
   private static isMemberBuyerPhone(phone?: string): boolean {
     const normalizedPhone = normalizeVietnamPhone(phone);
     if (!normalizedPhone) return false;
@@ -939,6 +1129,8 @@ export class Database {
       name: delivery.name || customer.name || 'Khách hàng',
       phone,
       address: delivery.address || customer.address || 'Địa chỉ giao hàng',
+      province: delivery.province,
+      ward: delivery.ward,
       location: delivery.location,
       locationSource: delivery.locationSource,
       stationId: delivery.stationId,
@@ -1054,6 +1246,7 @@ export class Database {
         process.env.SEPAY_WEBHOOK_SECRET ||
         '',
       commissionSettlementMode: this.settings.commissionSettlementMode || 'ORDER_DISCOUNT',
+      shippingFee: normalizeShippingFeeSettings(this.settings.shippingFee),
     };
     this.persistSettings();
     if (ordersNeedSecurePersist) this.persistOrders();
@@ -1179,11 +1372,18 @@ export class Database {
     if (this.staffMembers.length > 0) {
       let changed = false;
       this.staffMembers = this.staffMembers.map((member) => {
+        const permissions = normalizeStaffPermissions(member.permissions, member.role);
+        const canLogin = member.canLogin ?? Boolean(member.username);
+        let nextMember = member;
         if (member.id !== 1 && member.managerId === undefined) {
           changed = true;
-          return { ...member, managerId: 1 };
+          nextMember = { ...nextMember, managerId: 1 };
         }
-        return member;
+        if (JSON.stringify(member.permissions || []) !== JSON.stringify(permissions) || member.canLogin !== canLogin) {
+          changed = true;
+          nextMember = { ...nextMember, permissions, canLogin };
+        }
+        return nextMember;
       });
       if (changed) saveDataFile('staff.json', this.staffMembers);
       return;
@@ -1191,19 +1391,24 @@ export class Database {
 
     const now = new Date().toISOString();
     this.staffMembers = [
-      {
-        id: 1,
-        name: 'Nguyễn Minh Quân',
-        phone: '0901112222',
-        email: 'quan@saximi.vn',
+        {
+          id: 1,
+          name: 'Nguyễn Minh Quân',
+          phone: '0901112222',
+          email: 'quan@saximi.vn',
         role: 'MANAGER',
         status: 'active',
         department: 'Vận hành',
-        managerId: undefined,
-        note: 'Quản lý vận hành cửa hàng và đơn hàng',
-        createdAt: now,
-        updatedAt: now,
-      },
+          managerId: undefined,
+          note: 'Quản lý vận hành cửa hàng và đơn hàng',
+          username: 'giamdoc',
+          passwordHash: hashPassword('123456'),
+          passwordUpdatedAt: now,
+          permissions: defaultPermissionsForStaffRole('MANAGER'),
+          canLogin: true,
+          createdAt: now,
+          updatedAt: now,
+        },
       {
         id: 2,
         name: 'Trần Thu Ngân',
@@ -1212,11 +1417,16 @@ export class Database {
         role: 'ACCOUNTANT',
         status: 'active',
         department: 'Kế toán',
-        managerId: 1,
-        note: 'Đối soát thanh toán và công nợ',
-        createdAt: now,
-        updatedAt: now,
-      },
+          managerId: 1,
+          note: 'Đối soát thanh toán và công nợ',
+          username: 'ketoan',
+          passwordHash: hashPassword('123456'),
+          passwordUpdatedAt: now,
+          permissions: defaultPermissionsForStaffRole('ACCOUNTANT'),
+          canLogin: true,
+          createdAt: now,
+          updatedAt: now,
+        },
       {
         id: 3,
         name: 'Lê Văn Phúc',
@@ -1225,11 +1435,16 @@ export class Database {
         role: 'DELIVERY',
         status: 'active',
         department: 'Giao hàng',
-        managerId: 1,
-        note: 'Tài xế giao hàng nội bộ',
-        createdAt: now,
-        updatedAt: now,
-      },
+          managerId: 1,
+          note: 'Tài xế giao hàng nội bộ',
+          username: 'giaohang',
+          passwordHash: hashPassword('123456'),
+          passwordUpdatedAt: now,
+          permissions: defaultPermissionsForStaffRole('DELIVERY'),
+          canLogin: true,
+          createdAt: now,
+          updatedAt: now,
+        },
     ];
     saveDataFile('staff.json', this.staffMembers);
   }
@@ -2106,10 +2321,21 @@ export class Database {
   }
 
   public static getPickupStations(referrerId?: string): Station[] {
-    const storeStations = this.stations.map((station) => ({
-      ...station,
-      sourceType: 'STORE' as const,
-    }));
+    const hasAssignedStoreStations = Boolean(
+      referrerId && this.stations.some((station) => station.assignedAffiliateIds?.includes(referrerId))
+    );
+    const storeStations = this.stations
+      .filter((station) => {
+        if (!referrerId) return !station.assignedAffiliateIds?.length;
+        if (station.assignedAffiliateIds?.includes(referrerId)) return true;
+        return !hasAssignedStoreStations && !station.assignedAffiliateIds?.length;
+      })
+      .map((station) => ({
+        ...station,
+        sourceType: 'STORE' as const,
+        branchName: station.branchName || station.name,
+        branchPhone: station.branchPhone || station.phone,
+      }));
 
     if (!referrerId) {
       return storeStations;
@@ -2601,6 +2827,10 @@ export class Database {
     }
 
     const paymentMethod = normalizePaymentMethod(orderData.paymentMethod);
+    const rawSubtotal = normalizedItems.reduce(
+      (sum, item) => sum + Number(item.product.price || 0) * Math.max(1, Number(item.quantity || 1)),
+      0
+    );
     const subtotalAfterCoupon = this.calculateOrderTotal(normalizedItems, orderData.couponCode);
     const referrer = orderData.referrerId
       ? this.affiliates.find((a) => a.userId === orderData.referrerId)
@@ -2611,7 +2841,9 @@ export class Database {
       referrer && buyerCanUseMemberPricing && commissionSettlementMode === 'ORDER_DISCOUNT'
         ? Math.round((subtotalAfterCoupon * referrerRate) / 100)
         : 0;
-    const total = Math.max(0, subtotalAfterCoupon - commissionDiscountAmount);
+    const subtotalAfterDiscount = Math.max(0, subtotalAfterCoupon - commissionDiscountAmount);
+    const shipping = this.calculateShippingFeeFromSettings(subtotalAfterDiscount, delivery);
+    const total = Math.max(0, subtotalAfterDiscount + shipping.fee);
     const newId = this.orders.length > 0 ? Math.max(...this.orders.map((o) => o.id)) + 1 : 10001;
     const rawAccessToken = crypto.randomBytes(24).toString('base64url');
     const newOrder: Order = {
@@ -2622,6 +2854,10 @@ export class Database {
       ...orderData,
       items: normalizedItems,
       delivery,
+      subtotal: rawSubtotal,
+      couponDiscountAmount: this.getCouponDiscountAmount(rawSubtotal, orderData.couponCode),
+      shippingFee: shipping.fee,
+      shippingFeeLabel: shipping.label,
       total,
       accessToken: rawAccessToken,
       accessTokenHash: hashSensitiveToken(rawAccessToken),
@@ -2970,6 +3206,13 @@ export class Database {
     };
   }
 
+  public static estimateShippingFee(data: {
+    subtotal?: number;
+    delivery?: Partial<Order['delivery']> & { province?: string; ward?: string };
+  }) {
+    return this.calculateShippingFeeFromSettings(Math.max(0, Number(data.subtotal || 0)), data.delivery);
+  }
+
   public static getAdminSettings() {
     return {
       ...this.settings,
@@ -3003,6 +3246,7 @@ export class Database {
       sepayWebhookApiKey: shouldKeepSepayKey ? this.settings.sepayWebhookApiKey : incomingSepayKey,
       commissionSettlementMode:
         data.commissionSettlementMode === 'MANUAL_PAYOUT' ? 'MANUAL_PAYOUT' : 'ORDER_DISCOUNT',
+      shippingFee: normalizeShippingFeeSettings(data.shippingFee || this.settings.shippingFee),
       maintenanceMode: Boolean(data.maintenanceMode),
       maintenanceMessage: data.maintenanceMessage?.trim() || this.settings.maintenanceMessage,
       updatedAt: new Date().toISOString(),
@@ -3013,8 +3257,19 @@ export class Database {
     return this.settings;
   }
 
+  private static toSafeStaffMember(member: StaffMember): StaffMember {
+    const { passwordHash, ...safeMember } = member;
+    return {
+      ...safeMember,
+      permissions: normalizeStaffPermissions(member.permissions, member.role),
+      canLogin: member.canLogin ?? Boolean(member.username),
+    };
+  }
+
   public static getStaffMembers(): StaffMember[] {
-    return this.staffMembers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return [...this.staffMembers]
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .map((member) => this.toSafeStaffMember(member));
   }
 
   private static wouldCreateStaffCycle(staffId: number, managerId: number): boolean {
@@ -3054,6 +3309,8 @@ export class Database {
       }
     }
 
+    const existing = this.staffMembers.find((member) => member.id === staffId);
+    const incomingPassword = String((data as any).password || '').trim();
     const normalized: StaffMember = {
       id: staffId,
       name: data.name.trim(),
@@ -3064,6 +3321,11 @@ export class Database {
       department: data.department?.trim() || 'Vận hành',
       managerId,
       note: data.note?.trim() || '',
+      username: data.username?.trim() || existing?.username || '',
+      passwordHash: incomingPassword ? hashPassword(incomingPassword) : existing?.passwordHash,
+      passwordUpdatedAt: incomingPassword ? now : existing?.passwordUpdatedAt,
+      permissions: normalizeStaffPermissions(data.permissions, data.role || existing?.role),
+      canLogin: data.canLogin ?? existing?.canLogin ?? Boolean(data.username || existing?.username),
       createdAt: now,
       updatedAt: now,
     };
@@ -3078,7 +3340,7 @@ export class Database {
 
     saveDataFile('staff.json', this.staffMembers);
     this.logAction('admin', 'SUPER_ADMIN', 'UPSERT_STAFF', `Cập nhật nhân sự ${normalized.name} (${normalized.role})`, String(normalized.id));
-    return normalized;
+    return this.toSafeStaffMember(normalized);
   }
 
   public static updateStaffStatus(id: number, status: StaffStatus): StaffMember | null {
@@ -3091,7 +3353,18 @@ export class Database {
     };
     saveDataFile('staff.json', this.staffMembers);
     this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_STAFF_STATUS', `Đổi trạng thái nhân sự #${id} thành ${status}`, String(id));
-    return this.staffMembers[idx];
+    return this.toSafeStaffMember(this.staffMembers[idx]);
+  }
+
+  public static verifyStaffLogin(username: string, password: string): StaffMember | null {
+    const normalizedUsername = username.trim().toLowerCase();
+    const staff = this.staffMembers.find((member) => {
+      return member.status === 'active' && member.canLogin !== false && String(member.username || '').trim().toLowerCase() === normalizedUsername;
+    });
+    if (!staff || !staff.passwordHash || !verifyPassword(password, staff.passwordHash)) return null;
+    staff.updatedAt = new Date().toISOString();
+    saveDataFile('staff.json', this.staffMembers);
+    return this.toSafeStaffMember(staff);
   }
 
   public static deleteStaffMember(id: number): boolean {
@@ -3370,6 +3643,7 @@ export class Database {
     role: AuthSessionRole;
     subjectId: string;
     username?: string;
+    subjectType?: AdminSubjectType;
     phone?: string;
     userAgent?: string;
     ip?: string;
@@ -3380,6 +3654,7 @@ export class Database {
       role: data.role,
       subjectId: data.subjectId,
       username: data.username,
+      subjectType: data.subjectType,
       phone: data.phone,
       userAgent: data.userAgent,
       ip: data.ip,

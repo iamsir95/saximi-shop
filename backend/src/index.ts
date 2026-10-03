@@ -21,6 +21,36 @@ const DEFAULT_JWT_SECRET = 'zaui-market-secret-key-2026';
 const DEFAULT_ADMIN_PASSWORD = 'admin123';
 const adminLoginAttempts = new Map<string, { count: number; firstAttemptAt: number; blockedUntil?: number }>();
 
+function getAdminPermissionForPath(pathname: string): string | undefined {
+  const normalized = pathname.replace(/^\/api\/admin\/?/, '').split('/')[0];
+  const map: Record<string, string> = {
+    stats: 'dashboard',
+    posts: 'posts',
+    forms: 'forms',
+    'form-submissions': 'forms',
+    products: 'products',
+    'media-library': 'media-library',
+    categories: 'categories',
+    affiliates: 'affiliates',
+    consignments: 'consignments',
+    settlements: 'settlements',
+    deliveries: 'deliveries',
+    'audit-logs': 'audit-logs',
+    banners: 'banners',
+    stations: 'stations',
+    coupons: 'coupons',
+    users: 'users',
+    'otp-outbox': 'otp-outbox',
+    staff: 'staff',
+    settings: 'settings',
+    orders: 'orders',
+    commissions: 'affiliates',
+    'auth-sessions': 'settings',
+    'web-push': 'settings',
+  };
+  return map[normalized];
+}
+
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.JWT_SECRET || JWT_SECRET === DEFAULT_JWT_SECRET) {
     throw new Error('JWT_SECRET must be set to a strong value in production.');
@@ -212,10 +242,20 @@ const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
       return res.status(401).json({ message: 'Invalid token' });
     }
     const session = Database.getAuthSession(String(decoded.sid || ''));
-    if (!session || session.role !== 'SUPER_ADMIN' || session.subjectId !== String(decoded.username || 'admin')) {
+    const expectedSubjectId = decoded.subjectType === 'STAFF'
+      ? String(decoded.staffId || '')
+      : String(decoded.username || 'admin');
+    if (!session || session.role !== 'SUPER_ADMIN' || session.subjectId !== expectedSubjectId) {
       return res.status(401).json({ message: 'Phiên đăng nhập đã bị đăng xuất khỏi thiết bị này.' });
     }
     Database.touchAuthSession(session.id);
+    if (decoded.subjectType === 'STAFF') {
+      const requiredPermission = getAdminPermissionForPath(req.path || req.originalUrl || '');
+      const permissions = Array.isArray(decoded.permissions) ? decoded.permissions : [];
+      if (requiredPermission && !permissions.includes(requiredPermission)) {
+        return res.status(403).json({ message: 'Tài khoản nhân sự chưa có quyền thực hiện chức năng này.' });
+      }
+    }
     (req as any).admin = decoded;
     next();
   } catch (err) {
@@ -355,9 +395,18 @@ publicApi.get('/settings', (_req: Request, res: Response) => {
     businessAddress: settings.businessAddress,
     publicSiteUrl: settings.publicSiteUrl,
     zaloOaUrl: settings.zaloOaUrl,
+    shippingFee: settings.shippingFee,
     maintenanceMode: settings.maintenanceMode,
     maintenanceMessage: settings.maintenanceMessage,
   });
+});
+
+publicApi.post('/shipping/estimate', (req: Request, res: Response) => {
+  const result = Database.estimateShippingFee({
+    subtotal: req.body?.subtotal,
+    delivery: req.body?.delivery,
+  });
+  res.json(result);
 });
 
 publicApi.get('/forms', (req: Request, res: Response) => {
@@ -1019,6 +1068,40 @@ app.post('/api/admin/login', (req: Request, res: Response) => {
       })
       .catch((pushError) => Logger.error('Failed to notify admin login by web push', pushError));
     return res.json({ token, user: { username, name: 'System Admin', role: 'SUPER_ADMIN' }, session });
+  }
+  const staff = Database.verifyStaffLogin(String(username || ''), String(password || ''));
+  if (staff) {
+    adminLoginAttempts.delete(loginKey);
+    const session = Database.createAuthSession({
+      role: 'SUPER_ADMIN',
+      subjectId: String(staff.id),
+      username: staff.username || staff.phone,
+      subjectType: 'STAFF',
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+    });
+    const permissions = staff.permissions || [];
+    const token = jwt.sign({
+      username: staff.username || staff.phone,
+      role: 'SUPER_ADMIN',
+      subjectType: 'STAFF',
+      staffId: staff.id,
+      permissions,
+      sid: session.id,
+    }, JWT_SECRET);
+    Logger.info(`🔑 [Staff Auth] Staff logged in: ${staff.name}`);
+    Database.logAction(staff.name, 'STAFF', 'STAFF_LOGIN', 'Nhân sự đăng nhập trang quản trị', String(staff.id), req.ip);
+    return res.json({
+      token,
+      user: {
+        username: staff.username,
+        name: staff.name,
+        role: staff.role,
+        subjectType: 'STAFF',
+        permissions,
+      },
+      session,
+    });
   }
   registerAdminLoginFailure(loginKey);
   return res.status(401).json({ message: 'Tên đăng nhập hoặc mật khẩu không chính xác' });

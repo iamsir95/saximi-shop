@@ -34,7 +34,9 @@ function Station({
       />
       <div className="flex-1 space-y-0.5">
         <div className="flex items-center gap-2">
-          <div className="text-sm font-bold text-slate-800">{station.name}</div>
+          <div className="text-sm font-bold text-slate-800">
+            {station.branchName || station.name}
+          </div>
           <span
             className={
               "flex-none rounded-full px-2 py-0.5 text-[10px] font-bold ".concat(
@@ -53,8 +55,10 @@ function Station({
           </div>
         )}
         <div className="text-xs text-inactive">{station.address}</div>
-        {station.phone && (
-          <div className="text-xs text-slate-600">Liên hệ: {station.phone}</div>
+        {(station.branchPhone || station.phone) && (
+          <div className="text-xs text-slate-600">
+            Liên hệ chi nhánh: {station.branchPhone || station.phone}
+          </div>
         )}
         {station.distance && (
           <div className="text-xs text-primary">{station.distance}</div>

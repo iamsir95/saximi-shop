@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BriefcaseBusiness, GitBranch, Mail, Phone, Plus, Search, ShieldCheck, Trash2, UserRoundCheck, UserRoundX, X } from 'lucide-react';
 import { api } from '../api';
-import { StaffMember, StaffRole, StaffStatus } from '../types';
+import { StaffMember, StaffPermission, StaffRole, StaffStatus } from '../types';
 
 const ROLE_LABELS: Record<StaffRole, string> = {
   ADMIN: 'Quản trị',
@@ -13,6 +13,28 @@ const ROLE_LABELS: Record<StaffRole, string> = {
 };
 
 const ROLE_OPTIONS = Object.entries(ROLE_LABELS) as Array<[StaffRole, string]>;
+const PERMISSION_OPTIONS: Array<[StaffPermission, string]> = [
+  ['dashboard', 'Tổng quan'],
+  ['analytics', 'KPI'],
+  ['orders', 'Đơn hàng'],
+  ['products', 'Sản phẩm'],
+  ['media-library', 'Kho ảnh'],
+  ['categories', 'Danh mục'],
+  ['affiliates', 'Hội viên'],
+  ['consignments', 'Gối đầu'],
+  ['settlements', 'Đối soát'],
+  ['deliveries', 'Vận chuyển'],
+  ['audit-logs', 'Nhật ký'],
+  ['banners', 'Banner'],
+  ['stations', 'Điểm nhận'],
+  ['coupons', 'Voucher'],
+  ['users', 'Khách hàng'],
+  ['otp-outbox', 'OTP Zalo'],
+  ['staff', 'Nhân sự'],
+  ['settings', 'Cài đặt'],
+  ['posts', 'Bản tin'],
+  ['forms', 'Form'],
+];
 
 const emptyForm = {
   name: '',
@@ -23,6 +45,10 @@ const emptyForm = {
   department: 'Vận hành',
   managerId: '',
   note: '',
+  username: '',
+  password: '',
+  canLogin: true,
+  permissions: [] as StaffPermission[],
 };
 
 type StaffTreeNode = StaffMember & { children: StaffTreeNode[] };
@@ -172,6 +198,10 @@ export const StaffPage: React.FC = () => {
       department: member.department,
       managerId: member.managerId ? String(member.managerId) : '',
       note: member.note || '',
+      username: member.username || '',
+      password: '',
+      canLogin: member.canLogin ?? Boolean(member.username),
+      permissions: member.permissions || [],
     });
     setShowForm(true);
   };
@@ -181,6 +211,7 @@ export const StaffPage: React.FC = () => {
     await api.saveStaff({
       ...(editing ? { id: editing.id } : {}),
       ...form,
+      password: form.password || undefined,
       managerId: form.managerId ? Number(form.managerId) : undefined,
     });
     setShowForm(false);
@@ -408,6 +439,78 @@ export const StaffPage: React.FC = () => {
                   ))}
                 </select>
               </label>
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4 space-y-4">
+              <div>
+                <div className="font-bold text-white">Tài khoản đăng nhập riêng</div>
+                <div className="mt-1 text-xs text-slate-400">
+                  Nhân sự có thể đăng nhập admin bằng tài khoản riêng và chỉ thấy chức năng được cấp quyền.
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className="grid gap-1 text-sm">
+                  <span className="font-medium text-slate-300">Tên đăng nhập</span>
+                  <input
+                    value={form.username}
+                    onChange={(event) => setForm({ ...form, username: event.target.value })}
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-white outline-none focus:border-blue-500"
+                    placeholder="vd: giamdoc"
+                  />
+                </label>
+                <label className="grid gap-1 text-sm">
+                  <span className="font-medium text-slate-300">Mật khẩu mới</span>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(event) => setForm({ ...form, password: event.target.value })}
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-white outline-none focus:border-blue-500"
+                    placeholder={editing ? 'Để trống nếu không đổi' : 'Nhập mật khẩu'}
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm">
+                  <span className="font-medium text-slate-300">Cho phép đăng nhập</span>
+                  <input
+                    type="checkbox"
+                    checked={form.canLogin}
+                    onChange={(event) => setForm({ ...form, canLogin: event.target.checked })}
+                    className="h-5 w-5 accent-blue-500"
+                  />
+                </label>
+              </div>
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase text-slate-500">Quyền theo chức năng</div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {PERMISSION_OPTIONS.map(([permission, label]) => {
+                    const checked = form.permissions.includes(permission);
+                    return (
+                      <label
+                        key={permission}
+                        className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${
+                          checked
+                            ? 'border-blue-400/40 bg-blue-500/12 text-blue-100'
+                            : 'border-slate-700 bg-slate-900 text-slate-400'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(event) => {
+                            setForm({
+                              ...form,
+                              permissions: event.target.checked
+                                ? [...form.permissions, permission]
+                                : form.permissions.filter((item) => item !== permission),
+                            });
+                          }}
+                          className="h-4 w-4 accent-blue-500"
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <label className="grid gap-1 text-sm">

@@ -12,6 +12,9 @@ export const StationsPage: React.FC = () => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [image, setImage] = useState('');
+  const [branchName, setBranchName] = useState('');
+  const [branchPhone, setBranchPhone] = useState('');
+  const [assignedAffiliateIds, setAssignedAffiliateIds] = useState('');
   const [lat, setLat] = useState('10.773756');
   const [lng, setLng] = useState('106.689247');
 
@@ -39,6 +42,12 @@ export const StationsPage: React.FC = () => {
         name,
         address,
         image: image || '/icon.png',
+        branchName,
+        branchPhone,
+        assignedAffiliateIds: assignedAffiliateIds
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
         location: { lat: parseFloat(lat), lng: parseFloat(lng) },
       };
       if (editing) {
@@ -51,6 +60,9 @@ export const StationsPage: React.FC = () => {
       setName('');
       setAddress('');
       setImage('');
+      setBranchName('');
+      setBranchPhone('');
+      setAssignedAffiliateIds('');
       loadStations();
     } catch (err: any) {
       alert(err.message || 'Lỗi khi thêm điểm nhận');
@@ -62,6 +74,9 @@ export const StationsPage: React.FC = () => {
     setName('');
     setAddress('');
     setImage('');
+    setBranchName('');
+    setBranchPhone('');
+    setAssignedAffiliateIds('');
     setLat('10.773756');
     setLng('106.689247');
     setIsModalOpen(true);
@@ -72,6 +87,9 @@ export const StationsPage: React.FC = () => {
     setName(station.name);
     setAddress(station.address);
     setImage(station.image || '');
+    setBranchName(station.branchName || '');
+    setBranchPhone(station.branchPhone || station.phone || '');
+    setAssignedAffiliateIds((station.assignedAffiliateIds || []).join(', '));
     setLat(String(station.location?.lat || 10.773756));
     setLng(String(station.location?.lng || 106.689247));
     setIsModalOpen(true);
@@ -131,6 +149,16 @@ export const StationsPage: React.FC = () => {
                     <MapPin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     {s.address}
                   </p>
+                  {(s.branchName || s.branchPhone) && (
+                    <p className="mt-2 text-xs font-semibold text-cyan-200">
+                      {s.branchName || s.name}{s.branchPhone ? ` · ${s.branchPhone}` : ''}
+                    </p>
+                  )}
+                  {Boolean(s.assignedAffiliateIds?.length) && (
+                    <p className="mt-1 text-[11px] text-amber-200">
+                      Gán {s.assignedAffiliateIds?.length} hội viên
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -200,6 +228,42 @@ export const StationsPage: React.FC = () => {
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
                   placeholder="https://..."
                 />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Tên chi nhánh hiển thị</label>
+                  <input
+                    type="text"
+                    value={branchName}
+                    onChange={(e) => setBranchName(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="Ví dụ: Chi nhánh Quận 7"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">SĐT chi nhánh</label>
+                  <input
+                    type="tel"
+                    value={branchPhone}
+                    onChange={(e) => setBranchPhone(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                    placeholder="090..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">ID hội viên được gán</label>
+                <textarea
+                  value={assignedAffiliateIds}
+                  onChange={(e) => setAssignedAffiliateIds(e.target.value)}
+                  className="min-h-20 w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                  placeholder="Nhập userId hội viên, cách nhau bằng dấu phẩy. Ví dụ: aff-1, aff-2"
+                />
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Nếu có gán hội viên, khách đi qua link hội viên đó sẽ ưu tiên chỉ thấy chi nhánh này.
+                </p>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">

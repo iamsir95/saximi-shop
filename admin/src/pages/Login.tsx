@@ -9,7 +9,7 @@ import {
   Store,
   User,
 } from 'lucide-react';
-import { api, setAuthToken } from '../api';
+import { api, setAdminUser, setAuthToken } from '../api';
 
 interface LoginProps {
   onSuccess: () => void;
@@ -30,6 +30,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
     try {
       const res = await api.login(username, password);
       setAuthToken(res.token);
+      setAdminUser(res.user);
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.');

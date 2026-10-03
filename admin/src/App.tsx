@@ -22,7 +22,7 @@ import { SettingsPage } from './pages/Settings';
 import { Login } from './pages/Login';
 import { PostsPage } from './pages/Posts';
 import { FormsPage } from './pages/Forms';
-import { getAuthToken } from './api';
+import { getAdminUser, getAuthToken } from './api';
 import { PullToRefresh } from './components/PullToRefresh';
 
 const ADMIN_TABS = new Set([
@@ -59,6 +59,11 @@ export function App() {
     }
   }, []);
 
+  const adminUser = getAdminUser();
+  const permissions = Array.isArray(adminUser?.permissions) ? adminUser.permissions as string[] : undefined;
+  const canViewTab = (tab: string) => !permissions || permissions.includes(tab);
+  const visibleTabs = Array.from(ADMIN_TABS).filter(canViewTab);
+
   useEffect(() => {
     const syncTabFromUrl = () => {
       const tab = new URLSearchParams(window.location.search).get('tab');
@@ -71,6 +76,12 @@ export function App() {
     window.addEventListener('popstate', syncTabFromUrl);
     return () => window.removeEventListener('popstate', syncTabFromUrl);
   }, []);
+
+  useEffect(() => {
+    if (!canViewTab(activeTab)) {
+      setActiveTab(visibleTabs[0] || 'dashboard');
+    }
+  }, [activeTab, permissions?.join('|')]);
 
   if (!isAuthenticated) {
     return <Login onSuccess={() => setIsAuthenticated(true)} />;
@@ -120,6 +131,7 @@ export function App() {
         return 'Quản trị';
     }
   };
+  const activeTabAllowed = canViewTab(activeTab);
 
   return (
     <div className="admin-shell flex min-h-screen bg-slate-950 text-slate-100">
@@ -127,26 +139,29 @@ export function App() {
       <div className="admin-main flex-1 flex flex-col min-w-0">
         <Header title={getTitle()} />
         <main className="admin-content flex-1 overflow-y-auto">
-          {activeTab === 'posts' && <PostsPage />}
-          {activeTab === 'forms' && <FormsPage />}
-          {activeTab === 'dashboard' && <Dashboard />}
-          {activeTab === 'analytics' && <AnalyticsPage />}
-          {activeTab === 'orders' && <Orders />}
-          {activeTab === 'products' && <Products />}
-          {activeTab === 'media-library' && <MediaLibraryPage />}
-          {activeTab === 'categories' && <Categories />}
-          {activeTab === 'affiliates' && <AffiliatesPage />}
-          {activeTab === 'consignments' && <ConsignmentPage />}
-          {activeTab === 'settlements' && <SettlementsPage />}
-          {activeTab === 'deliveries' && <DeliveriesPage />}
-          {activeTab === 'audit-logs' && <AuditLogsPage />}
-          {activeTab === 'banners' && <BannersPage />}
-          {activeTab === 'stations' && <StationsPage />}
-          {activeTab === 'coupons' && <CouponsPage />}
-          {activeTab === 'users' && <UsersPage />}
-          {activeTab === 'otp-outbox' && <OtpOutboxPage />}
-          {activeTab === 'staff' && <StaffPage />}
-          {activeTab === 'settings' && <SettingsPage />}
+          {!activeTabAllowed && (
+            <div className="p-6 text-sm text-slate-400">Tài khoản này chưa được cấp quyền xem mục này.</div>
+          )}
+          {activeTabAllowed && activeTab === 'posts' && <PostsPage />}
+          {activeTabAllowed && activeTab === 'forms' && <FormsPage />}
+          {activeTabAllowed && activeTab === 'dashboard' && <Dashboard />}
+          {activeTabAllowed && activeTab === 'analytics' && <AnalyticsPage />}
+          {activeTabAllowed && activeTab === 'orders' && <Orders />}
+          {activeTabAllowed && activeTab === 'products' && <Products />}
+          {activeTabAllowed && activeTab === 'media-library' && <MediaLibraryPage />}
+          {activeTabAllowed && activeTab === 'categories' && <Categories />}
+          {activeTabAllowed && activeTab === 'affiliates' && <AffiliatesPage />}
+          {activeTabAllowed && activeTab === 'consignments' && <ConsignmentPage />}
+          {activeTabAllowed && activeTab === 'settlements' && <SettlementsPage />}
+          {activeTabAllowed && activeTab === 'deliveries' && <DeliveriesPage />}
+          {activeTabAllowed && activeTab === 'audit-logs' && <AuditLogsPage />}
+          {activeTabAllowed && activeTab === 'banners' && <BannersPage />}
+          {activeTabAllowed && activeTab === 'stations' && <StationsPage />}
+          {activeTabAllowed && activeTab === 'coupons' && <CouponsPage />}
+          {activeTabAllowed && activeTab === 'users' && <UsersPage />}
+          {activeTabAllowed && activeTab === 'otp-outbox' && <OtpOutboxPage />}
+          {activeTabAllowed && activeTab === 'staff' && <StaffPage />}
+          {activeTabAllowed && activeTab === 'settings' && <SettingsPage />}
         </main>
         <PullToRefresh targetSelector=".admin-content" />
       </div>

@@ -23,6 +23,13 @@ const emptySettings: PlatformSettings = {
   sepayWebhookUrl: '',
   sepayWebhookConfigured: false,
   commissionSettlementMode: 'ORDER_DISCOUNT',
+  shippingFee: {
+    mode: 'FIXED',
+    fixedFee: 0,
+    freeShippingMinOrder: 0,
+    areaRules: [],
+    stationRules: [],
+  },
   maintenanceMode: false,
   maintenanceMessage: 'Hệ thống đang bảo trì, vui lòng quay lại sau.',
   updatedAt: '',
@@ -76,8 +83,17 @@ export function SettingsPage() {
     load();
   }, []);
 
-  const update = (key: keyof PlatformSettings, value: string | boolean) => {
+  const update = (key: keyof PlatformSettings, value: string | boolean | PlatformSettings['shippingFee']) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+  const updateShipping = (value: Partial<PlatformSettings['shippingFee']>) => {
+    setSettings((prev) => ({
+      ...prev,
+      shippingFee: {
+        ...prev.shippingFee,
+        ...value,
+      },
+    }));
   };
 
   const save = async (event: React.FormEvent) => {
@@ -313,6 +329,177 @@ export function SettingsPage() {
               </div>
               <div className="rounded-xl bg-cyan-400/10 px-3 py-2 text-xs leading-5 text-cyan-100 ring-1 ring-cyan-300/15">
                 Header gửi từ SePay: <span className="font-mono font-bold">Authorization: Apikey &lt;API key&gt;</span>. Nội dung chuyển khoản chuẩn: <span className="font-mono font-bold">SAXIMI ORDER {'{mã đơn}'}</span>.
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
+            <div className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
+              <Store className="h-5 w-5 text-cyan-300" />
+              Phí vận chuyển
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Cách tính phí" icon={<Store className="h-4 w-4" />}>
+                <select
+                  className={inputClass}
+                  value={settings.shippingFee.mode}
+                  onChange={(e) => updateShipping({ mode: e.target.value as PlatformSettings['shippingFee']['mode'] })}
+                >
+                  <option value="FIXED">Phí cố định</option>
+                  <option value="AREA">Theo khu vực</option>
+                  <option value="STATION">Theo điểm nhận</option>
+                </select>
+              </Field>
+              <Field label="Phí cố định" icon={<CreditCard className="h-4 w-4" />}>
+                <input
+                  className={inputClass}
+                  type="number"
+                  min={0}
+                  value={settings.shippingFee.fixedFee}
+                  onChange={(e) => updateShipping({ fixedFee: Number(e.target.value || 0) })}
+                />
+              </Field>
+              <Field label="Miễn phí từ đơn" icon={<BadgePercent className="h-4 w-4" />}>
+                <input
+                  className={inputClass}
+                  type="number"
+                  min={0}
+                  value={settings.shippingFee.freeShippingMinOrder}
+                  onChange={(e) => updateShipping({ freeShippingMinOrder: Number(e.target.value || 0) })}
+                />
+              </Field>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl bg-slate-950/60 p-4 ring-1 ring-white/10">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-black text-white">Phí theo khu vực</div>
+                    <div className="mt-1 text-xs text-slate-400">Tỉnh thành, từ khóa phường/xã và mức phí.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-white/10 px-3 py-2 text-xs font-black text-white"
+                    onClick={() =>
+                      updateShipping({
+                        areaRules: [
+                          ...settings.shippingFee.areaRules,
+                          { id: `area-${Date.now()}`, label: 'Khu vực mới', province: '', wardKeyword: '', fee: 0, isActive: true },
+                        ],
+                      })
+                    }
+                  >
+                    Thêm
+                  </button>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {settings.shippingFee.areaRules.length === 0 && (
+                    <div className="rounded-xl bg-slate-900/80 px-3 py-3 text-xs text-slate-400">Chưa có khu vực riêng.</div>
+                  )}
+                  {settings.shippingFee.areaRules.map((rule, index) => (
+                    <div key={rule.id} className="grid gap-2 rounded-xl bg-slate-900/80 p-3">
+                      <input
+                        className={inputClass}
+                        placeholder="Tên khu vực"
+                        value={rule.label}
+                        onChange={(e) => {
+                          const areaRules = [...settings.shippingFee.areaRules];
+                          areaRules[index] = { ...rule, label: e.target.value };
+                          updateShipping({ areaRules });
+                        }}
+                      />
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <input
+                          className={inputClass}
+                          placeholder="Tỉnh thành"
+                          value={rule.province || ''}
+                          onChange={(e) => {
+                            const areaRules = [...settings.shippingFee.areaRules];
+                            areaRules[index] = { ...rule, province: e.target.value };
+                            updateShipping({ areaRules });
+                          }}
+                        />
+                        <input
+                          className={inputClass}
+                          placeholder="Từ khóa phường/xã"
+                          value={rule.wardKeyword || ''}
+                          onChange={(e) => {
+                            const areaRules = [...settings.shippingFee.areaRules];
+                            areaRules[index] = { ...rule, wardKeyword: e.target.value };
+                            updateShipping({ areaRules });
+                          }}
+                        />
+                        <input
+                          className={inputClass}
+                          type="number"
+                          min={0}
+                          value={rule.fee}
+                          onChange={(e) => {
+                            const areaRules = [...settings.shippingFee.areaRules];
+                            areaRules[index] = { ...rule, fee: Number(e.target.value || 0) };
+                            updateShipping({ areaRules });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-slate-950/60 p-4 ring-1 ring-white/10">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-black text-white">Phí theo điểm nhận</div>
+                    <div className="mt-1 text-xs text-slate-400">Dùng ID điểm nhận hàng/chi nhánh.</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-white/10 px-3 py-2 text-xs font-black text-white"
+                    onClick={() =>
+                      updateShipping({
+                        stationRules: [
+                          ...settings.shippingFee.stationRules,
+                          { id: `station-${Date.now()}`, stationId: 0, fee: 0, isActive: true },
+                        ],
+                      })
+                    }
+                  >
+                    Thêm
+                  </button>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {settings.shippingFee.stationRules.length === 0 && (
+                    <div className="rounded-xl bg-slate-900/80 px-3 py-3 text-xs text-slate-400">Chưa có phí theo điểm nhận.</div>
+                  )}
+                  {settings.shippingFee.stationRules.map((rule, index) => (
+                    <div key={rule.id} className="grid gap-2 rounded-xl bg-slate-900/80 p-3 md:grid-cols-2">
+                      <input
+                        className={inputClass}
+                        type="number"
+                        min={0}
+                        placeholder="ID điểm nhận"
+                        value={rule.stationId}
+                        onChange={(e) => {
+                          const stationRules = [...settings.shippingFee.stationRules];
+                          stationRules[index] = { ...rule, stationId: Number(e.target.value || 0) };
+                          updateShipping({ stationRules });
+                        }}
+                      />
+                      <input
+                        className={inputClass}
+                        type="number"
+                        min={0}
+                        placeholder="Phí"
+                        value={rule.fee}
+                        onChange={(e) => {
+                          const stationRules = [...settings.shippingFee.stationRules];
+                          stationRules[index] = { ...rule, fee: Number(e.target.value || 0) };
+                          updateShipping({ stationRules });
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </section>

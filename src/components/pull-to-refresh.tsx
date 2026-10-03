@@ -8,6 +8,7 @@ type PullToRefreshProps = {
 
 const PULL_LIMIT = 92;
 const REFRESH_THRESHOLD = 64;
+const START_THRESHOLD = 12;
 const reloadPage = () => window.location.reload();
 
 export default function PullToRefresh({
@@ -15,6 +16,7 @@ export default function PullToRefresh({
   onRefresh = reloadPage,
 }: PullToRefreshProps) {
   const startYRef = useRef(0);
+  const startXRef = useRef(0);
   const pullDistanceRef = useRef(0);
   const isPullingRef = useRef(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -35,6 +37,7 @@ export default function PullToRefresh({
       }
 
       startYRef.current = event.touches[0].clientY;
+      startXRef.current = event.touches[0].clientX;
       isPullingRef.current = true;
     };
 
@@ -44,8 +47,9 @@ export default function PullToRefresh({
       }
 
       const distance = event.touches[0].clientY - startYRef.current;
+      const horizontalDistance = Math.abs(event.touches[0].clientX - startXRef.current);
 
-      if (distance <= 0 || !canPull()) {
+      if (distance <= START_THRESHOLD || horizontalDistance > distance || !canPull()) {
         pullDistanceRef.current = 0;
         setPullDistance(0);
         return;

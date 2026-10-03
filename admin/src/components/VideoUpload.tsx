@@ -2,10 +2,48 @@ import { useEffect, useRef, useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import { api } from '../api';
 
-export function VideoUpload({ value, onChange, onBusyChange }: {
+function createVideoThumbnail(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    const cleanup = () => URL.revokeObjectURL(url);
+    const fail = () => {
+      cleanup();
+      reject(new Error('Không tạo được ảnh thumbnail từ video này.'));
+    };
+    video.preload = 'metadata';
+    video.muted = true;
+    video.playsInline = true;
+    video.src = url;
+    video.onerror = fail;
+    video.onloadedmetadata = () => {
+      const target = Math.min(0.1, Math.max(0, (video.duration || 1) - 0.05));
+      video.currentTime = target;
+    };
+    video.onseeked = () => {
+      try {
+        const maxWidth = 1280;
+        const scale = video.videoWidth > maxWidth ? maxWidth / video.videoWidth : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+        canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas không khả dụng.');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        cleanup();
+        resolve(canvas.toDataURL('image/jpeg', 0.84));
+      } catch {
+        fail();
+      }
+    };
+  });
+}
+
+export function VideoUpload({ value, onChange, onBusyChange, onThumbnailGenerated }: {
   value: string;
   onChange: (url: string) => void;
   onBusyChange?: (busy: boolean) => void;
+  onThumbnailGenerated?: (url: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +86,7 @@ export function VideoUpload({ value, onChange, onBusyChange }: {
               setUploadBusy(true);
               setError('');
               try {
+                const thumbnailData = await createVideoThumbnail(file).catch(() => '');
                 const data = await new Promise<string>((resolve, reject) => {
                   const reader = new FileReader();
                   reader.onload = () => resolve(String(reader.result));
@@ -56,6 +95,11 @@ export function VideoUpload({ value, onChange, onBusyChange }: {
                 });
                 const result = await api.uploadMedia(data, file.name);
                 if (mounted.current) onChange(result.url);
+                if (thumbnailData) {
+                  const extensionlessName = file.name.replace(/\.[^.]+$/, '');
+                  const thumbnail = await api.uploadImage(thumbnailData, `${extensionlessName}-thumbnail.jpg`);
+                  if (mounted.current) onThumbnailGenerated?.(thumbnail.url);
+                }
               } catch (err) {
                 if (mounted.current) setError((err as Error).message);
               } finally {
@@ -86,7 +130,7 @@ export function VideoUpload({ value, onChange, onBusyChange }: {
         />
       )}
       {error && <p role="alert" className="text-xs text-rose-300 break-words">{error}</p>}
-      <p className="text-xs leading-5 text-slate-500">Hỗ trợ MP4, WebM, MOV. Dung lượng tối đa 60 MB.</p>
+      <p className="text-xs leading-5 text-slate-500">Hỗ trợ MP4, WebM, MOV. Dung lượng tối đa 60 MB. Khi tải video từ máy tính, hệ thống tự lấy frame đầu làm thumbnail nếu bài viết chưa có ảnh bìa.</p>
     </div>
   );
 }

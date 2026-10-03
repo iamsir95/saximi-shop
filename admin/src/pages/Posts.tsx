@@ -120,6 +120,18 @@ export function PostsPage() {
     window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
   const update = (key: keyof Post, value: string) => { setForm(old => old ? { ...old, [key]: value } : old); setDirty(true); };
+  const applyGeneratedVideoThumbnail = (url: string) => {
+    setForm(old => {
+      if (!old || old.cover) return old;
+      return {
+        ...old,
+        cover: url,
+        coverAlt: old.coverAlt || old.title || 'Thumbnail video',
+      };
+    });
+    setDirty(true);
+    setNotice('Đã tự tạo ảnh bìa từ frame đầu video.');
+  };
   const applyContentType = (contentType: string) => {
     setForm(old => {
       if (!old) return old;
@@ -200,7 +212,7 @@ export function PostsPage() {
         <div className="flex gap-2 border-b border-slate-700 pb-2" role="tablist" aria-label="Soạn bài">{[['content', 'Nội dung'], ['seo', 'SEO']].map(([id, name]) => <button key={id} type="button" role="tab" aria-selected={tab === id} className={`${buttonClass} ${tab === id ? 'bg-slate-700' : ''}`} onClick={() => setTab(id)}>{name}</button>)}</div>
         {tab === 'content' ? <div className="space-y-5">
           <label className="grid gap-1.5 text-sm">Tóm tắt<textarea className={inputClass} rows={3} maxLength={500} value={form.excerpt} onChange={e => update('excerpt', e.target.value)} /></label>
-          {(activeContentType === 'video' || activeContentType === 'short-video') && <div className="space-y-3 rounded-2xl border border-indigo-500/25 bg-indigo-500/5 p-4"><div className="flex items-center gap-2 text-sm font-bold text-indigo-100"><Video size={16} />Cấu hình video {activeContentType === 'short-video' ? 'dọc 9:16' : 'ngang 16:9'}</div><VideoUpload value={form.videoUrl || ''} onChange={url => update('videoUrl', url)} onBusyChange={uploadBusy} /><label className="grid gap-1.5 text-sm"><span>Hoặc dùng đường dẫn video</span><input className={inputClass} value={form.videoUrl || ''} onChange={e => update('videoUrl', e.target.value)} placeholder="https://...mp4 hoặc /api/uploads/video.mp4" /></label><p className="text-xs leading-5 text-slate-400">Có thể tải video từ máy tính hoặc dùng link MP4/WebM/MOV hợp lệ. Nội dung bên dưới dùng để thêm mô tả, CTA, form hoặc voucher.</p></div>}
+          {(activeContentType === 'video' || activeContentType === 'short-video') && <div className="space-y-3 rounded-2xl border border-indigo-500/25 bg-indigo-500/5 p-4"><div className="flex items-center gap-2 text-sm font-bold text-indigo-100"><Video size={16} />Cấu hình video {activeContentType === 'short-video' ? 'dọc 9:16' : 'ngang 16:9'}</div><VideoUpload value={form.videoUrl || ''} onChange={url => update('videoUrl', url)} onBusyChange={uploadBusy} onThumbnailGenerated={applyGeneratedVideoThumbnail} /><label className="grid gap-1.5 text-sm"><span>Hoặc dùng đường dẫn video</span><input className={inputClass} value={form.videoUrl || ''} onChange={e => update('videoUrl', e.target.value)} placeholder="https://...mp4 hoặc /api/uploads/video.mp4" /></label><p className="text-xs leading-5 text-slate-400">Có thể tải video từ máy tính hoặc dùng link MP4/WebM/MOV hợp lệ. Nếu bài chưa có ảnh bìa, video tải lên sẽ tự lấy frame đầu làm thumbnail. Nội dung bên dưới dùng để thêm mô tả, CTA, form hoặc voucher.</p></div>}
           {activeContentType === 'policy' && <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm leading-6 text-slate-300"><div className="flex items-center gap-2 font-bold text-emerald-100"><ShieldCheck size={16} />Khung chính sách</div><p className="mt-2">Nên chia nội dung theo các mục: phạm vi áp dụng, quyền lợi, điều kiện, quy trình xử lý và thông tin liên hệ. Khi xuất bản, bài sẽ dùng schema WebPage phù hợp SEO.</p></div>}
           {activeContentType === 'flash-sale' && <div className="space-y-3 rounded-2xl border border-rose-500/25 bg-rose-500/5 p-4"><div className="flex items-center gap-2 text-sm font-bold text-rose-200"><Flame size={16} />Cấu hình Flash Sale</div><label className="grid gap-1.5 text-sm"><span>Thời gian kết thúc countdown</span><input type="datetime-local" className={inputClass} value={toDatetimeLocal(form.flashSaleEndsAt)} onChange={e => update('flashSaleEndsAt', e.target.value)} /></label><div className="grid max-h-80 gap-2 overflow-y-auto pr-1 md:grid-cols-2">{products.map(product => <label key={product.id} className="flex gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-2 text-sm"><input type="checkbox" className="mt-1" checked={(form.productIds || []).includes(product.id)} onChange={() => toggleProduct(product.id)} /><img src={product.image} alt="" className="h-12 w-12 rounded-lg object-cover" /><span className="min-w-0"><strong className="line-clamp-2">{product.name}</strong><span className="block text-xs text-slate-400">{Number(product.price).toLocaleString('vi-VN')}đ</span></span></label>)}</div></div>}
           <RichTextEditor onUploadingChange={uploadBusy} label="Nội dung bài viết" value={form.content} onChange={value => update('content', value)} minHeight={400} snippets={dynamicForms.filter(item => item.isActive && item.placements.includes('news')).map(item => ({ id: String(item.id), label: `Form: ${item.title}`, html: `<p>[[form:${item.id}]]</p><p><br></p>` }))} />

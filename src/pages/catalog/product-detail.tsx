@@ -162,7 +162,25 @@ export default function ProductDetailPage() {
   const lowStock = isLowStock(productForCart);
   const soldQuantity = Math.max(0, Number(productForCart.soldQuantity || 0));
   const promotionLabels = product.promotionLabels || [];
-  const hasAttributes = Boolean(product.attributes?.length);
+  const visibleAttributes = useMemo(
+    () =>
+      [...(product.attributes || [])]
+        .filter((attribute) => attribute.name && attribute.value)
+        .sort((a, b) => Number(Boolean(b.highlighted)) - Number(Boolean(a.highlighted)) || (a.sortOrder || 0) - (b.sortOrder || 0)),
+    [product.attributes]
+  );
+  const groupedAttributes = useMemo(
+    () =>
+      visibleAttributes.reduce<Array<{ group: string; items: typeof visibleAttributes }>>((groups, attribute) => {
+        const groupName = attribute.group || "Thông tin sản phẩm";
+        const existing = groups.find((group) => group.group === groupName);
+        if (existing) existing.items.push(attribute);
+        else groups.push({ group: groupName, items: [attribute] });
+        return groups;
+      }, []),
+    [visibleAttributes]
+  );
+  const hasAttributes = Boolean(visibleAttributes.length);
   const seoArticle = product.seo?.article?.trim();
   const giftPrograms = useMemo(
     () =>
@@ -499,17 +517,31 @@ export default function ProductDetailPage() {
           <>
             <div className="bg-background h-2 w-full"></div>
             <Section title="Thông số & thuộc tính">
-              <div className="grid grid-cols-1 gap-2 p-4 pt-2 sm:grid-cols-2">
-                {product.attributes!.map((attribute) => (
-                  <div
-                    key={`${attribute.name}-${attribute.value}`}
-                    className="rounded-2xl bg-white/62 px-3 py-2"
-                  >
-                    <div className="text-[11px] font-bold uppercase text-slate-400">
-                      {attribute.name}
+              <div className="space-y-4 p-4 pt-2">
+                {groupedAttributes.map((group) => (
+                  <div key={group.group} className="space-y-2">
+                    <div className="text-xs font-black uppercase tracking-wide text-slate-500">
+                      {group.group}
                     </div>
-                    <div className="mt-0.5 text-sm font-semibold text-slate-800">
-                      {attribute.value}
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {group.items.map((attribute) => (
+                        <div
+                          key={`${attribute.name}-${attribute.value}`}
+                          className={`rounded-2xl px-3 py-2 ${
+                            attribute.highlighted
+                              ? "bg-primary/10 ring-1 ring-primary/20"
+                              : "bg-white/62"
+                          }`}
+                        >
+                          <div className="text-[11px] font-bold uppercase text-slate-400">
+                            {attribute.name}
+                          </div>
+                          <div className="mt-0.5 text-sm font-semibold text-slate-800">
+                            {attribute.value}
+                            {attribute.unit ? ` ${attribute.unit}` : ""}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}

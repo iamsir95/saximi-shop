@@ -57,6 +57,10 @@ export interface ProductImage {
 export interface ProductAttribute {
   name: string;
   value: string;
+  group?: string;
+  unit?: string;
+  highlighted?: boolean;
+  sortOrder?: number;
 }
 
 export interface ProductSeoContent {

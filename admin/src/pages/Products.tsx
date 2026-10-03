@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, Sparkles, Gift, ArrowUp, ArrowDown, FileText } from 'lucide-react';
 import { api } from '../api';
-import { Category, MediaAsset, Product, ProductGiftProgram, ProductPromotionLabel, ProductVariant } from '../types';
+import { Category, MediaAsset, Product, ProductAttribute, ProductGiftProgram, ProductPromotionLabel, ProductVariant } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
 import { ImageField } from '../components/ImageField';
 
@@ -68,7 +68,7 @@ export const Products: React.FC = () => {
   const [giftPrograms, setGiftPrograms] = useState<ProductGiftProgram[]>([]);
   const [enableVariants, setEnableVariants] = useState(false);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [attributesText, setAttributesText] = useState('');
+  const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
@@ -183,6 +183,18 @@ export const Products: React.FC = () => {
     setVariants((current) => current.filter((variant) => variant.id !== id));
   };
 
+  const attributePresets: ProductAttribute[] = [
+    { name: 'Xuất xứ', value: '', group: 'Thông tin chung', highlighted: true },
+    { name: 'Thương hiệu', value: '', group: 'Thông tin chung', highlighted: true },
+    { name: 'Quy cách', value: '', group: 'Thông tin chung', highlighted: true },
+    { name: 'Chất liệu', value: '', group: 'Chi tiết sản phẩm' },
+    { name: 'Kích thước', value: '', group: 'Chi tiết sản phẩm' },
+    { name: 'Khối lượng', value: '', unit: 'g', group: 'Chi tiết sản phẩm' },
+    { name: 'Hạn sử dụng', value: '', group: 'Bảo quản & sử dụng' },
+    { name: 'Bảo quản', value: '', group: 'Bảo quản & sử dụng' },
+    { name: 'Phù hợp', value: '', group: 'Gợi ý mua hàng' },
+  ];
+
   const parseAttributes = (value: string) =>
     value
       .split('\n')
@@ -198,10 +210,51 @@ export const Products: React.FC = () => {
       })
       .filter((item) => item.name && item.value);
 
-  const serializeAttributes = (product: Product) =>
-    (product.attributes || [])
-      .map((item) => `${item.name}: ${item.value}`)
-      .join('\n');
+  const normalizeAttributes = (items: ProductAttribute[]) =>
+    items
+      .map((item, index) => ({
+        name: item.name.trim(),
+        value: item.value.trim(),
+        group: item.group?.trim() || undefined,
+        unit: item.unit?.trim() || undefined,
+        highlighted: Boolean(item.highlighted),
+        sortOrder: index + 1,
+      }))
+      .filter((item) => item.name && item.value);
+
+  const addAttribute = (preset?: ProductAttribute) => {
+    setAttributes((current) => [
+      ...current,
+      {
+        name: preset?.name || '',
+        value: preset?.value || '',
+        group: preset?.group || 'Thông tin chung',
+        unit: preset?.unit || '',
+        highlighted: preset?.highlighted || false,
+        sortOrder: current.length + 1,
+      },
+    ]);
+  };
+
+  const updateAttribute = (index: number, patch: Partial<ProductAttribute>) => {
+    setAttributes((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+    );
+  };
+
+  const removeAttribute = (index: number) => {
+    setAttributes((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const moveAttribute = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    setAttributes((current) => {
+      if (nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
 
   const normalizeGiftPrograms = () =>
     giftPrograms
@@ -294,7 +347,7 @@ export const Products: React.FC = () => {
     setGiftPrograms([]);
     setEnableVariants(false);
     setVariants([]);
-    setAttributesText('');
+    setAttributes([]);
     setSeoTitle('');
     setSeoDescription('');
     setSeoKeywords('');
@@ -326,7 +379,13 @@ export const Products: React.FC = () => {
     setGiftPrograms(product.giftPrograms || []);
     setEnableVariants(Boolean(product.enableVariants));
     setVariants(product.variants || []);
-    setAttributesText(serializeAttributes(product));
+    setAttributes((product.attributes || []).map((item, index) => ({
+      ...item,
+      group: item.group || 'Thông tin chung',
+      unit: item.unit || '',
+      highlighted: item.highlighted || false,
+      sortOrder: item.sortOrder || index + 1,
+    })));
     setSeoTitle(product.seo?.title || '');
     setSeoDescription(product.seo?.description || '');
     setSeoKeywords(product.seo?.keywords || '');
@@ -379,7 +438,7 @@ export const Products: React.FC = () => {
       giftPrograms: normalizeGiftPrograms(),
       enableVariants,
       variants: enableVariants ? normalizeVariants() : [],
-      attributes: parseAttributes(attributesText),
+      attributes: normalizeAttributes(attributes),
       seo: {
         title: seoTitle.trim() || undefined,
         description: seoDescription.trim() || undefined,
@@ -465,8 +524,8 @@ export const Products: React.FC = () => {
   const generateProductSeo = () => {
     const categoryName = categories.find((item) => item.id === categoryId)?.name || 'sản phẩm';
     const productName = name.trim() || 'Sản phẩm Saximi Shop';
-    const attributes = parseAttributes(attributesText);
-    const attributeSummary = attributes.slice(0, 4).map((item) => `${item.name} ${item.value}`);
+    const normalizedAttributes = normalizeAttributes(attributes);
+    const attributeSummary = normalizedAttributes.slice(0, 4).map((item) => `${item.name} ${item.value}${item.unit ? ` ${item.unit}` : ''}`);
     const cleanDetail = stripHtml(detail);
     const cleanArticle = stripHtml(seoArticle);
     const promo = promoDescription.trim();
@@ -1066,18 +1125,94 @@ export const Products: React.FC = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Thuộc tính sản phẩm</label>
-                    <textarea
-                      rows={6}
-                      value={attributesText}
-                      onChange={(e) => setAttributesText(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                      placeholder={'Mỗi dòng một thuộc tính\nXuất xứ: Việt Nam\nKhối lượng: 500g\nHạn sử dụng: 12 tháng'}
-                    />
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Hỗ trợ định dạng “Tên: Giá trị” hoặc “Tên | Giá trị”.
-                    </p>
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/45 p-3 space-y-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-400">Thuộc tính sản phẩm</label>
+                        <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                          Quản lý thông số theo nhóm, đơn vị, thứ tự và đánh dấu nổi bật để hiển thị đẹp ở trang chi tiết.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addAttribute()}
+                        className="rounded-xl border border-cyan-500/40 px-3 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/10"
+                      >
+                        + Thêm thuộc tính
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {attributePresets.map((preset) => (
+                        <button
+                          key={`${preset.group}-${preset.name}`}
+                          type="button"
+                          onClick={() => addAttribute(preset)}
+                          className="rounded-full border border-slate-700 bg-slate-950/50 px-3 py-1.5 text-[11px] font-bold text-slate-300 hover:border-cyan-500/50 hover:text-cyan-200"
+                        >
+                          {preset.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="space-y-2">
+                      {attributes.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-8 text-center text-sm text-slate-500">
+                          Chưa có thuộc tính. Chọn mẫu nhanh hoặc thêm thuộc tính mới.
+                        </div>
+                      ) : (
+                        attributes.map((attribute, index) => (
+                          <div key={index} className="rounded-2xl border border-slate-700 bg-slate-950/55 p-3 space-y-2">
+                            <div className="grid gap-2 lg:grid-cols-[1fr_1.4fr_110px_1fr_auto]">
+                              <input
+                                value={attribute.name}
+                                onChange={(e) => updateAttribute(index, { name: e.target.value })}
+                                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                                placeholder="Tên thuộc tính"
+                              />
+                              <input
+                                value={attribute.value}
+                                onChange={(e) => updateAttribute(index, { value: e.target.value })}
+                                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                                placeholder="Giá trị"
+                              />
+                              <input
+                                value={attribute.unit || ''}
+                                onChange={(e) => updateAttribute(index, { unit: e.target.value })}
+                                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                                placeholder="Đơn vị"
+                              />
+                              <input
+                                value={attribute.group || ''}
+                                onChange={(e) => updateAttribute(index, { group: e.target.value })}
+                                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                                placeholder="Nhóm"
+                              />
+                              <div className="flex items-center justify-end gap-1">
+                                <button type="button" onClick={() => moveAttribute(index, -1)} className="rounded-lg bg-slate-800 p-2 text-slate-400 hover:text-white" title="Đưa lên">
+                                  <ArrowUp className="h-4 w-4" />
+                                </button>
+                                <button type="button" onClick={() => moveAttribute(index, 1)} className="rounded-lg bg-slate-800 p-2 text-slate-400 hover:text-white" title="Đưa xuống">
+                                  <ArrowDown className="h-4 w-4" />
+                                </button>
+                                <button type="button" onClick={() => removeAttribute(index)} className="rounded-lg bg-rose-500/10 p-2 text-rose-300 hover:bg-rose-500/20" title="Xóa thuộc tính">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-300">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(attribute.highlighted)}
+                                onChange={(e) => updateAttribute(index, { highlighted: e.target.checked })}
+                                className="accent-cyan-400"
+                              />
+                              Hiển thị nổi bật ở đầu bảng thông số
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

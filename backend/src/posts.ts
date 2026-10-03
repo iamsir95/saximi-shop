@@ -80,10 +80,16 @@ export class PostStore {
     if (!Array.isArray(productIds) || productIds.length > 24 || productIds.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new PostError('Chọn tối đa 24 sản phẩm hợp lệ.');
     const field = (key: string, max: number) => {
       const value = input[key];
-      if (value !== undefined && typeof value !== 'string') throw new PostError(`Trường ${key} không hợp lệ.`);
+      if (value !== undefined && value !== null && typeof value !== 'string') throw new PostError(`Trường ${key} không hợp lệ.`);
       const text = String(value ?? '').trim();
       if (text.length > max) throw new PostError(`Trường ${key} vượt quá ${max} ký tự.`);
       return text;
+    };
+    const normalizeOptionalDate = (value: string) => {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) throw new PostError('Thời gian countdown Flash Sale không hợp lệ.');
+      return date.toISOString();
     };
     const title = field('title', 200);
     const slug = postSlug(field('slug', 160) || title);
@@ -96,8 +102,7 @@ export class PostStore {
     const contentType: PostContentType = postContentTypes.includes(rawContentType) ? rawContentType : (category === 'policy' ? 'policy' : 'article');
     const videoUrl = field('videoUrl', 2000);
     if (videoUrl && !/^https?:\/\/[^\s]+$/i.test(videoUrl) && !/^\/(?!\/)[^\s]*$/.test(videoUrl)) throw new PostError('Video phải là URL http/https hoặc đường dẫn trên website.');
-    const flashSaleEndsAt = field('flashSaleEndsAt', 80) || null;
-    if (flashSaleEndsAt && Number.isNaN(Date.parse(flashSaleEndsAt))) throw new PostError('Thời gian countdown Flash Sale không hợp lệ.');
+    const flashSaleEndsAt = normalizeOptionalDate(field('flashSaleEndsAt', 80));
     const content = cleanArticle(field('content', 80000));
     const customCode = cleanArticle(field('customCode', 120000));
     const hasMedia = content.includes('<img') || content.includes('<video') || content.includes('<iframe') || Boolean(videoUrl);

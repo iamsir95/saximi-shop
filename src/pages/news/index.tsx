@@ -130,6 +130,10 @@ function PostFormatBadge({ post }: { post: Post }) {
   return text ? <span className={`news-format news-format--${post.contentType}`}>{text}</span> : null;
 }
 
+function postLayoutClass(post: Post) {
+  return `news-detail__article news-detail__article--${post.contentType || "article"}`;
+}
+
 function PostVideoBlock({ post }: { post: Post }) {
   if (!post.videoUrl) return null;
   const vertical = post.contentType === "short-video";
@@ -242,8 +246,8 @@ export function NewsDetailPage() {
       .then(setForms)
       .catch(() => setForms([]));
   }, []);
-  return <div className="news-detail"><Link className="news-back" to="/news"><CommerceIcon name="arrow-left" size={18} />Bản tin</Link>{error ? <div role="alert"><p>{error}</p><button onClick={() => setRetry(n => n + 1)}>Thử lại</button></div> : !post ? <p role="status">Đang tải bài viết…</p> : <article>
-    <Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link>
+  return <div className="news-detail"><Link className="news-back" to="/news"><CommerceIcon name="arrow-left" size={18} />Bản tin</Link>{error ? <div role="alert"><p>{error}</p><button onClick={() => setRetry(n => n + 1)}>Thử lại</button></div> : !post ? <p role="status">Đang tải bài viết…</p> : <article className={postLayoutClass(post)}>
+    <div className="news-detail__meta"><Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link><PostFormatBadge post={post} /></div>
     <h1>{post.title}</h1><p className="news-byline">{post.author} · Đăng ngày <time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></p>
     <p className="news-intro">{post.excerpt}</p>{post.cover && <img className="news-cover" src={post.cover} alt={post.coverAlt} />}
     <PostVideoBlock post={post} />

@@ -144,6 +144,56 @@ function PostVideoBlock({ post }: { post: Post }) {
   );
 }
 
+function SuggestedVideoStrip({ posts }: { posts: Post[] }) {
+  const videos = posts.filter((item) => item.contentType === "video" && item.videoUrl).slice(0, 6);
+  if (!videos.length) return null;
+  return (
+    <section className="news-video-suggestions" aria-label="Video gợi ý">
+      <div className="news-section-heading">
+        <span>Video gợi ý</span>
+        <strong>Nội dung liên quan</strong>
+      </div>
+      <div className="news-video-suggestions__rail">
+        {videos.map((item) => (
+          <Link key={item.id} to={`/news/${item.slug}`} className="news-video-card">
+            <div className="news-video-card__thumb">
+              {item.cover && <img src={item.cover} alt={item.coverAlt || item.title} loading="lazy" />}
+              <span><CommerceIcon name="play" size={14} />Video</span>
+            </div>
+            <strong>{item.title}</strong>
+            <small>{date(item.publishedAt)}</small>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ShortVideoReel({ current, related }: { current: Post; related: Post[] }) {
+  const videos = [current, ...related.filter((item) => item.id !== current.id && item.contentType === "short-video" && item.videoUrl)].slice(0, 8);
+  if (!current.videoUrl) return null;
+  return (
+    <section className="news-short-reel" aria-label="Short video">
+      {videos.map((item, index) => (
+        <article key={item.id} className="news-short-card">
+          <video
+            src={item.videoUrl}
+            poster={item.cover || undefined}
+            controls
+            playsInline
+            preload={index === 0 ? "metadata" : "none"}
+          />
+          <div className="news-short-card__overlay">
+            <Link to={`/news/${item.slug}`}>{item.title}</Link>
+            <p>{item.excerpt}</p>
+            <span>{item.author} · {date(item.publishedAt)}</span>
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function FlashSaleBlock({ post }: { post: Post }) {
   if (post.contentType !== "flash-sale") return null;
   const ends = post.flashSaleEndsAt ? new Date(post.flashSaleEndsAt) : null;
@@ -228,6 +278,7 @@ export default function NewsPage() {
 export function NewsDetailPage() {
   const { slug } = useParams();
   const [post, setPost] = useState<Post>();
+  const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [forms, setForms] = useState<DynamicForm[]>([]);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -246,11 +297,30 @@ export function NewsDetailPage() {
       .then(setForms)
       .catch(() => setForms([]));
   }, []);
+  useEffect(() => {
+    if (!post) {
+      setRelatedPosts([]);
+      return;
+    }
+    const controller = new AbortController();
+    const filter = new URLSearchParams({ limit: "24", category: post.category });
+    fetch(`${getApiBaseUrl()}/posts?${filter}`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data: Page) => {
+        if (controller.signal.aborted) return;
+        setRelatedPosts((data.items || []).filter((item) => item.id !== post.id));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setRelatedPosts([]);
+      });
+    return () => controller.abort();
+  }, [post?.id, post?.category]);
   return <div className="news-detail"><Link className="news-back" to="/news"><CommerceIcon name="arrow-left" size={18} />Bản tin</Link>{error ? <div role="alert"><p>{error}</p><button onClick={() => setRetry(n => n + 1)}>Thử lại</button></div> : !post ? <p role="status">Đang tải bài viết…</p> : <article className={postLayoutClass(post)}>
     <div className="news-detail__meta"><Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link><PostFormatBadge post={post} /></div>
     <h1>{post.title}</h1><p className="news-byline">{post.author} · Đăng ngày <time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></p>
     <p className="news-intro">{post.excerpt}</p>{post.cover && <img className="news-cover" src={post.cover} alt={post.coverAlt} />}
-    <PostVideoBlock post={post} />
+    {post.contentType === "short-video" ? <ShortVideoReel current={post} related={relatedPosts} /> : <PostVideoBlock post={post} />}
+    {post.contentType === "video" && <SuggestedVideoStrip posts={relatedPosts} />}
     <FlashSaleBlock post={post} />
     <PostVouchers vouchers={post.vouchers} />
     <PostContentWithForms content={post.content || ''} forms={forms} />

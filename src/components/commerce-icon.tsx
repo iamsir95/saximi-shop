@@ -24,6 +24,7 @@ export type CommerceIconName =
   | "package"
   | "percent"
   | "phone"
+  | "play"
   | "plus"
   | "qr"
   | "receipt"
@@ -132,6 +133,10 @@ const icons: Record<CommerceIconName, FontAwesomeGlyph> = {
   phone: {
     viewBox: "0 0 384 512",
     path: "M16 64C16 28.7 44.7 0 80 0h224c35.3 0 64 28.7 64 64v384c0 35.3-28.7 64-64 64H80c-35.3 0-64-28.7-64-64V64zm96 384c0 8.8 7.2 16 16 16h128c8.8 0 16-7.2 16-16s-7.2-16-16-16H128c-8.8 0-16 7.2-16 16z",
+  },
+  play: {
+    viewBox: "0 0 384 512",
+    path: "M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80v352c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9l288-176c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z",
   },
   plus: {
     viewBox: "0 0 448 512",

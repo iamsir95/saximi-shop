@@ -6,6 +6,7 @@ export interface Category {
   id: number;
   name: string;
   image: string;
+  icon?: string;
   showOnHome?: boolean;
 }
 
@@ -1662,6 +1663,17 @@ export class Database {
         purpose: 'CATEGORY',
         tags: ['category', category.name],
       }) || changed;
+      if (category.icon && category.icon !== category.image) {
+        changed = this.registerMediaAsset({
+          url: category.icon,
+          title: `Icon danh mục ${category.name}`,
+          altText: category.name,
+          sourceType: 'CATEGORY',
+          sourceId: String(category.id),
+          purpose: 'CATEGORY',
+          tags: ['category', 'icon', category.name],
+        }) || changed;
+      }
     });
 
     this.getBannerItems().forEach((banner) => {

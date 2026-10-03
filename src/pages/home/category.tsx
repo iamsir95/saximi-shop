@@ -17,7 +17,7 @@ export default function Category() {
           to={`/category/${category.id}`}
         >
           <img
-            src={category.image}
+            src={category.icon || category.image}
             className="w-14 h-14 object-cover rounded-2xl bg-skeleton ring-2 ring-white/70 shadow-sm"
             alt={category.name}
           />

@@ -20,7 +20,7 @@ export default function CategorySlider() {
           )}
         >
           <img
-            src={category.image}
+            src={category.icon || category.image}
             className="w-8 h-8 rounded-xl bg-skeleton object-cover"
             alt={category.name}
           />

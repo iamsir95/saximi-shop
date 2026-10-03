@@ -14,7 +14,7 @@ export default function CategoryListPage() {
           to={`/category/${category.id}`}
         >
           <img
-            src={category.image}
+            src={category.icon || category.image}
             className="w-16 h-16 object-cover rounded-2xl bg-skeleton"
             alt={category.name}
           />

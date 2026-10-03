@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, FolderTree, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api';
 import { Category } from '../types';
+import { ImageField } from '../components/ImageField';
 
 export const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -14,7 +15,10 @@ export const Categories: React.FC = () => {
   // Form State
   const [name, setName] = useState('');
   const [image, setImage] = useState('');
+  const [icon, setIcon] = useState('');
   const [showOnHome, setShowOnHome] = useState(true);
+  const [uploads, setUploads] = useState(0);
+  const onUploadingChange = (busy: boolean) => setUploads(n => Math.max(0, n + (busy ? 1 : -1)));
 
   const loadCategories = async () => {
     try {
@@ -36,6 +40,7 @@ export const Categories: React.FC = () => {
     setEditingCategory(null);
     setName('');
     setImage('');
+    setIcon('');
     setShowOnHome(true);
     setIsModalOpen(true);
   };
@@ -44,13 +49,15 @@ export const Categories: React.FC = () => {
     setEditingCategory(cat);
     setName(cat.name);
     setImage(cat.image);
+    setIcon(cat.icon || '');
     setShowOnHome(cat.showOnHome !== false);
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { name, image: image || '/icon.png', showOnHome };
+    if (uploads) { alert('Vui lòng đợi tải media hoàn tất trước khi lưu.'); return; }
+    const payload = { name, image: image || icon || '/icon.png', icon: icon || undefined, showOnHome };
 
     try {
       if (editingCategory) {
@@ -109,7 +116,7 @@ export const Categories: React.FC = () => {
             >
               <div className="flex items-center gap-4">
                 <img
-                  src={cat.image}
+                  src={cat.icon || cat.image}
                   alt={cat.name}
                   className="w-16 h-16 rounded-xl object-cover bg-slate-900 border border-slate-700 p-1 group-hover:scale-105 transition-transform"
                 />
@@ -181,16 +188,19 @@ export const Categories: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">URL Icon / Hình ảnh</label>
-                <input
-                  type="url"
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
-                  placeholder="https://..."
-                />
-              </div>
+              <ImageField
+                label="Icon danh mục"
+                value={icon}
+                onChange={setIcon}
+                onBusyChange={onUploadingChange}
+              />
+
+              <ImageField
+                label="Ảnh đại diện danh mục"
+                value={image}
+                onChange={setImage}
+                onBusyChange={onUploadingChange}
+              />
 
               <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3">
                 <span>
@@ -215,9 +225,10 @@ export const Categories: React.FC = () => {
                 </button>
                 <button
                   type="submit"
+                  disabled={uploads > 0}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/30"
                 >
-                  Lưu Danh Mục
+                  {uploads > 0 ? 'Đang tải media...' : 'Lưu Danh Mục'}
                 </button>
               </div>
             </form>

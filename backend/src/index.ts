@@ -218,7 +218,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 app.use(cors());
-app.use('/api/admin/uploads', express.json({ limit: '8mb' }));
+app.use('/api/admin/uploads', express.json({ limit: '96mb' }));
 app.use('/api/admin/posts', express.json({ limit: '256kb' }));
 app.use(['/user/avatar', '/api/user/avatar'], express.json({ limit: '256kb' }));
 app.use(express.json());

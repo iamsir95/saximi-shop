@@ -5,9 +5,17 @@ import sanitizeHtml from 'sanitize-html';
 
 export const postCategories = ['news', 'event', 'promotion', 'policy'] as const;
 export type PostCategory = typeof postCategories[number];
+export const postContentTypes = ['article', 'policy', 'video', 'short-video', 'flash-sale', 'custom-code'] as const;
+export type PostContentType = typeof postContentTypes[number];
 export interface Post {
   id: string; slug: string; title: string; excerpt: string; content: string;
   category: PostCategory; status: 'draft' | 'published' | 'archived';
+  contentType?: PostContentType;
+  videoUrl?: string;
+  videoOrientation?: 'horizontal' | 'vertical';
+  flashSaleEndsAt?: string | null;
+  productIds?: number[];
+  customCode?: string;
   cover: string; coverAlt: string; author: string; seoTitle: string; seoDescription: string;
   createdAt: string; updatedAt: string; publishedAt: string | null;
   voucherIds?: number[];
@@ -25,12 +33,27 @@ export function plainText(value: string) {
 }
 export function cleanArticle(value: string) {
   return sanitizeHtml(value, {
-    allowedTags: ['p', 'br', 'h2', 'h3', 'h4', 'strong', 'b', 'em', 'i', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'figure', 'figcaption', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'span', 'div'],
-    allowedAttributes: { a: ['href', 'title'], img: ['src', 'alt', 'width', 'height'], '*': ['style'] },
+    allowedTags: ['p', 'br', 'h2', 'h3', 'h4', 'strong', 'b', 'em', 'i', 'u', 's', 'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'figure', 'figcaption', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'span', 'div', 'video', 'source', 'iframe'],
+    allowedAttributes: {
+      a: ['href', 'title', 'target', 'rel'],
+      img: ['src', 'alt', 'width', 'height'],
+      video: ['src', 'poster', 'controls', 'playsinline', 'preload'],
+      source: ['src', 'type'],
+      iframe: ['src', 'title', 'allow', 'allowfullscreen', 'loading', 'referrerpolicy'],
+      '*': ['style', 'class'],
+    },
     allowedSchemes: ['https', 'http', 'mailto', 'tel'],
-    allowedSchemesByTag: { img: ['https', 'http'] },
+    allowedSchemesByTag: { img: ['https', 'http'], video: ['https', 'http'], source: ['https', 'http'], iframe: ['https', 'http'] },
+    allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'player.vimeo.com'],
     allowProtocolRelative: false,
-    allowedStyles: { '*': { 'text-align': [/^(left|right|center|justify)$/] } },
+    allowedStyles: {
+      '*': {
+        'text-align': [/^(left|right|center|justify)$/],
+        'color': [/^#[0-9a-f]{3,8}$/i, /^rgb\(/, /^rgba\(/],
+        'background-color': [/^#[0-9a-f]{3,8}$/i, /^rgb\(/, /^rgba\(/],
+        'border-color': [/^#[0-9a-f]{3,8}$/i],
+      },
+    },
   });
 }
 
@@ -53,6 +76,8 @@ export class PostStore {
     if (id && (!previous || previous.deletedAt)) throw new PostError('Không tìm thấy bài viết.', 404);
     const voucherIds = input.voucherIds ?? previous?.voucherIds ?? [];
     if (!Array.isArray(voucherIds) || voucherIds.length > 8 || voucherIds.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new PostError('Chọn tối đa 8 voucher hợp lệ.');
+    const productIds = input.productIds ?? previous?.productIds ?? [];
+    if (!Array.isArray(productIds) || productIds.length > 24 || productIds.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new PostError('Chọn tối đa 24 sản phẩm hợp lệ.');
     const field = (key: string, max: number) => {
       const value = input[key];
       if (value !== undefined && typeof value !== 'string') throw new PostError(`Trường ${key} không hợp lệ.`);
@@ -67,13 +92,27 @@ export class PostStore {
     const category = field('category', 20) as PostCategory;
     const status = field('status', 20) as Post['status'];
     if (!postCategories.includes(category) || !['draft', 'published', 'archived'].includes(status)) throw new PostError('Chuyên mục hoặc trạng thái không hợp lệ.');
+    const rawContentType = field('contentType', 30) as PostContentType;
+    const contentType: PostContentType = postContentTypes.includes(rawContentType) ? rawContentType : (category === 'policy' ? 'policy' : 'article');
+    const videoUrl = field('videoUrl', 2000);
+    if (videoUrl && !/^https?:\/\/[^\s]+$/i.test(videoUrl) && !/^\/(?!\/)[^\s]*$/.test(videoUrl)) throw new PostError('Video phải là URL http/https hoặc đường dẫn trên website.');
+    const flashSaleEndsAt = field('flashSaleEndsAt', 80) || null;
+    if (flashSaleEndsAt && Number.isNaN(Date.parse(flashSaleEndsAt))) throw new PostError('Thời gian countdown Flash Sale không hợp lệ.');
     const content = cleanArticle(field('content', 80000));
-    if (status === 'published' && !plainText(content) && !content.includes('<img')) throw new PostError('Bài xuất bản cần có nội dung.');
+    const customCode = cleanArticle(field('customCode', 120000));
+    const hasMedia = content.includes('<img') || content.includes('<video') || content.includes('<iframe') || Boolean(videoUrl);
+    if (status === 'published' && !plainText(content) && !plainText(customCode) && !hasMedia) throw new PostError('Bài xuất bản cần có nội dung.');
     const cover = field('cover', 2000);
     if (cover && !/^https?:\/\/[^\s]+$/i.test(cover) && !/^\/(?!\/)[^\s]*$/.test(cover)) throw new PostError('Ảnh bìa phải là URL http/https hoặc đường dẫn trên website.');
     const now = new Date().toISOString();
     const post: Post = {
       id: previous?.id || randomUUID(), slug, title, content, category, status, cover,
+      contentType,
+      videoUrl: videoUrl || undefined,
+      videoOrientation: contentType === 'short-video' ? 'vertical' : contentType === 'video' ? 'horizontal' : previous?.videoOrientation,
+      flashSaleEndsAt: contentType === 'flash-sale' ? flashSaleEndsAt : null,
+      productIds: contentType === 'flash-sale' ? [...new Set(productIds)] : [...new Set(productIds)].slice(0, 24),
+      customCode: contentType === 'custom-code' ? customCode : customCode || undefined,
       coverAlt: field('coverAlt', 200) || title, author: field('author', 100) || 'Saximi Shop',
       excerpt: field('excerpt', 500) || plainText(content).slice(0, 240),
       seoTitle: field('seoTitle', 200), seoDescription: field('seoDescription', 320),
@@ -115,7 +154,7 @@ export class PostStore {
     const page = posts.slice(0, limit);
     const last = page.at(-1);
     return {
-      items: page.map(({ content, ...post }) => post),
+      items: page.map(({ content, customCode, ...post }) => post),
       nextCursor: posts.length > limit && last ? Buffer.from(JSON.stringify({ date: last.publishedAt, id: last.id })).toString('base64url') : null,
     };
   }

@@ -12,6 +12,7 @@ import { AuditLogsPage } from './pages/AuditLogs';
 import { SettlementsPage } from './pages/Settlements';
 import { AnalyticsPage } from './pages/Analytics';
 import { BannersPage } from './pages/Banners';
+import { PopupsPage } from './pages/Popups';
 import { StationsPage } from './pages/Stations';
 import { CouponsPage } from './pages/Coupons';
 import { Orders } from './pages/Orders';
@@ -42,6 +43,7 @@ const ADMIN_TABS = new Set([
   'deliveries',
   'audit-logs',
   'banners',
+  'popups',
   'stations',
   'coupons',
   'users',
@@ -119,6 +121,8 @@ export function App() {
         return 'Nhật ký hệ thống';
       case 'banners':
         return 'Banner';
+      case 'popups':
+        return 'Popup';
       case 'stations':
         return 'Điểm nhận hàng';
       case 'coupons':
@@ -161,6 +165,7 @@ export function App() {
           {activeTabAllowed && activeTab === 'deliveries' && <DeliveriesPage />}
           {activeTabAllowed && activeTab === 'audit-logs' && <AuditLogsPage />}
           {activeTabAllowed && activeTab === 'banners' && <BannersPage />}
+          {activeTabAllowed && activeTab === 'popups' && <PopupsPage />}
           {activeTabAllowed && activeTab === 'stations' && <StationsPage />}
           {activeTabAllowed && activeTab === 'coupons' && <CouponsPage />}
           {activeTabAllowed && activeTab === 'users' && <UsersPage />}

@@ -68,6 +68,7 @@ export interface ProductPromotionLabel {
 
 export interface Product {
   id: number;
+  sortOrder?: number;
   name: string;
   price: number;
   originalPrice?: number;
@@ -137,9 +138,31 @@ export interface ShippingFeeSettings {
 export interface BannerItem {
   id: number;
   imageUrl: string;
+  mobileImageUrl?: string;
+  mobileAspectRatio?: 'wide' | 'mobile-4-6';
   linkUrl?: string;
   title?: string;
   isActive: boolean;
+}
+
+export interface PopupCampaign {
+  id: number;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  layout: 'center' | 'bottom' | 'fullscreen';
+  ctaLabel?: string;
+  ctaUrl?: string;
+  placement: 'home' | 'news' | 'product' | 'cart' | 'all';
+  trigger: 'on-load' | 'delay';
+  delaySeconds?: number;
+  frequency: 'session' | 'daily' | 'always';
+  isActive: boolean;
+  startsAt?: string;
+  endsAt?: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type MediaSourceType = 'PRODUCT' | 'CATEGORY' | 'BANNER' | 'STATION' | 'DELIVERY' | 'MANUAL';
@@ -288,6 +311,7 @@ export type StaffPermission =
   | 'deliveries'
   | 'audit-logs'
   | 'banners'
+  | 'popups'
   | 'stations'
   | 'coupons'
   | 'users'
@@ -781,6 +805,7 @@ const ALL_STAFF_PERMISSIONS: StaffPermission[] = [
   'deliveries',
   'audit-logs',
   'banners',
+  'popups',
   'stations',
   'coupons',
   'users',
@@ -893,6 +918,7 @@ function withImageParams(url: string, params: Record<string, string>): string {
 
 export class Database {
   private static banners: (string | BannerItem)[] = [];
+  private static popupCampaigns: PopupCampaign[] = [];
   private static categories: Category[] = [];
   private static products: Product[] = [];
   private static stations: Station[] = [];
@@ -1281,12 +1307,14 @@ export class Database {
 
   public static init() {
     this.banners = ensureDataFile<(string | BannerItem)[]>('banners.json', 'banners.json');
+    this.popupCampaigns = ensureDataFile<PopupCampaign[]>('popups.json');
     this.categories = ensureDataFile<Category[]>('categories.json', 'categories.json');
     this.products = ensureDataFile<Product[]>('products.json', 'products.json');
 
     // Add default minStockLevel for products
     this.products = this.products.map((p) => ({
       ...p,
+      sortOrder: Number.isFinite(p.sortOrder) ? p.sortOrder : p.id,
       stockQuantity: p.stockQuantity ?? 100,
       minStockLevel: p.minStockLevel ?? 15,
       soldQuantity: p.soldQuantity ?? 0,
@@ -2281,7 +2309,7 @@ export class Database {
       if (typeof b === 'string') {
         return { id: idx + 1, imageUrl: b, title: `Banner #${idx + 1}`, isActive: true };
       }
-      return b;
+      return { ...b, mobileAspectRatio: b.mobileAspectRatio || 'wide' };
     });
   }
   public static addBanner(banner: Omit<BannerItem, 'id'>): BannerItem {
@@ -2302,6 +2330,8 @@ export class Database {
       ...bannerItems[idx],
       title: data.title?.trim() || bannerItems[idx].title,
       imageUrl: data.imageUrl?.trim() || bannerItems[idx].imageUrl,
+      mobileImageUrl: data.mobileImageUrl?.trim() || undefined,
+      mobileAspectRatio: data.mobileAspectRatio === 'mobile-4-6' ? 'mobile-4-6' : 'wide',
       linkUrl: data.linkUrl?.trim() || undefined,
       isActive: data.isActive ?? bannerItems[idx].isActive,
     };
@@ -2329,6 +2359,66 @@ export class Database {
     saveDataFile('banners.json', this.banners);
     this.logAction('admin', 'SUPER_ADMIN', 'DELETE_BANNER', `Xóa banner #${id}`);
     return this.banners.length < initialLen;
+  }
+
+  public static getPopupCampaigns(includeInactive = false): PopupCampaign[] {
+    const now = Date.now();
+    return [...this.popupCampaigns]
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || b.updatedAt.localeCompare(a.updatedAt))
+      .filter((popup) => includeInactive || (
+        popup.isActive !== false &&
+        (!popup.startsAt || Date.parse(popup.startsAt) <= now) &&
+        (!popup.endsAt || Date.parse(popup.endsAt) >= now)
+      ));
+  }
+
+  public static savePopupCampaign(data: Partial<PopupCampaign>, id?: number): PopupCampaign {
+    const now = new Date().toISOString();
+    const existing = id ? this.popupCampaigns.find((popup) => popup.id === id) : undefined;
+    const title = String(data.title || existing?.title || '').trim();
+    if (!title) throw new Error('Vui lòng nhập tên popup.');
+    const imageUrl = String(data.imageUrl || '').trim();
+    if (imageUrl && !/^https?:\/\/[^\s]+$/i.test(imageUrl) && !/^\/(?!\/)[^\s]*$/.test(imageUrl)) throw new Error('Ảnh popup phải là URL hợp lệ hoặc đường dẫn trên website.');
+    const ctaUrl = String(data.ctaUrl || '').trim();
+    const placement = ['home', 'news', 'product', 'cart', 'all'].includes(String(data.placement)) ? data.placement as PopupCampaign['placement'] : existing?.placement || 'home';
+    const layout = ['center', 'bottom', 'fullscreen'].includes(String(data.layout)) ? data.layout as PopupCampaign['layout'] : existing?.layout || 'center';
+    const trigger = data.trigger === 'delay' ? 'delay' : 'on-load';
+    const frequency = ['session', 'daily', 'always'].includes(String(data.frequency)) ? data.frequency as PopupCampaign['frequency'] : existing?.frequency || 'session';
+    const popup: PopupCampaign = {
+      id: existing?.id || (this.popupCampaigns.length ? Math.max(...this.popupCampaigns.map((item) => item.id)) + 1 : 1),
+      title,
+      description: String(data.description || '').trim() || undefined,
+      imageUrl: imageUrl || undefined,
+      layout,
+      ctaLabel: String(data.ctaLabel || '').trim() || undefined,
+      ctaUrl: ctaUrl || undefined,
+      placement,
+      trigger,
+      delaySeconds: Math.max(0, Math.min(60, Number(data.delaySeconds || existing?.delaySeconds || 0))),
+      frequency,
+      isActive: data.isActive ?? existing?.isActive ?? true,
+      startsAt: data.startsAt || undefined,
+      endsAt: data.endsAt || undefined,
+      sortOrder: Number.isFinite(data.sortOrder) ? Number(data.sortOrder) : existing?.sortOrder ?? this.popupCampaigns.length + 1,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    };
+    this.popupCampaigns = existing
+      ? this.popupCampaigns.map((item) => (item.id === popup.id ? popup : item))
+      : [...this.popupCampaigns, popup];
+    saveDataFile('popups.json', this.popupCampaigns);
+    this.ensureMediaLibrary();
+    this.logAction('admin', 'SUPER_ADMIN', existing ? 'UPDATE_POPUP' : 'ADD_POPUP', `${existing ? 'Cập nhật' : 'Tạo'} popup: ${popup.title}`);
+    return popup;
+  }
+
+  public static deletePopupCampaign(id: number): boolean {
+    const initialLen = this.popupCampaigns.length;
+    this.popupCampaigns = this.popupCampaigns.filter((popup) => popup.id !== id);
+    if (initialLen === this.popupCampaigns.length) return false;
+    saveDataFile('popups.json', this.popupCampaigns);
+    this.logAction('admin', 'SUPER_ADMIN', 'DELETE_POPUP', `Xóa popup #${id}`);
+    return true;
   }
 
   public static getCategories(): Category[] {
@@ -2361,7 +2451,7 @@ export class Database {
   }
 
   public static getProducts(): Product[] {
-    return this.products;
+    return [...this.products].sort((a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id) || a.id - b.id);
   }
   public static getProductById(id: number): Product | undefined {
     return this.products.find((p) => p.id === id);
@@ -2374,6 +2464,7 @@ export class Database {
     const newId = this.products.length > 0 ? Math.max(...this.products.map((p) => p.id)) + 1 : 1;
     const newProduct: Product = {
       id: newId,
+      sortOrder: Number(product.sortOrder) || (this.products.length + 1),
       stockQuantity: 100,
       minStockLevel: 15,
       soldQuantity: 0,
@@ -2386,6 +2477,20 @@ export class Database {
     this.ensureMediaLibrary();
     this.logAction('admin', 'SUPER_ADMIN', 'ADD_PRODUCT', `Thêm sản phẩm: ${newProduct.name} - ${newProduct.images.length} ảnh - Giá: ${newProduct.price}`);
     return newProduct;
+  }
+  public static reorderProducts(ids: number[]): Product[] {
+    const byId = new Map(this.products.map((product) => [product.id, product]));
+    ids.forEach((id, index) => {
+      const product = byId.get(id);
+      if (product) product.sortOrder = index + 1;
+    });
+    const selected = new Set(ids);
+    this.products.filter((product) => !selected.has(product.id)).forEach((product, index) => {
+      product.sortOrder = ids.length + index + 1;
+    });
+    saveDataFile('products.json', this.products);
+    this.logAction('admin', 'SUPER_ADMIN', 'REORDER_PRODUCTS', 'Sắp xếp lại thứ tự sản phẩm');
+    return this.getProducts();
   }
   public static updateProduct(id: number, data: Partial<Product>): Product | null {
     const idx = this.products.findIndex((p) => p.id === id);

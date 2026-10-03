@@ -23,6 +23,8 @@ export const BannersPage: React.FC = () => {
   const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
 
   const [imageUrl, setImageUrl] = useState('');
+  const [mobileImageUrl, setMobileImageUrl] = useState('');
+  const [mobileAspectRatio, setMobileAspectRatio] = useState<'wide' | 'mobile-4-6'>('wide');
   const [title, setTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -50,6 +52,8 @@ export const BannersPage: React.FC = () => {
   const openCreateModal = () => {
     setEditingBanner(null);
     setImageUrl('');
+    setMobileImageUrl('');
+    setMobileAspectRatio('wide');
     setTitle('');
     setLinkUrl('');
     setIsActive(true);
@@ -59,6 +63,8 @@ export const BannersPage: React.FC = () => {
   const openEditModal = (banner: BannerItem) => {
     setEditingBanner(banner);
     setImageUrl(banner.imageUrl);
+    setMobileImageUrl(banner.mobileImageUrl || '');
+    setMobileAspectRatio(banner.mobileAspectRatio || 'wide');
     setTitle(banner.title || '');
     setLinkUrl(banner.linkUrl || '');
     setIsActive(banner.isActive !== false);
@@ -76,6 +82,8 @@ export const BannersPage: React.FC = () => {
     setSaving(true);
     const payload = {
       imageUrl: imageUrl.trim(),
+      mobileImageUrl: mobileImageUrl.trim() || undefined,
+      mobileAspectRatio,
       title: title.trim() || 'Banner khuyến mãi',
       linkUrl: linkUrl.trim() || undefined,
       isActive,
@@ -179,6 +187,7 @@ export const BannersPage: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-bold text-white">{banner.title || `Banner #${banner.id}`}</h4>
                   <p className="mt-1 truncate text-xs text-slate-400">{banner.imageUrl}</p>
+                  {banner.mobileImageUrl && <p className="mt-1 text-xs font-semibold text-cyan-300">Có ảnh mobile {banner.mobileAspectRatio === 'mobile-4-6' ? '4:6' : 'ngang'}</p>}
                   {banner.linkUrl && (
                     <a href={banner.linkUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex max-w-full items-center gap-1 text-xs font-semibold text-cyan-300">
                       <LinkIcon className="h-3.5 w-3.5 flex-none" />
@@ -261,6 +270,18 @@ export const BannersPage: React.FC = () => {
               </div>
 
               <ImageField label="Ảnh banner" value={imageUrl} onChange={setImageUrl} onBusyChange={onUploadingChange} />
+
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_190px]">
+                <ImageField label="Ảnh banner mobile" value={mobileImageUrl} onChange={setMobileImageUrl} onBusyChange={onUploadingChange} />
+                <label className="grid gap-1.5 text-xs font-semibold text-slate-400">
+                  Tỷ lệ trên mobile
+                  <select className={inputClass} value={mobileAspectRatio} onChange={(e) => setMobileAspectRatio(e.target.value as 'wide' | 'mobile-4-6')}>
+                    <option value="wide">Ngang mặc định</option>
+                    <option value="mobile-4-6">Dọc 4:6</option>
+                  </select>
+                  <span className="text-[11px] leading-4 text-slate-500">Dùng 4:6 cho hero mobile dẫn đến bài viết/sản phẩm.</span>
+                </label>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5">Đường dẫn khi bấm banner</label>

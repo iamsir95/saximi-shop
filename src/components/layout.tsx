@@ -9,6 +9,7 @@ import FloatingCartPreview from "./floating-cart-preview";
 import { useAtomValue, useSetAtom } from "jotai";
 import { affiliateReferrerIdState, platformSettingsState } from "@/state";
 import PullToRefresh from "./pull-to-refresh";
+import PopupCampaigns from "./popup-campaigns";
 
 export default function Layout() {
   const setAffiliateReferrerId = useSetAtom(affiliateReferrerIdState);
@@ -106,6 +107,7 @@ export default function Layout() {
         }}
       />
       <FloatingCartPreview />
+      <PopupCampaigns />
       <ScrollRestoration />
     </div>
   );

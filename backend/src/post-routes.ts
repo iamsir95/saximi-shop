@@ -53,8 +53,26 @@ export function mountPostRoutes(app: Express, authenticate: RequestHandler, site
       const old = id ? store.all().find(p => p.id === id)?.voucherIds || [] : [];
       if (body.voucherIds.some(v => !getCoupons().some(c => c.id === v) && !old.includes(v))) throw new PostError('Voucher được chọn không tồn tại.');
     }
+    if (Array.isArray(body?.productIds)) {
+      const old = id ? store.all().find(p => p.id === id)?.productIds || [] : [];
+      if (body.productIds.some(v => !getProducts().some(product => product.id === v) && !old.includes(v))) throw new PostError('Sản phẩm Flash Sale được chọn không tồn tại.');
+    }
     return store.save(body, id);
   };
+  const relatedProducts = (post: { productIds?: number[] }) => (post.productIds || []).flatMap(id => {
+    const product = getProducts().find(item => item.id === id);
+    if (!product) return [];
+    return [{
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      image: product.image,
+      promotionLabels: product.promotionLabels,
+      isFlashSale: product.isFlashSale,
+      isRecommended: product.isRecommended,
+    }];
+  });
   const guard: RequestHandler = (req, res, next) => {
     if ((req as any).admin?.role !== 'SUPER_ADMIN') return res.status(403).json({ message: 'Bạn không có quyền quản lý bài viết.' });
     next();
@@ -70,12 +88,12 @@ export function mountPostRoutes(app: Express, authenticate: RequestHandler, site
   app.get(['/posts', '/api/posts'], handle((req, res) => {
     const query = Object.fromEntries(['category', 'q', 'cursor', 'limit', 'ids'].map(key => [key, typeof req.query[key] === 'string' ? req.query[key] : undefined]));
     const page = store.list(query);
-    res.json({ ...page, items: page.items.map(p => ({ ...p, vouchers: vouchers(p) })) });
+    res.json({ ...page, items: page.items.map(p => ({ ...p, vouchers: vouchers(p), products: relatedProducts(p) })) });
   }));
   app.get(['/posts/:slug', '/api/posts/:slug'], handle((req, res) => {
     const post = store.all().find(p => p.slug === req.params.slug && p.status === 'published');
     if (!post) return res.status(404).json({ message: 'Bài viết không tồn tại hoặc chưa được xuất bản.' });
-    res.json({ ...post, vouchers: vouchers(post) });
+    res.json({ ...post, vouchers: vouchers(post), products: relatedProducts(post) });
   }));
   app.get('/api/admin/posts', authenticate, guard, handle((req, res) => {
     res.json(store.all(req.query.trash === 'true').filter(p => req.query.trash === 'true' ? Boolean(p.deletedAt) : true).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));

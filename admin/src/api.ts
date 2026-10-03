@@ -130,6 +130,8 @@ export const api = {
     request('/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id: number, data: any) =>
     request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  reorderProducts: (ids: number[]) =>
+    request('/products/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
   deleteProduct: (id: number) => request(`/products/${id}`, { method: 'DELETE' }),
   getCategories: () => request('/categories'),
   createCategory: (data: any) =>
@@ -145,6 +147,12 @@ export const api = {
   reorderBanners: (ids: number[]) =>
     request('/banners/reorder', { method: 'PATCH', body: JSON.stringify({ ids }) }),
   deleteBanner: (id: number) => request(`/banners/${id}`, { method: 'DELETE' }),
+  getPopups: () => request('/popups'),
+  createPopup: (data: any) =>
+    request('/popups', { method: 'POST', body: JSON.stringify(data) }),
+  updatePopup: (id: number, data: any) =>
+    request(`/popups/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePopup: (id: number) => request(`/popups/${id}`, { method: 'DELETE' }),
   getMediaLibrary: (params: { q?: string; purpose?: string; sourceType?: string; activeOnly?: boolean } = {}) => {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {

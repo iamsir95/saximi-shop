@@ -13,7 +13,9 @@ import { absoluteSeoUrl, applySeoTags } from "@/utils/seo";
 
 type Post = {
   vouchers?: PostVoucher[];
+  products?: Array<{ id: number; name: string; price: number; originalPrice?: number; image: string; isFlashSale?: boolean; isRecommended?: boolean; promotionLabels?: Array<{ id: string; name: string; color: string }> }>;
   id: string; slug: string; title: string; excerpt: string; content?: string;
+  contentType?: string; videoUrl?: string; flashSaleEndsAt?: string | null; customCode?: string;
   category: string; cover: string; coverAlt: string; author: string;
   publishedAt: string; updatedAt: string; seoTitle: string; seoDescription: string;
 };
@@ -21,6 +23,7 @@ type Page = { items: Post[]; nextCursor: string | null };
 const categories = [{ key: "", label: "Tất cả" }, { key: "news", label: "Cần biết" }, { key: "event", label: "Sự kiện" }, { key: "promotion", label: "Khuyến mãi" }, { key: "policy", label: "Chính sách" }];
 const date = (value: string) => new Date(value).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 const label = (key: string) => categories.find(c => c.key === key)?.label || "Bản tin";
+const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 function savedIds(): string[] {
   try { const ids = JSON.parse(localStorage.getItem('savedPosts') || '[]'); return Array.isArray(ids) ? ids.filter(id => typeof id === 'string').slice(-200) : []; }
   catch { return []; }
@@ -115,6 +118,53 @@ function PostContentWithForms({
   );
 }
 
+function PostFormatBadge({ post }: { post: Post }) {
+  const map: Record<string, string> = {
+    video: "Video",
+    "short-video": "Short Video",
+    "flash-sale": "Flash Sale",
+    "custom-code": "Nội dung đặc biệt",
+    policy: "Chính sách",
+  };
+  const text = map[post.contentType || ""] || "";
+  return text ? <span className={`news-format news-format--${post.contentType}`}>{text}</span> : null;
+}
+
+function PostVideoBlock({ post }: { post: Post }) {
+  if (!post.videoUrl) return null;
+  const vertical = post.contentType === "short-video";
+  return (
+    <div className={`news-video ${vertical ? "news-video--vertical" : ""}`}>
+      <video src={post.videoUrl} poster={post.cover || undefined} controls playsInline preload="metadata" />
+    </div>
+  );
+}
+
+function FlashSaleBlock({ post }: { post: Post }) {
+  if (post.contentType !== "flash-sale") return null;
+  const ends = post.flashSaleEndsAt ? new Date(post.flashSaleEndsAt) : null;
+  return (
+    <section className="news-flash-sale" aria-label="Flash Sale">
+      <div>
+        <span>Flash Sale</span>
+        <strong>{ends && !Number.isNaN(ends.getTime()) ? `Kết thúc ${ends.toLocaleString("vi-VN")}` : "Ưu đãi đang mở"}</strong>
+      </div>
+      {!!post.products?.length && (
+        <div className="news-flash-sale__products">
+          {post.products.map((product) => (
+            <Link key={product.id} to={`/product/${product.id}`} className="news-flash-sale__product">
+              <img src={product.image} alt={product.name} loading="lazy" />
+              <span>{product.name}</span>
+              <strong>{money(product.price)}</strong>
+              {product.originalPrice && <small>{money(product.originalPrice)}</small>}
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function NewsPage() {
   const [params, setParams] = useSearchParams();
   const category = params.get("category") || "";
@@ -162,7 +212,7 @@ export default function NewsPage() {
       <nav className="news-tabs" aria-label="Lọc chuyên mục">{categories.map(c => <Link key={c.key} to={`/news${c.key ? `?category=${c.key}` : ''}`} aria-current={!onlySaved && category === c.key ? "page" : undefined}>{c.label}</Link>)}<Link to="/news?saved=1" aria-current={onlySaved ? 'page' : undefined}>Đã lưu</Link></nav></div>
       <div className="news-posts" aria-busy={loading}>{items.map(post => <article className="news-post" key={post.id}>
         <header><div className="news-publisher"><CommerceIcon name="note" size={22} /><div><strong>{post.author}</strong><time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></div></div><Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link></header>
-        <Link className="news-post-link" to={`/news/${post.slug}`}><h2>{post.title}</h2><p>{post.excerpt}</p>{post.cover && <img loading="lazy" src={post.cover} alt={post.coverAlt} />}<span className="news-read">Đọc tiếp <CommerceIcon name="chevron-right" size={16} /></span></Link>
+        <Link className="news-post-link" to={`/news/${post.slug}`}><div className="news-post-badges"><PostFormatBadge post={post} /></div><h2>{post.title}</h2><p>{post.excerpt}</p>{post.cover && <img loading="lazy" src={post.cover} alt={post.coverAlt} />}<span className="news-read">Đọc tiếp <CommerceIcon name="chevron-right" size={16} /></span></Link>
         <PostVouchers vouchers={post.vouchers} />
         <PostActions post={post} />
       </article>)}</div>
@@ -196,8 +246,11 @@ export function NewsDetailPage() {
     <Link className={`news-category news-category--${post.category}`} to={`/news?category=${post.category}`}>{label(post.category)}</Link>
     <h1>{post.title}</h1><p className="news-byline">{post.author} · Đăng ngày <time dateTime={post.publishedAt}>{date(post.publishedAt)}</time></p>
     <p className="news-intro">{post.excerpt}</p>{post.cover && <img className="news-cover" src={post.cover} alt={post.coverAlt} />}
+    <PostVideoBlock post={post} />
+    <FlashSaleBlock post={post} />
     <PostVouchers vouchers={post.vouchers} />
     <PostContentWithForms content={post.content || ''} forms={forms} />
+    {post.customCode && <div className="news-custom-code" dangerouslySetInnerHTML={{ __html: post.customCode }} />}
     {post.updatedAt !== post.publishedAt && <p className="news-byline">Cập nhật: <time dateTime={post.updatedAt}>{date(post.updatedAt)}</time></p>}
     <PostActions key={post.id} post={post} /><Link className="news-back" to={`/news?category=${post.category}`}>Xem bài viết cùng chuyên mục<CommerceIcon name="chevron-right" size={18} /></Link>
   </article>}</div>;

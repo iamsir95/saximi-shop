@@ -27,6 +27,7 @@ const PERMISSION_OPTIONS: Array<[StaffPermission, string]> = [
   ['deliveries', 'Vận chuyển'],
   ['audit-logs', 'Nhật ký'],
   ['banners', 'Banner'],
+  ['popups', 'Popup'],
   ['stations', 'Điểm nhận'],
   ['coupons', 'Voucher'],
   ['users', 'Khách hàng'],

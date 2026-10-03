@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, FileText, Sparkles, Gift } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Tags, Sparkles, Gift, ArrowUp, ArrowDown, FileText } from 'lucide-react';
 import { api } from '../api';
 import { Category, MediaAsset, Product, ProductGiftProgram, ProductPromotionLabel, ProductVariant } from '../types';
 import { RichTextEditor, cleanRichText } from '../components/RichTextEditor';
@@ -389,6 +389,7 @@ export const Products: React.FC = () => {
       },
       isFlashSale,
       isRecommended,
+      sortOrder: editingProduct?.sortOrder,
     };
 
     try {
@@ -412,6 +413,21 @@ export const Products: React.FC = () => {
       } catch (err: any) {
         alert(err.message || 'Xóa thất bại');
       }
+    }
+  };
+
+  const moveProduct = async (productId: number, direction: -1 | 1) => {
+    const index = products.findIndex((item) => item.id === productId);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= products.length) return;
+    const next = [...products];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    setProducts(next.map((item, idx) => ({ ...item, sortOrder: idx + 1 })));
+    try {
+      await api.reorderProducts(next.map((item) => item.id));
+    } catch (err: any) {
+      alert(err.message || 'Không sắp xếp được sản phẩm');
+      loadProductsAndCategories();
     }
   };
 
@@ -559,6 +575,7 @@ export const Products: React.FC = () => {
               <thead className="bg-slate-900/60 text-slate-400 uppercase text-xs font-semibold border-b border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">Hình ảnh</th>
+                  <th className="py-3.5 px-4">Thứ tự</th>
                   <th className="py-3.5 px-4">Tên sản phẩm</th>
                   <th className="py-3.5 px-4">Danh mục</th>
                   <th className="py-3.5 px-4">Giá bán</th>
@@ -581,6 +598,19 @@ export const Products: React.FC = () => {
                           <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[10px] font-bold">
                             {product.images?.length || 1} ảnh
                           </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <span className="min-w-8 rounded-lg bg-slate-900 px-2 py-1 text-center text-xs font-bold text-slate-300">
+                            {products.findIndex((item) => item.id === product.id) + 1}
+                          </span>
+                          <button type="button" onClick={() => moveProduct(product.id, -1)} className="rounded-lg bg-slate-900 p-1.5 text-slate-400 hover:text-white" title="Đưa lên">
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button type="button" onClick={() => moveProduct(product.id, 1)} className="rounded-lg bg-slate-900 p-1.5 text-slate-400 hover:text-white" title="Đưa xuống">
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </td>
                       <td className="py-3 px-4">

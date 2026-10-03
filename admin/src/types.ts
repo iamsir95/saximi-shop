@@ -103,6 +103,7 @@ export interface ProductPromotionLabel {
 
 export interface Product {
   id: number;
+  sortOrder?: number;
   name: string;
   price: number;
   originalPrice?: number;
@@ -179,9 +180,31 @@ export interface Location {
 export interface BannerItem {
   id: number;
   imageUrl: string;
+  mobileImageUrl?: string;
+  mobileAspectRatio?: 'wide' | 'mobile-4-6';
   title?: string;
   linkUrl?: string;
   isActive: boolean;
+}
+
+export interface PopupCampaign {
+  id: number;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  layout: 'center' | 'bottom' | 'fullscreen';
+  ctaLabel?: string;
+  ctaUrl?: string;
+  placement: 'home' | 'news' | 'product' | 'cart' | 'all';
+  trigger: 'on-load' | 'delay';
+  delaySeconds?: number;
+  frequency: 'session' | 'daily' | 'always';
+  isActive: boolean;
+  startsAt?: string;
+  endsAt?: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type MediaSourceType = 'PRODUCT' | 'CATEGORY' | 'BANNER' | 'STATION' | 'DELIVERY' | 'MANUAL';
@@ -464,6 +487,7 @@ export type StaffPermission =
   | 'deliveries'
   | 'audit-logs'
   | 'banners'
+  | 'popups'
   | 'stations'
   | 'coupons'
   | 'users'

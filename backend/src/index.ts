@@ -37,6 +37,7 @@ function getAdminPermissionForPath(pathname: string): string | undefined {
     deliveries: 'deliveries',
     'audit-logs': 'audit-logs',
     banners: 'banners',
+    popups: 'popups',
     stations: 'stations',
     coupons: 'coupons',
     users: 'users',
@@ -116,6 +117,7 @@ function toCompactProduct(product: any) {
 
   return {
     id: product.id,
+    sortOrder: product.sortOrder,
     categoryId: product.categoryId,
     name: product.name,
     price: product.price,
@@ -308,6 +310,15 @@ publicApi.get('/banners', async (req: Request, res: Response) => {
   });
   setPublicMobileCache(res, 300);
   res.json(banners);
+});
+
+publicApi.get('/popups', async (req: Request, res: Response) => {
+  const placement = typeof req.query.placement === 'string' ? req.query.placement : 'all';
+  const popups = await CacheService.getOrSet(`popups:${placement}`, 120, async () => {
+    return Database.getPopupCampaigns().filter((popup) => popup.placement === 'all' || popup.placement === placement);
+  });
+  setPublicMobileCache(res, 120);
+  res.json(popups);
 });
 
 publicApi.get('/categories', async (req: Request, res: Response) => {
@@ -1338,6 +1349,13 @@ app.put('/api/admin/products/:id', authenticateAdmin, (req: Request, res: Respon
   res.json(updated);
 });
 
+app.patch('/api/admin/products/reorder', authenticateAdmin, (req: Request, res: Response) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids.map((id: unknown) => Number(id)).filter(Number.isFinite) : [];
+  const products = Database.reorderProducts(ids);
+  CacheService.invalidate('products');
+  res.json(products);
+});
+
 app.delete('/api/admin/products/:id', authenticateAdmin, (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
   const success = Database.deleteProduct(id);
@@ -1413,6 +1431,41 @@ app.delete('/api/admin/banners/:id', authenticateAdmin, (req: Request, res: Resp
   Database.deleteBanner(id);
   CacheService.invalidate('banners');
   res.json({ message: 'Banner deleted' });
+});
+
+// Admin Popup CRUD
+app.get('/api/admin/popups', authenticateAdmin, (req: Request, res: Response) => {
+  res.json(Database.getPopupCampaigns(true));
+});
+
+app.post('/api/admin/popups', authenticateAdmin, (req: Request, res: Response) => {
+  try {
+    const popup = Database.savePopupCampaign(req.body);
+    CacheService.invalidate('popups');
+    CacheService.invalidate('media-library');
+    res.status(201).json(popup);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || 'Không lưu được popup' });
+  }
+});
+
+app.put('/api/admin/popups/:id', authenticateAdmin, (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const popup = Database.savePopupCampaign(req.body, id);
+    CacheService.invalidate('popups');
+    CacheService.invalidate('media-library');
+    res.json(popup);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message || 'Không lưu được popup' });
+  }
+});
+
+app.delete('/api/admin/popups/:id', authenticateAdmin, (req: Request, res: Response) => {
+  const ok = Database.deletePopupCampaign(Number(req.params.id));
+  if (!ok) return res.status(404).json({ message: 'Popup not found' });
+  CacheService.invalidate('popups');
+  res.json({ success: true });
 });
 
 // Admin Station CRUD

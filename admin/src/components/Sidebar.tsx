@@ -23,6 +23,7 @@ import {
   FileText,
   ClipboardList,
   BadgePercent,
+  Megaphone,
 } from 'lucide-react';
 import { clearAuthToken, getAdminUser } from '../api';
 
@@ -55,6 +56,7 @@ const menuGroups = [
       { id: 'forms', label: 'Form bản tin', icon: ClipboardList },
       { id: 'media-library', label: 'Kho ảnh', icon: Images },
       { id: 'banners', label: 'Banner', icon: ImageIcon },
+      { id: 'popups', label: 'Popup', icon: Megaphone },
     ],
   },
   {

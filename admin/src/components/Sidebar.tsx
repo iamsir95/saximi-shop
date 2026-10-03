@@ -22,6 +22,7 @@ import {
   Settings,
   FileText,
   ClipboardList,
+  BadgePercent,
 } from 'lucide-react';
 import { clearAuthToken, getAdminUser } from '../api';
 
@@ -69,6 +70,7 @@ const menuGroups = [
     title: 'Nhân sự',
     items: [
       { id: 'affiliates', label: 'Hội viên', icon: UserCheck },
+      { id: 'commission-settings', label: 'Hoa hồng', icon: BadgePercent },
       { id: 'users', label: 'Khách hàng', icon: Users },
       { id: 'otp-outbox', label: 'OTP Zalo', icon: MessageCircle },
       { id: 'staff', label: 'Nhân sự', icon: BriefcaseBusiness },

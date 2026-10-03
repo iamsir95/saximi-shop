@@ -6,6 +6,7 @@ import { loadable } from "jotai/utils";
 import {
   findAffiliateForUser,
   getAffiliateCommissionLabel,
+  getAffiliateCommissionRate,
   getAffiliateHierarchyPath,
   getAffiliateRoleDescription,
   getAffiliateRoleLabel,
@@ -182,7 +183,9 @@ export const AffiliatePortalPage: React.FC = () => {
   const parentPresident = branchProfile?.presidentId
     ? affiliates.find((affiliate) => affiliate.userId === branchProfile.presidentId)
     : undefined;
-  const activeHierarchyPath = getAffiliateHierarchyPath(activeProfile, parentPresident);
+  const activeHierarchyPath = getAffiliateHierarchyPath(activeProfile, parentPresident, portal);
+  const branchCommissionRate = getAffiliateCommissionRate(branchProfile, portal);
+  const presidentCommissionRate = getAffiliateCommissionRate(presidentProfile, portal);
 
   return (
     <Page className="min-h-screen pb-24">
@@ -262,10 +265,10 @@ export const AffiliatePortalPage: React.FC = () => {
                 </Box>
                 <Box className="rounded-2xl bg-white/62 border border-white/70 px-3 py-2">
                   <Text className="text-[10px] font-bold text-secondaryDark">
-                    {getAffiliateCommissionLabel(branchProfile)}
+                    {getAffiliateCommissionLabel(branchProfile, portal)}
                   </Text>
                   <Text className="text-xs font-bold text-slate-700">
-                    Tỷ lệ cá nhân {branchProfile?.directCommissionRate || 0}%
+                    Tỷ lệ cá nhân {branchCommissionRate || 0}%
                   </Text>
                 </Box>
               </Box>
@@ -275,7 +278,7 @@ export const AffiliatePortalPage: React.FC = () => {
           {/* Wallet Summary */}
           <Box className="liquid-card p-5 rounded-[24px] space-y-3">
             <Text className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-              Ví {getAffiliateCommissionLabel(branchProfile)} ({branchProfile?.directCommissionRate || 0}%)
+              Ví {getAffiliateCommissionLabel(branchProfile, portal)} ({branchCommissionRate || 0}%)
             </Text>
             <Box className="flex justify-between items-baseline">
               <Text className="text-2xl font-black text-primary">
@@ -347,7 +350,7 @@ export const AffiliatePortalPage: React.FC = () => {
               Mã QR Độc Quyền Giới Thiệu Khách Mua Hàng
             </Text>
             <Text className="text-xs text-slate-500">
-              Đưa mã QR này cho Khách quét để mở Mini App. Đơn hàng sẽ tự động ghi nhận {getAffiliateCommissionLabel(branchProfile).toLowerCase()} cho bạn.
+              Đưa mã QR này cho Khách quét để mở Mini App. Đơn hàng sẽ tự động ghi nhận {getAffiliateCommissionLabel(branchProfile, portal).toLowerCase()} cho bạn.
             </Text>
 
             {branchProfile && (
@@ -427,7 +430,7 @@ export const AffiliatePortalPage: React.FC = () => {
           {/* Overriding Commission Summary */}
           <Box className="liquid-card p-5 rounded-[24px] space-y-2">
             <Text className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-              Ví {getAffiliateCommissionLabel(presidentProfile)} ({presidentProfile?.overridingCommissionRate || 0}%)
+              Ví {getAffiliateCommissionLabel(presidentProfile, portal)} ({presidentCommissionRate || 0}%)
             </Text>
             <Text className="text-2xl font-black text-primary">
               {formatMoney(presidentProfile?.walletBalance || 0)}
@@ -453,7 +456,7 @@ export const AffiliatePortalPage: React.FC = () => {
                     <Text className="font-bold text-xs text-slate-800">{b.name}</Text>
                     <Text className="text-[10px] text-slate-400">{b.phone}</Text>
                     <Text className="text-[10px] text-secondaryDark font-semibold mt-0.5">
-                      {getAffiliateCommissionLabel(b)} {b.directCommissionRate || 0}%
+                      {getAffiliateCommissionLabel(b, portal)} {getAffiliateCommissionRate(b, portal) || 0}%
                     </Text>
                   </Box>
 

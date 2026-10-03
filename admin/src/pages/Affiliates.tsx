@@ -70,7 +70,21 @@ export const AffiliatesPage: React.FC = () => {
   const loadAffiliates = async () => {
     try {
       setLoading(true);
-      const data = await api.getAffiliates();
+      const [data, commissionSettings] = await Promise.all([
+        api.getAffiliates(),
+        api.getCommissionSettings().catch(() => null),
+      ]);
+      if (commissionSettings?.tiers) {
+        commissionSettings.tiers.forEach((tier: any) => {
+          if (tier?.tierLevel && TIER_CONFIG[tier.tierLevel as 1 | 2 | 3]) {
+            TIER_CONFIG[tier.tierLevel as 1 | 2 | 3] = {
+              levelName: tier.levelName || TIER_CONFIG[tier.tierLevel as 1 | 2 | 3].levelName,
+              commissionLabel: tier.commissionLabel || TIER_CONFIG[tier.tierLevel as 1 | 2 | 3].commissionLabel,
+              rate: Number(tier.rate ?? TIER_CONFIG[tier.tierLevel as 1 | 2 | 3].rate),
+            };
+          }
+        });
+      }
       setAffiliates(data);
     } catch (err) {
       console.error(err);

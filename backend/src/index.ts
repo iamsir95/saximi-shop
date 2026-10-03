@@ -44,7 +44,8 @@ function getAdminPermissionForPath(pathname: string): string | undefined {
     staff: 'staff',
     settings: 'settings',
     orders: 'orders',
-    commissions: 'affiliates',
+    commissions: 'commission-settings',
+    'commission-settings': 'commission-settings',
     'auth-sessions': 'settings',
     'web-push': 'settings',
   };
@@ -396,6 +397,7 @@ publicApi.get('/settings', (_req: Request, res: Response) => {
     publicSiteUrl: settings.publicSiteUrl,
     zaloOaUrl: settings.zaloOaUrl,
     shippingFee: settings.shippingFee,
+    commissionSettings: settings.commissionSettings,
     maintenanceMode: settings.maintenanceMode,
     maintenanceMessage: settings.maintenanceMessage,
   });
@@ -1548,6 +1550,14 @@ app.delete('/api/admin/deliveries/:id', authenticateAdmin, (req: Request, res: R
 // Admin Commissions Ledger
 app.get('/api/admin/commissions', authenticateAdmin, (req: Request, res: Response) => {
   res.json(Database.getCommissions());
+});
+
+app.get('/api/admin/commission-settings', authenticateAdmin, (_req: Request, res: Response) => {
+  res.json(Database.getCommissionSettings());
+});
+
+app.put('/api/admin/commission-settings', authenticateAdmin, (req: Request, res: Response) => {
+  res.json(Database.updateCommissionSettings(req.body || {}));
 });
 
 // Admin Orders

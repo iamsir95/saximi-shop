@@ -1,5 +1,14 @@
 import { AffiliateProfile, AffiliatePortalSummary, UserInfo } from "@/types";
 
+function getTierLevel(profile?: AffiliateProfile): 1 | 2 | 3 {
+  return profile?.tierLevel || (profile?.role === "PRESIDENT" ? 1 : 2);
+}
+
+function getPortalTierConfig(profile?: AffiliateProfile, portal?: AffiliatePortalSummary) {
+  const tierLevel = getTierLevel(profile);
+  return portal?.commissionSettings?.tiers?.find((tier) => tier.tierLevel === tierLevel);
+}
+
 export function findAffiliateForUser(
   affiliates: AffiliateProfile[],
   userInfo?: Partial<UserInfo>
@@ -21,10 +30,12 @@ export function findAffiliateByReferrer(
   return affiliates.find((affiliate) => affiliate.userId === referrerId);
 }
 
-export function getAffiliateRoleLabel(profile?: AffiliateProfile) {
+export function getAffiliateRoleLabel(profile?: AffiliateProfile, portal?: AffiliatePortalSummary) {
   if (!profile) return "Khách hàng thông thường";
+  const tierConfig = getPortalTierConfig(profile, portal);
   return (
     profile.levelName ||
+    tierConfig?.levelName ||
     (profile.role === "PRESIDENT"
       ? "Chủ tịch hội"
       : profile.role === "BRANCH_LEADER"
@@ -33,10 +44,13 @@ export function getAffiliateRoleLabel(profile?: AffiliateProfile) {
   );
 }
 
-export function getAffiliateRoleDescription(profile?: AffiliateProfile) {
+export function getAffiliateRoleDescription(profile?: AffiliateProfile, portal?: AffiliatePortalSummary) {
   if (!profile) {
     return "Tài khoản mua hàng tiêu chuẩn, không có quyền quản lý tuyến hội.";
   }
+
+  const tierConfig = getPortalTierConfig(profile, portal);
+  if (tierConfig?.description) return tierConfig.description;
 
   if (profile.role === "PRESIDENT") {
     return "Quản lý các Chi hội trưởng trực thuộc, hàng gối đầu và hoa hồng tuyến.";
@@ -49,29 +63,46 @@ export function getAffiliateRoleDescription(profile?: AffiliateProfile) {
   return "Tài khoản mua hàng tiêu chuẩn.";
 }
 
-export function getAffiliateCommissionLabel(profile?: AffiliateProfile) {
+export function getAffiliateCommissionLabel(profile?: AffiliateProfile, portal?: AffiliatePortalSummary) {
   if (!profile) return "Hoa hồng";
+  const tierConfig = getPortalTierConfig(profile, portal);
   return (
     profile.commissionLabel ||
+    tierConfig?.commissionLabel ||
     (profile.role === "PRESIDENT" ? "Hoa hồng quản lý" : "Hoa hồng trực tiếp")
   );
 }
 
 export function getAffiliateHierarchyPath(
   profile?: AffiliateProfile,
-  parent?: AffiliateProfile
+  parent?: AffiliateProfile,
+  portal?: AffiliatePortalSummary
 ) {
   if (!profile) return [];
-  const ownLevel = getAffiliateRoleLabel(profile);
-  const commissionLabel = getAffiliateCommissionLabel(profile);
+  const ownLevel = getAffiliateRoleLabel(profile, portal);
+  const commissionLabel = getAffiliateCommissionLabel(profile, portal);
 
   if (profile.role === "PRESIDENT") {
     return [ownLevel, commissionLabel];
   }
 
   return parent
-    ? [getAffiliateRoleLabel(parent), ownLevel, commissionLabel]
+    ? [getAffiliateRoleLabel(parent, portal), ownLevel, commissionLabel]
     : [ownLevel, commissionLabel];
+}
+
+export function getAffiliateCommissionRate(
+  profile?: AffiliateProfile,
+  portal?: AffiliatePortalSummary
+) {
+  if (!profile) return 0;
+  const tierConfig = getPortalTierConfig(profile, portal);
+  if (portal?.commissionSettings && portal.commissionSettings.allowPersonalOverride === false) {
+    return tierConfig?.rate || 0;
+  }
+  return profile.role === "PRESIDENT"
+    ? profile.overridingCommissionRate || profile.directCommissionRate || tierConfig?.rate || 0
+    : profile.directCommissionRate || tierConfig?.rate || 0;
 }
 
 export function getAffiliateCommissionPoints(
@@ -97,13 +128,11 @@ export function getAffiliateCommissionPoints(
     )
     .reduce((sum, commission) => sum + commission.amount, 0);
   const approvedCommission = profile.walletBalance || 0;
-  const commissionRate =
-    profile.role === "PRESIDENT"
-      ? profile.overridingCommissionRate || 0
-      : profile.directCommissionRate || 0;
+  const commissionRate = getAffiliateCommissionRate(profile, portal);
   const commissionBaseSales = profile.totalSales || 0;
   const salesBasedCommission = (commissionBaseSales * commissionRate) / 100;
   const totalCommission = salesBasedCommission || approvedCommission + pendingCommission;
+  const pointValue = Math.max(1, Number(portal?.commissionSettings?.pointValue || 1000));
 
   return {
     approvedCommission,
@@ -111,6 +140,6 @@ export function getAffiliateCommissionPoints(
     commissionRate,
     commissionBaseSales,
     totalCommission,
-    points: Math.floor(totalCommission / 1000),
+    points: Math.floor(totalCommission / pointValue),
   };
 }

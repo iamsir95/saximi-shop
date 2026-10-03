@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BadgePercent, CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Laptop, Link2, LogOut, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
+import { CheckCircle2, Copy, CreditCard, Globe2, ImageIcon, KeyRound, Laptop, Link2, LogOut, Mail, Palette, Phone, Save, Settings as SettingsIcon, ShieldCheck, Store, Wrench } from 'lucide-react';
 import { api, clearAuthToken } from '../api';
 import { AuthSession, PlatformSettings } from '../types';
 import { ImageField } from '../components/ImageField';
@@ -23,6 +23,15 @@ const emptySettings: PlatformSettings = {
   sepayWebhookUrl: '',
   sepayWebhookConfigured: false,
   commissionSettlementMode: 'ORDER_DISCOUNT',
+  commissionSettings: {
+    settlementMode: 'ORDER_DISCOUNT',
+    pointValue: 1000,
+    applyToSelfPurchase: true,
+    applyToReferralOrders: true,
+    allowPersonalOverride: true,
+    tiers: [],
+    updatedAt: '',
+  },
   shippingFee: {
     mode: 'FIXED',
     fixedFee: 0,
@@ -504,40 +513,6 @@ export function SettingsPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-xl shadow-black/20">
-            <div className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
-              <BadgePercent className="h-5 w-5 text-cyan-300" />
-              Cách xử lý hoa hồng
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {[
-                {
-                  value: 'ORDER_DISCOUNT',
-                  title: 'Trừ trực tiếp vào tiền hàng',
-                  description: 'Khách mua qua link giới thiệu được giảm ngay phần hoa hồng cá nhân.',
-                },
-                {
-                  value: 'MANUAL_PAYOUT',
-                  title: 'Nhận thủ công',
-                  description: 'Hệ thống ghi nhận hoa hồng vào sổ để admin đối soát/rút tiền sau.',
-                },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => update('commissionSettlementMode', option.value)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    settings.commissionSettlementMode === option.value
-                      ? 'border-cyan-300/70 bg-cyan-400/12 text-cyan-50'
-                      : 'border-white/10 bg-slate-950/60 text-slate-300 hover:border-white/20'
-                  }`}
-                >
-                  <div className="font-black">{option.title}</div>
-                  <div className="mt-1 text-xs leading-5 text-slate-400">{option.description}</div>
-                </button>
-              ))}
-            </div>
-          </section>
         </div>
 
         <aside className="space-y-5">

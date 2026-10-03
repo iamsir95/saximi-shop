@@ -109,8 +109,30 @@ export interface PlatformSettings {
   publicSiteUrl: string;
   zaloOaUrl: string;
   shippingFee?: ShippingFeeSettings;
+  commissionSettings?: CommissionSettings;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+}
+
+export type CommissionSettlementMode = "ORDER_DISCOUNT" | "MANUAL_PAYOUT";
+
+export interface CommissionTierSetting {
+  tierLevel: 1 | 2 | 3;
+  levelName: string;
+  commissionLabel: string;
+  rate: number;
+  description: string;
+  isActive: boolean;
+}
+
+export interface CommissionSettings {
+  settlementMode: CommissionSettlementMode;
+  pointValue: number;
+  applyToSelfPurchase: boolean;
+  applyToReferralOrders: boolean;
+  allowPersonalOverride: boolean;
+  tiers: CommissionTierSetting[];
+  updatedAt: string;
 }
 
 export interface ShippingAreaRule {
@@ -443,6 +465,7 @@ export interface AffiliatePortalSummary {
   consignments: ConsignmentStock[];
   settlements: FinancialSettlement[];
   commissions: CommissionRecord[];
+  commissionSettings?: CommissionSettings;
   branchesByPresident: Record<string, AffiliateProfile[]>;
   hierarchy: AffiliateHierarchyNode[];
 }

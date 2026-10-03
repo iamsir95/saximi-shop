@@ -184,9 +184,31 @@ export interface PlatformSettings {
   sepayWebhookEnabled: boolean;
   sepayWebhookApiKey: string;
   commissionSettlementMode: 'ORDER_DISCOUNT' | 'MANUAL_PAYOUT';
+  commissionSettings: CommissionSettings;
   shippingFee: ShippingFeeSettings;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  updatedAt: string;
+}
+
+export type CommissionSettlementMode = 'ORDER_DISCOUNT' | 'MANUAL_PAYOUT';
+
+export interface CommissionTierSetting {
+  tierLevel: 1 | 2 | 3;
+  levelName: string;
+  commissionLabel: string;
+  rate: number;
+  description: string;
+  isActive: boolean;
+}
+
+export interface CommissionSettings {
+  settlementMode: CommissionSettlementMode;
+  pointValue: number;
+  applyToSelfPurchase: boolean;
+  applyToReferralOrders: boolean;
+  allowPersonalOverride: boolean;
+  tiers: CommissionTierSetting[];
   updatedAt: string;
 }
 
@@ -260,6 +282,7 @@ export type StaffPermission =
   | 'media-library'
   | 'categories'
   | 'affiliates'
+  | 'commission-settings'
   | 'consignments'
   | 'settlements'
   | 'deliveries'
@@ -313,6 +336,7 @@ export interface AffiliatePortalSummary {
   consignments: ConsignmentStock[];
   settlements: FinancialSettlement[];
   commissions: CommissionRecord[];
+  commissionSettings: CommissionSettings;
   branchesByPresident: Record<string, AffiliateProfile[]>;
   hierarchy: Array<{
     president: AffiliateProfile;
@@ -630,9 +654,79 @@ function defaultCommissionLabel(role: UserRole): string {
 }
 
 function defaultTierConfig(tierLevel: number) {
-  if (tierLevel === 1) return { levelName: 'Bậc 1 - Chủ tịch', commissionLabel: 'Hoa hồng toàn tuyến', rate: 5 };
-  if (tierLevel === 3) return { levelName: 'Bậc 3 - Hội viên bán hàng', commissionLabel: 'Hoa hồng hội viên', rate: 15 };
-  return { levelName: 'Bậc 2 - Chi hội trưởng', commissionLabel: 'Hoa hồng chi hội', rate: 25 };
+  const tier = defaultCommissionSettings().tiers.find((item) => item.tierLevel === tierLevel);
+  return tier || defaultCommissionSettings().tiers[1];
+}
+
+function defaultCommissionSettings(): CommissionSettings {
+  const now = new Date().toISOString();
+  return {
+    settlementMode: 'ORDER_DISCOUNT',
+    pointValue: 1000,
+    applyToSelfPurchase: true,
+    applyToReferralOrders: true,
+    allowPersonalOverride: true,
+    tiers: [
+      {
+        tierLevel: 1,
+        levelName: 'Bậc 1 - Chủ tịch',
+        commissionLabel: 'Hoa hồng toàn tuyến',
+        rate: 5,
+        description: 'Nhận hoa hồng toàn bộ tuyến và đơn tự bán/tự mua.',
+        isActive: true,
+      },
+      {
+        tierLevel: 2,
+        levelName: 'Bậc 2 - Chi hội trưởng',
+        commissionLabel: 'Hoa hồng chi hội',
+        rate: 25,
+        description: 'Nhận hoa hồng từ bán hàng, tự mua hàng và link/QR giới thiệu.',
+        isActive: true,
+      },
+      {
+        tierLevel: 3,
+        levelName: 'Bậc 3 - Hội viên bán hàng',
+        commissionLabel: 'Hoa hồng hội viên',
+        rate: 15,
+        description: 'Nhận hoa hồng cá nhân từ bán hàng, tự mua hàng và link/QR giới thiệu.',
+        isActive: true,
+      },
+    ],
+    updatedAt: now,
+  };
+}
+
+function normalizeCommissionSettings(
+  data?: Partial<CommissionSettings>,
+  settlementMode?: CommissionSettlementMode
+): CommissionSettings {
+  const defaults = defaultCommissionSettings();
+  const source = data || {};
+  const sourceTiers = Array.isArray(source.tiers) ? source.tiers : [];
+  const tiers = defaults.tiers.map((fallback) => {
+    const incoming = sourceTiers.find((item) => Number(item.tierLevel) === fallback.tierLevel);
+    return {
+      tierLevel: fallback.tierLevel,
+      levelName: String(incoming?.levelName || fallback.levelName).trim(),
+      commissionLabel: String(incoming?.commissionLabel || fallback.commissionLabel).trim(),
+      rate: Math.max(0, Math.min(100, Number(incoming?.rate ?? fallback.rate))),
+      description: String(incoming?.description ?? fallback.description).trim(),
+      isActive: incoming?.isActive !== false,
+    };
+  });
+
+  return {
+    settlementMode:
+      source.settlementMode === 'MANUAL_PAYOUT' || settlementMode === 'MANUAL_PAYOUT'
+        ? 'MANUAL_PAYOUT'
+        : 'ORDER_DISCOUNT',
+    pointValue: Math.max(1, Number(source.pointValue || defaults.pointValue)),
+    applyToSelfPurchase: source.applyToSelfPurchase ?? defaults.applyToSelfPurchase,
+    applyToReferralOrders: source.applyToReferralOrders ?? defaults.applyToReferralOrders,
+    allowPersonalOverride: source.allowPersonalOverride ?? defaults.allowPersonalOverride,
+    tiers,
+    updatedAt: source.updatedAt || defaults.updatedAt,
+  };
 }
 
 function defaultShippingFeeSettings(): ShippingFeeSettings {
@@ -681,6 +775,7 @@ const ALL_STAFF_PERMISSIONS: StaffPermission[] = [
   'media-library',
   'categories',
   'affiliates',
+  'commission-settings',
   'consignments',
   'settlements',
   'deliveries',
@@ -752,10 +847,14 @@ function getAffiliateTierLevel(affiliate: Pick<AffiliateProfile, 'role' | 'tierL
 
 function getAffiliateCommissionRate(affiliate: AffiliateProfile): number {
   const tierLevel = getAffiliateTierLevel(affiliate);
-  if (tierLevel === 1) {
-    return affiliate.overridingCommissionRate || affiliate.directCommissionRate || defaultTierConfig(1).rate;
+  const tierConfig = Database.getCommissionTierConfig(tierLevel);
+  if (!Database.getCommissionSettings().allowPersonalOverride) {
+    return tierConfig.rate;
   }
-  return affiliate.directCommissionRate || defaultTierConfig(tierLevel).rate;
+  if (tierLevel === 1) {
+    return affiliate.overridingCommissionRate || affiliate.directCommissionRate || tierConfig.rate;
+  }
+  return affiliate.directCommissionRate || tierConfig.rate;
 }
 
 function affiliateLevelLabel(affiliate?: Pick<AffiliateProfile, 'role' | 'levelName'>): string {
@@ -828,6 +927,7 @@ export class Database {
     sepayWebhookEnabled: true,
     sepayWebhookApiKey: process.env.SEPAY_WEBHOOK_API_KEY || process.env.SEPAY_WEBHOOK_SECRET || '',
     commissionSettlementMode: 'ORDER_DISCOUNT',
+    commissionSettings: defaultCommissionSettings(),
     shippingFee: defaultShippingFeeSettings(),
     maintenanceMode: false,
     maintenanceMessage: 'Hệ thống đang bảo trì, vui lòng quay lại sau.',
@@ -838,6 +938,10 @@ export class Database {
     saveDataFile('settings.json', {
       ...this.settings,
       sepayWebhookApiKey: encryptSensitiveValue(this.settings.sepayWebhookApiKey),
+      commissionSettings: normalizeCommissionSettings(
+        this.settings.commissionSettings,
+        this.settings.commissionSettlementMode
+      ),
     });
   }
 
@@ -1246,8 +1350,13 @@ export class Database {
         process.env.SEPAY_WEBHOOK_SECRET ||
         '',
       commissionSettlementMode: this.settings.commissionSettlementMode || 'ORDER_DISCOUNT',
+      commissionSettings: normalizeCommissionSettings(
+        this.settings.commissionSettings,
+        this.settings.commissionSettlementMode || 'ORDER_DISCOUNT'
+      ),
       shippingFee: normalizeShippingFeeSettings(this.settings.shippingFee),
     };
+    this.settings.commissionSettlementMode = this.settings.commissionSettings.settlementMode;
     this.persistSettings();
     if (ordersNeedSecurePersist) this.persistOrders();
     this.persistWebPushSubscriptions();
@@ -1688,7 +1797,7 @@ export class Database {
     this.affiliates = this.affiliates.map((affiliate, index) => {
       const fallback = fallbackDetails[index % fallbackDetails.length];
       const tierLevel = getAffiliateTierLevel(affiliate);
-      const tierConfig = defaultTierConfig(tierLevel);
+      const tierConfig = this.getCommissionTierConfig(tierLevel);
       const expectedQrCodeUrl = qrCodeFor(affiliate.userId, this.settings.publicSiteUrl);
       const shouldRefreshQr =
         !affiliate.qrCodeUrl ||
@@ -1860,7 +1969,7 @@ export class Database {
           beneficiaryName: beneficiary.name,
           beneficiaryRole: beneficiary.role,
           amount,
-          commissionName: commission.commissionName || beneficiary.commissionLabel || defaultTierConfig(getAffiliateTierLevel(beneficiary)).commissionLabel,
+          commissionName: commission.commissionName || beneficiary.commissionLabel || this.getCommissionTierConfig(getAffiliateTierLevel(beneficiary)).commissionLabel,
           commissionRate,
           hierarchyPath: commission.hierarchyPath || this.buildAffiliateHierarchyPath(beneficiary),
           status,
@@ -1900,7 +2009,7 @@ export class Database {
         beneficiaryRole: branchLeader.role,
         amount: Math.round((order.total * getAffiliateCommissionRate(branchLeader)) / 100),
         type: 'TIER_DIRECT',
-        commissionName: branchLeader.commissionLabel || defaultTierConfig(getAffiliateTierLevel(branchLeader)).commissionLabel,
+        commissionName: branchLeader.commissionLabel || this.getCommissionTierConfig(getAffiliateTierLevel(branchLeader)).commissionLabel,
         commissionRate: getAffiliateCommissionRate(branchLeader),
         hierarchyPath: this.buildAffiliateHierarchyPath(branchLeader),
         status: order.status === 'completed' ? 'available' : 'pending',
@@ -1916,7 +2025,7 @@ export class Database {
           beneficiaryRole: president.role,
           amount: Math.round((order.total * getAffiliateCommissionRate(president)) / 100),
           type: 'TIER_ONE_GLOBAL',
-          commissionName: president.commissionLabel || defaultTierConfig(1).commissionLabel,
+          commissionName: president.commissionLabel || this.getCommissionTierConfig(1).commissionLabel,
           commissionRate: getAffiliateCommissionRate(president),
           hierarchyPath: this.buildAffiliateHierarchyPath(president),
           status: order.status === 'completed' ? 'available' : 'pending',
@@ -2451,15 +2560,15 @@ export class Database {
     }
 
     return chain
-      .map((item) => item.levelName || defaultTierConfig(getAffiliateTierLevel(item)).levelName)
-      .concat(affiliate.commissionLabel || defaultTierConfig(getAffiliateTierLevel(affiliate)).commissionLabel)
+      .map((item) => item.levelName || this.getCommissionTierConfig(getAffiliateTierLevel(item)).levelName)
+      .concat(affiliate.commissionLabel || this.getCommissionTierConfig(getAffiliateTierLevel(affiliate)).commissionLabel)
       .join(' > ');
   }
 
   public static upsertAffiliate(profile: AffiliateProfile): AffiliateProfile {
     const firstPresident = this.affiliates.find((affiliate) => affiliate.role === 'PRESIDENT');
     const tierLevel = profile.tierLevel || (profile.role === 'PRESIDENT' ? 1 : 2);
-    const tierConfig = defaultTierConfig(tierLevel);
+    const tierConfig = this.getCommissionTierConfig(tierLevel);
     const parentAffiliate = profile.parentAffiliateId
       ? this.affiliates.find((affiliate) => affiliate.userId === profile.parentAffiliateId)
       : undefined;
@@ -2505,7 +2614,7 @@ export class Database {
 
     const affiliate = this.affiliates[idx];
     const tierLevel = data.tierLevel || getAffiliateTierLevel(affiliate);
-    const tierConfig = defaultTierConfig(tierLevel);
+    const tierConfig = this.getCommissionTierConfig(tierLevel);
     const parentAffiliate = data.parentAffiliateId
       ? this.affiliates.find((item) => item.userId === data.parentAffiliateId)
       : undefined;
@@ -2581,13 +2690,13 @@ export class Database {
       avatar: DEFAULT_AVATAR,
       role: 'BRANCH_LEADER',
       tierLevel: 3,
-      levelName: defaultTierConfig(3).levelName,
-      commissionLabel: defaultTierConfig(3).commissionLabel,
+      levelName: this.getCommissionTierConfig(3).levelName,
+      commissionLabel: this.getCommissionTierConfig(3).commissionLabel,
       parentAffiliateId: firstTierTwo?.userId || firstPresident?.userId,
       presidentId: firstTierTwo?.presidentId || firstPresident?.userId,
       referralCode: `DL-${suffix}`,
       qrCodeUrl: qrCodeFor(userId, this.settings.publicSiteUrl),
-      directCommissionRate: defaultTierConfig(3).rate,
+      directCommissionRate: this.getCommissionTierConfig(3).rate,
       overridingCommissionRate: 0,
       walletBalance: 0,
       totalSales: 0,
@@ -2774,6 +2883,7 @@ export class Database {
       consignments: this.consignmentStocks,
       settlements: this.settlements,
       commissions: this.commissions,
+      commissionSettings: this.getCommissionSettings(),
       branchesByPresident,
       hierarchy: this.affiliates
         .filter((affiliate) => affiliate.role === 'PRESIDENT')
@@ -2832,13 +2942,19 @@ export class Database {
       0
     );
     const subtotalAfterCoupon = this.calculateOrderTotal(normalizedItems, orderData.couponCode);
-    const referrer = orderData.referrerId
+    const commissionSettings = this.getCommissionSettings();
+    const linkedReferrer = orderData.referrerId
       ? this.affiliates.find((a) => a.userId === orderData.referrerId)
       : undefined;
-    const commissionSettlementMode = this.settings.commissionSettlementMode || 'ORDER_DISCOUNT';
-    const referrerRate = referrer ? getAffiliateCommissionRate(referrer) : 0;
+    const selfAffiliate = commissionSettings.applyToSelfPurchase
+      ? this.affiliates.find((affiliate) => normalizeVietnamPhone(affiliate.phone) === normalizeVietnamPhone(delivery.phone))
+      : undefined;
+    const referrer = commissionSettings.applyToReferralOrders ? linkedReferrer : undefined;
+    const commissionBeneficiary = referrer || selfAffiliate;
+    const commissionSettlementMode = commissionSettings.settlementMode;
+    const referrerRate = commissionBeneficiary ? getAffiliateCommissionRate(commissionBeneficiary) : 0;
     const commissionDiscountAmount =
-      referrer && buyerCanUseMemberPricing && commissionSettlementMode === 'ORDER_DISCOUNT'
+      commissionBeneficiary && buyerCanUseMemberPricing && commissionSettlementMode === 'ORDER_DISCOUNT'
         ? Math.round((subtotalAfterCoupon * referrerRate) / 100)
         : 0;
     const subtotalAfterDiscount = Math.max(0, subtotalAfterCoupon - commissionDiscountAmount);
@@ -2864,7 +2980,7 @@ export class Database {
       paymentMethod,
       commissionSettlementMode,
       commissionDiscountAmount,
-      commissionDiscountBeneficiaryId: commissionDiscountAmount > 0 ? referrer?.userId : undefined,
+      commissionDiscountBeneficiaryId: commissionDiscountAmount > 0 ? commissionBeneficiary?.userId : undefined,
     };
     this.orders.unshift(newOrder);
     this.persistOrders();
@@ -2883,30 +2999,30 @@ export class Database {
 
     // Calculate affiliate tier commissions. The referrer always receives their own tier rate;
     // the tier-one ancestor also receives the global network rate for downstream orders.
-    if (orderData.referrerId) {
-      if (referrer) {
-        referrer.totalSales += newOrder.total;
+    if (commissionBeneficiary) {
+      if (commissionBeneficiary) {
+        commissionBeneficiary.totalSales += newOrder.total;
 
         if (commissionSettlementMode === 'MANUAL_PAYOUT') {
           const comm1: CommissionRecord = {
             id: this.commissions.length + 1,
             orderId: newOrder.id,
-            beneficiaryId: referrer.userId,
-            beneficiaryName: referrer.name,
-            beneficiaryRole: referrer.role,
+            beneficiaryId: commissionBeneficiary.userId,
+            beneficiaryName: commissionBeneficiary.name,
+            beneficiaryRole: commissionBeneficiary.role,
             amount: Math.round((subtotalAfterCoupon * referrerRate) / 100),
             type: 'TIER_DIRECT',
-            commissionName: referrer.commissionLabel || defaultTierConfig(getAffiliateTierLevel(referrer)).commissionLabel,
+            commissionName: commissionBeneficiary.commissionLabel || this.getCommissionTierConfig(getAffiliateTierLevel(commissionBeneficiary)).commissionLabel,
             commissionRate: referrerRate,
-            hierarchyPath: this.buildAffiliateHierarchyPath(referrer),
+            hierarchyPath: this.buildAffiliateHierarchyPath(commissionBeneficiary),
             status: 'pending',
             createdAt: new Date().toISOString(),
           };
           this.commissions.push(comm1);
         }
 
-        const tierOne = this.getTierOneAncestor(referrer);
-        if (commissionSettlementMode === 'MANUAL_PAYOUT' && tierOne && tierOne.userId !== referrer.userId) {
+        const tierOne = this.getTierOneAncestor(commissionBeneficiary);
+        if (commissionSettlementMode === 'MANUAL_PAYOUT' && tierOne && tierOne.userId !== commissionBeneficiary.userId) {
             tierOne.totalSales += newOrder.total;
             const tierOneRate = getAffiliateCommissionRate(tierOne);
             const comm2: CommissionRecord = {
@@ -2917,7 +3033,7 @@ export class Database {
               beneficiaryRole: tierOne.role,
               amount: Math.round((subtotalAfterCoupon * tierOneRate) / 100),
               type: 'TIER_ONE_GLOBAL',
-              commissionName: tierOne.commissionLabel || defaultTierConfig(1).commissionLabel,
+              commissionName: tierOne.commissionLabel || this.getCommissionTierConfig(1).commissionLabel,
               commissionRate: tierOneRate,
               hierarchyPath: this.buildAffiliateHierarchyPath(tierOne),
               status: 'pending',
@@ -3185,6 +3301,43 @@ export class Database {
     return this.users.map((user) => this.toSafeUser(user));
   }
 
+  public static getCommissionSettings(): CommissionSettings {
+    return normalizeCommissionSettings(
+      this.settings.commissionSettings,
+      this.settings.commissionSettlementMode
+    );
+  }
+
+  public static getCommissionTierConfig(tierLevel: number): CommissionTierSetting {
+    const settings = this.getCommissionSettings();
+    return (
+      settings.tiers.find((tier) => tier.tierLevel === tierLevel) ||
+      settings.tiers.find((tier) => tier.tierLevel === 2) ||
+      defaultTierConfig(tierLevel)
+    );
+  }
+
+  public static updateCommissionSettings(data: Partial<CommissionSettings>): CommissionSettings {
+    const nextSettings = normalizeCommissionSettings(
+      {
+        ...this.settings.commissionSettings,
+        ...data,
+        tiers: data.tiers || this.settings.commissionSettings?.tiers,
+        updatedAt: new Date().toISOString(),
+      },
+      data.settlementMode || this.settings.commissionSettlementMode
+    );
+    this.settings = {
+      ...this.settings,
+      commissionSettings: nextSettings,
+      commissionSettlementMode: nextSettings.settlementMode,
+      updatedAt: new Date().toISOString(),
+    };
+    this.persistSettings();
+    this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_COMMISSION_SETTINGS', 'Cập nhật cấu hình hoa hồng');
+    return nextSettings;
+  }
+
   public static getSettings(): PlatformSettings {
     return this.settings;
   }
@@ -3245,12 +3398,19 @@ export class Database {
       sepayWebhookEnabled: data.sepayWebhookEnabled ?? this.settings.sepayWebhookEnabled,
       sepayWebhookApiKey: shouldKeepSepayKey ? this.settings.sepayWebhookApiKey : incomingSepayKey,
       commissionSettlementMode:
-        data.commissionSettlementMode === 'MANUAL_PAYOUT' ? 'MANUAL_PAYOUT' : 'ORDER_DISCOUNT',
+        data.commissionSettings?.settlementMode === 'MANUAL_PAYOUT' || data.commissionSettlementMode === 'MANUAL_PAYOUT'
+          ? 'MANUAL_PAYOUT'
+          : 'ORDER_DISCOUNT',
+      commissionSettings: normalizeCommissionSettings(
+        data.commissionSettings || this.settings.commissionSettings,
+        data.commissionSettings?.settlementMode || data.commissionSettlementMode || this.settings.commissionSettlementMode
+      ),
       shippingFee: normalizeShippingFeeSettings(data.shippingFee || this.settings.shippingFee),
       maintenanceMode: Boolean(data.maintenanceMode),
       maintenanceMessage: data.maintenanceMessage?.trim() || this.settings.maintenanceMessage,
       updatedAt: new Date().toISOString(),
     };
+    nextSettings.commissionSettlementMode = nextSettings.commissionSettings.settlementMode;
     this.settings = nextSettings;
     this.persistSettings();
     this.logAction('admin', 'SUPER_ADMIN', 'UPDATE_SETTINGS', 'Cập nhật cài đặt nền tảng');

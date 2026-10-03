@@ -21,6 +21,7 @@ const PERMISSION_OPTIONS: Array<[StaffPermission, string]> = [
   ['media-library', 'Kho ảnh'],
   ['categories', 'Danh mục'],
   ['affiliates', 'Hội viên'],
+  ['commission-settings', 'Hoa hồng'],
   ['consignments', 'Gối đầu'],
   ['settlements', 'Đối soát'],
   ['deliveries', 'Vận chuyển'],

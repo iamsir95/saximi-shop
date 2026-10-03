@@ -22,6 +22,7 @@ import { SettingsPage } from './pages/Settings';
 import { Login } from './pages/Login';
 import { PostsPage } from './pages/Posts';
 import { FormsPage } from './pages/Forms';
+import { CommissionSettingsPage } from './pages/CommissionSettings';
 import { getAdminUser, getAuthToken } from './api';
 import { PullToRefresh } from './components/PullToRefresh';
 
@@ -35,6 +36,7 @@ const ADMIN_TABS = new Set([
   'media-library',
   'categories',
   'affiliates',
+  'commission-settings',
   'consignments',
   'settlements',
   'deliveries',
@@ -105,6 +107,8 @@ export function App() {
         return 'Danh mục';
       case 'affiliates':
         return 'Hội viên & đại lý';
+      case 'commission-settings':
+        return 'Hoa hồng';
       case 'consignments':
         return 'Hàng gối đầu';
       case 'settlements':
@@ -151,6 +155,7 @@ export function App() {
           {activeTabAllowed && activeTab === 'media-library' && <MediaLibraryPage />}
           {activeTabAllowed && activeTab === 'categories' && <Categories />}
           {activeTabAllowed && activeTab === 'affiliates' && <AffiliatesPage />}
+          {activeTabAllowed && activeTab === 'commission-settings' && <CommissionSettingsPage />}
           {activeTabAllowed && activeTab === 'consignments' && <ConsignmentPage />}
           {activeTabAllowed && activeTab === 'settlements' && <SettlementsPage />}
           {activeTabAllowed && activeTab === 'deliveries' && <DeliveriesPage />}

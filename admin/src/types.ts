@@ -420,9 +420,31 @@ export interface PlatformSettings {
   sepayWebhookUrl?: string;
   sepayWebhookConfigured?: boolean;
   commissionSettlementMode: 'ORDER_DISCOUNT' | 'MANUAL_PAYOUT';
+  commissionSettings: CommissionSettings;
   shippingFee: ShippingFeeSettings;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  updatedAt: string;
+}
+
+export type CommissionSettlementMode = 'ORDER_DISCOUNT' | 'MANUAL_PAYOUT';
+
+export interface CommissionTierSetting {
+  tierLevel: 1 | 2 | 3;
+  levelName: string;
+  commissionLabel: string;
+  rate: number;
+  description: string;
+  isActive: boolean;
+}
+
+export interface CommissionSettings {
+  settlementMode: CommissionSettlementMode;
+  pointValue: number;
+  applyToSelfPurchase: boolean;
+  applyToReferralOrders: boolean;
+  allowPersonalOverride: boolean;
+  tiers: CommissionTierSetting[];
   updatedAt: string;
 }
 
@@ -436,6 +458,7 @@ export type StaffPermission =
   | 'media-library'
   | 'categories'
   | 'affiliates'
+  | 'commission-settings'
   | 'consignments'
   | 'settlements'
   | 'deliveries'

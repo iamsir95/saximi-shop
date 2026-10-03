@@ -204,6 +204,9 @@ export const api = {
     request(`/settlements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteSettlement: (id: number) => request(`/settlements/${id}`, { method: 'DELETE' }),
   getCommissions: () => request('/commissions'),
+  getCommissionSettings: () => request('/commission-settings'),
+  updateCommissionSettings: (data: any) =>
+    request('/commission-settings', { method: 'PUT', body: JSON.stringify(data) }),
   getOrders: () => request('/orders'),
   updateOrderStatus: (id: number, status: string, paymentStatus?: string) =>
     request(`/orders/${id}/status`, {

@@ -19,6 +19,7 @@ import { useMemo } from "react";
 import {
   findAffiliateByReferrer,
   findAffiliateForUser,
+  getAffiliateCommissionRate,
   getAffiliateRoleDescription,
   getAffiliateRoleLabel,
 } from "@/utils/affiliate";
@@ -39,17 +40,14 @@ function AccountRoleCard() {
 
   const affiliates =
     portalLoadable.state === "hasData" ? portalLoadable.data.affiliates : [];
+  const portal = portalLoadable.state === "hasData" ? portalLoadable.data : undefined;
   const currentUser =
     userInfo.state === "hasData" && userInfo.data ? userInfo.data : undefined;
   const activeAffiliate = findAffiliateForUser(affiliates, currentUser);
   const referrerAffiliate = findAffiliateByReferrer(affiliates, referrerId);
   const isAffiliate = Boolean(activeAffiliate);
   const isLoggedIn = Boolean(currentUser?.phone);
-  const commissionRate = activeAffiliate
-    ? activeAffiliate.role === "PRESIDENT"
-      ? activeAffiliate.overridingCommissionRate
-      : activeAffiliate.directCommissionRate
-    : 0;
+  const commissionRate = getAffiliateCommissionRate(activeAffiliate, portal);
   const detailRows = [
     {
       label: "Trạng thái",
@@ -58,7 +56,7 @@ function AccountRoleCard() {
     },
     {
       label: "Loại tài khoản",
-      value: getAffiliateRoleLabel(activeAffiliate),
+      value: getAffiliateRoleLabel(activeAffiliate, portal),
       tone: "text-slate-900",
     },
     {
@@ -88,7 +86,7 @@ function AccountRoleCard() {
           {
             label: "Người giới thiệu",
             value: referrerAffiliate
-              ? `${referrerAffiliate.name} - ${getAffiliateRoleLabel(referrerAffiliate)}`
+              ? `${referrerAffiliate.name} - ${getAffiliateRoleLabel(referrerAffiliate, portal)}`
               : "Chưa có",
             tone: referrerAffiliate ? "text-primary" : "text-slate-500",
           },
@@ -132,10 +130,10 @@ function AccountRoleCard() {
               Nhận diện tài khoản
             </div>
             <div className="commerce-title truncate">
-              {getAffiliateRoleLabel(activeAffiliate)}
+              {getAffiliateRoleLabel(activeAffiliate, portal)}
             </div>
             <div className="commerce-caption text-subtitle mt-0.5">
-              {getAffiliateRoleDescription(activeAffiliate)}
+              {getAffiliateRoleDescription(activeAffiliate, portal)}
             </div>
           </div>
         </div>
@@ -180,7 +178,7 @@ function AccountRoleCard() {
           <div className="commerce-caption text-slate-700 mt-0.5">
             Tuyến hỗ trợ:{" "}
             <strong>
-              {referrerAffiliate.levelName || getAffiliateRoleLabel(referrerAffiliate)}{" "}
+              {referrerAffiliate.levelName || getAffiliateRoleLabel(referrerAffiliate, portal)}{" "}
               {referrerAffiliate.name}
             </strong>
           </div>

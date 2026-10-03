@@ -26,7 +26,7 @@ export default function Banners() {
       slides={banners.map((banner, index) => {
         const item =
           typeof banner === "string"
-            ? { id: index + 1, imageUrl: banner, title: "Ưu đãi Saximi shop", linkUrl: "", linkEnabled: true, isActive: true }
+            ? { id: index + 1, imageUrl: banner, title: "Ưu đãi Saximi shop", linkUrl: "", linkEnabled: true, openInNewTab: false, isActive: true }
             : banner;
         const imageUrl = isMobile && item.mobileImageUrl ? item.mobileImageUrl : item.imageUrl;
         const isMobilePortrait = isMobile && item.mobileAspectRatio === "mobile-4-6" && item.mobileImageUrl;
@@ -39,9 +39,9 @@ export default function Banners() {
         );
 
         if (!item.linkUrl || item.linkEnabled === false) return image;
-        if (/^https?:\/\//i.test(item.linkUrl)) {
+        if (item.openInNewTab || /^https?:\/\//i.test(item.linkUrl)) {
           return (
-            <a href={item.linkUrl} target="_blank" rel="noreferrer" aria-label={item.title || "Xem chương trình"}>
+            <a href={item.linkUrl} target={item.openInNewTab ? "_blank" : undefined} rel={item.openInNewTab ? "noreferrer" : undefined} aria-label={item.title || "Xem chương trình"}>
               {image}
             </a>
           );

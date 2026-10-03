@@ -212,11 +212,16 @@ export function PostsPage() {
         <label className="grid gap-1.5 text-sm">Chuyên mục<select className={inputClass} value={form.category} onChange={e => update('category', e.target.value)}>{Object.entries(categories).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
         {form.contentType && <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300"><div className="flex items-center gap-2 font-semibold text-white">{form.contentType.includes('video') ? <Video size={16} /> : form.contentType === 'flash-sale' ? <Flame size={16} /> : <Sparkles size={16} />}{contentTypes[form.contentType] || 'Bài viết'}</div></div>}
         {field('author', 'Tên đơn vị đăng bài', 100)}
+        <label className="grid gap-1.5 text-sm">
+          <span>Ngày đăng</span>
+          <input type="datetime-local" className={inputClass} value={toDatetimeLocal(form.publishedAt)} onChange={e => update('publishedAt', e.target.value)} />
+          <span className="text-xs leading-5 text-slate-400">Có thể chỉnh ngày đăng để sắp xếp bản tin, sự kiện, chính sách hoặc khuyến mãi.</span>
+        </label>
         <ImageField label="Ảnh bìa" value={form.cover} onChange={url => update('cover', url)} onBusyChange={uploadBusy} library={
           <select aria-label="Chọn từ kho ảnh" className={inputClass} value="" onChange={e => { const item = media.find(m => String(m.id) === e.target.value); if (item) { update('cover', item.url); update('coverAlt', item.altText || item.title); } }}><option value="">Chọn ảnh</option>{media.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
         } />
         {field('coverAlt', 'Mô tả ảnh (alt)', 200)}
-        {form.publishedAt && <p className="text-xs text-slate-400">Ngày đăng: {new Date(form.publishedAt).toLocaleString('vi-VN')}</p>}
+        {form.publishedAt && <p className="text-xs text-slate-400">Đang đặt ngày: {new Date(form.publishedAt).toLocaleString('vi-VN')}</p>}
       </aside>
     </div>
   </form>;

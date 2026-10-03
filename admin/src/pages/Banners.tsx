@@ -28,6 +28,7 @@ export const BannersPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [linkEnabled, setLinkEnabled] = useState(true);
+  const [openInNewTab, setOpenInNewTab] = useState(false);
   const [isActive, setIsActive] = useState(true);
 
   const onUploadingChange = (busy: boolean) => setUploads((count) => Math.max(0, count + (busy ? 1 : -1)));
@@ -58,6 +59,7 @@ export const BannersPage: React.FC = () => {
     setTitle('');
     setLinkUrl('');
     setLinkEnabled(true);
+    setOpenInNewTab(false);
     setIsActive(true);
     setIsModalOpen(true);
   };
@@ -70,6 +72,7 @@ export const BannersPage: React.FC = () => {
     setTitle(banner.title || '');
     setLinkUrl(banner.linkUrl || '');
     setLinkEnabled(banner.linkEnabled !== false);
+    setOpenInNewTab(banner.openInNewTab === true);
     setIsActive(banner.isActive !== false);
     setIsModalOpen(true);
   };
@@ -90,6 +93,7 @@ export const BannersPage: React.FC = () => {
       title: title.trim() || 'Banner khuyến mãi',
       linkUrl: linkUrl.trim() || undefined,
       linkEnabled,
+      openInNewTab,
       isActive,
     };
 
@@ -197,6 +201,7 @@ export const BannersPage: React.FC = () => {
                       <LinkIcon className="h-3.5 w-3.5 flex-none" />
                       <span className="truncate">{banner.linkUrl}</span>
                       {banner.linkEnabled === false && <span className="shrink-0 rounded-full bg-slate-700 px-2 py-0.5 text-[10px] text-slate-300">Tắt chuyển hướng</span>}
+                      {banner.linkEnabled !== false && banner.openInNewTab && <span className="shrink-0 rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] text-cyan-200">Tab mới</span>}
                       <ExternalLink className="h-3.5 w-3.5 flex-none" />
                     </a>
                   )}
@@ -305,6 +310,14 @@ export const BannersPage: React.FC = () => {
                   <span className="mt-1 block text-xs text-slate-400">Tắt mục này nếu chỉ muốn banner là hình ảnh, không dẫn đến trang khác.</span>
                 </span>
                 <input type="checkbox" checked={linkEnabled} onChange={(e) => setLinkEnabled(e.target.checked)} className="h-5 w-5 accent-cyan-400" />
+              </label>
+
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <span>
+                  <span className="block text-sm font-bold text-white">Mở chuyển hướng trong tab mới</span>
+                  <span className="mt-1 block text-xs text-slate-400">Phù hợp khi banner dẫn ra website khác hoặc muốn giữ khách ở trang hiện tại.</span>
+                </span>
+                <input type="checkbox" checked={openInNewTab} onChange={(e) => setOpenInNewTab(e.target.checked)} disabled={!linkEnabled} className="h-5 w-5 accent-cyan-400 disabled:opacity-40" />
               </label>
 
               <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">

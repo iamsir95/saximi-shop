@@ -146,6 +146,7 @@ export interface BannerItem {
   mobileAspectRatio?: 'wide' | 'mobile-4-6';
   linkUrl?: string;
   linkEnabled?: boolean;
+  openInNewTab?: boolean;
   title?: string;
   isActive: boolean;
 }
@@ -2312,9 +2313,9 @@ export class Database {
   public static getBannerItems(): BannerItem[] {
     return this.banners.map((b, idx) => {
       if (typeof b === 'string') {
-        return { id: idx + 1, imageUrl: b, title: `Banner #${idx + 1}`, isActive: true, linkEnabled: true };
+        return { id: idx + 1, imageUrl: b, title: `Banner #${idx + 1}`, isActive: true, linkEnabled: true, openInNewTab: false };
       }
-      return { ...b, mobileAspectRatio: b.mobileAspectRatio || 'wide', linkEnabled: b.linkEnabled !== false };
+      return { ...b, mobileAspectRatio: b.mobileAspectRatio || 'wide', linkEnabled: b.linkEnabled !== false, openInNewTab: b.openInNewTab === true };
     });
   }
   public static addBanner(banner: Omit<BannerItem, 'id'>): BannerItem {
@@ -2339,6 +2340,7 @@ export class Database {
       mobileAspectRatio: data.mobileAspectRatio === 'mobile-4-6' ? 'mobile-4-6' : 'wide',
       linkUrl: data.linkUrl?.trim() || undefined,
       linkEnabled: data.linkEnabled ?? bannerItems[idx].linkEnabled ?? true,
+      openInNewTab: data.openInNewTab === true,
       isActive: data.isActive ?? bannerItems[idx].isActive,
     };
     bannerItems[idx] = updatedBanner;

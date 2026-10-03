@@ -103,6 +103,7 @@ export class PostStore {
     const videoUrl = field('videoUrl', 2000);
     if (videoUrl && !/^https?:\/\/[^\s]+$/i.test(videoUrl) && !/^\/(?!\/)[^\s]*$/.test(videoUrl)) throw new PostError('Video phải là URL http/https hoặc đường dẫn trên website.');
     const flashSaleEndsAt = normalizeOptionalDate(field('flashSaleEndsAt', 80));
+    const requestedPublishedAt = normalizeOptionalDate(field('publishedAt', 80));
     const content = cleanArticle(field('content', 80000));
     const customCode = cleanArticle(field('customCode', 120000));
     const hasMedia = content.includes('<img') || content.includes('<video') || content.includes('<iframe') || Boolean(videoUrl);
@@ -122,7 +123,9 @@ export class PostStore {
       excerpt: field('excerpt', 500) || plainText(content).slice(0, 240),
       seoTitle: field('seoTitle', 200), seoDescription: field('seoDescription', 320),
       createdAt: previous?.createdAt || now, updatedAt: now,
-      publishedAt: previous?.publishedAt || (status === 'published' ? now : null),
+      publishedAt: status === 'published'
+        ? requestedPublishedAt || previous?.publishedAt || now
+        : requestedPublishedAt || previous?.publishedAt || null,
       voucherIds: [...new Set(voucherIds)],
     };
     this.write(previous ? posts.map(p => p.id === id ? post : p) : [...posts, post]);

@@ -228,6 +228,7 @@ export interface BannerItem {
   title?: string;
   linkUrl?: string;
   linkEnabled?: boolean;
+  openInNewTab?: boolean;
   isActive: boolean;
 }
 

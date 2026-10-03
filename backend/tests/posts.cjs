@@ -34,8 +34,10 @@ test('article lifecycle, pagination, sanitization, permissions and server SEO', 
     assert.equal((await save(payload)).status, 409);
     assert.equal((await save({ ...payload, category: 'invalid' })).status, 409);
     assert.equal((await save({ ...payload, slug: 'invalid', category: 'invalid' })).status, 400);
-    const published = await (await save({ ...draft, status: 'published' }, 'SUPER_ADMIN', draft.id)).json();
-    assert.ok(published.publishedAt);
+    const beforePublish = Date.now();
+    const published = await (await save({ ...draft, status: 'published', publishedAt: '' }, 'SUPER_ADMIN', draft.id)).json();
+    const publishedAt = Date.parse(published.publishedAt);
+    assert.ok(publishedAt >= beforePublish && publishedAt <= Date.now());
     for (let i = 0; i < 18; i++) store.save({ ...payload, title: `Bài ${i}`, status: 'published', category: i % 2 ? 'event' : 'news' });
     const found = []; let cursor;
     do {

@@ -85,10 +85,10 @@ export class PostStore {
       if (text.length > max) throw new PostError(`Trường ${key} vượt quá ${max} ký tự.`);
       return text;
     };
-    const normalizeOptionalDate = (value: string) => {
+    const normalizeOptionalDate = (value: string, message = 'Thời gian không hợp lệ.') => {
       if (!value) return null;
       const date = new Date(value);
-      if (Number.isNaN(date.getTime())) throw new PostError('Thời gian countdown Flash Sale không hợp lệ.');
+      if (Number.isNaN(date.getTime())) throw new PostError(message);
       return date.toISOString();
     };
     const title = field('title', 200);
@@ -102,8 +102,8 @@ export class PostStore {
     const contentType: PostContentType = postContentTypes.includes(rawContentType) ? rawContentType : (category === 'policy' ? 'policy' : 'article');
     const videoUrl = field('videoUrl', 2000);
     if (videoUrl && !/^https?:\/\/[^\s]+$/i.test(videoUrl) && !/^\/(?!\/)[^\s]*$/.test(videoUrl)) throw new PostError('Video phải là URL http/https hoặc đường dẫn trên website.');
-    const flashSaleEndsAt = normalizeOptionalDate(field('flashSaleEndsAt', 80));
-    const requestedPublishedAt = normalizeOptionalDate(field('publishedAt', 80));
+    const flashSaleEndsAt = normalizeOptionalDate(field('flashSaleEndsAt', 80), 'Thời gian countdown Flash Sale không hợp lệ.');
+    const requestedPublishedAt = normalizeOptionalDate(field('publishedAt', 80), 'Ngày đăng bài viết không hợp lệ.');
     const content = cleanArticle(field('content', 80000));
     const customCode = cleanArticle(field('customCode', 120000));
     const hasMedia = content.includes('<img') || content.includes('<video') || content.includes('<iframe') || Boolean(videoUrl);

@@ -180,7 +180,10 @@ export function PostsPage() {
     if (uploads) { setError('Vui lòng đợi media tải lên hoàn tất.'); return; }
     setSaving(true); setError(''); setNotice('');
     try {
-      const saved = form.id ? await api.updatePost(form.id, form) : await api.createPost(form);
+      const payload = form.status === 'published' && !form.publishedAt
+        ? { ...form, publishedAt: new Date().toISOString() }
+        : form;
+      const saved = form.id ? await api.updatePost(form.id, payload) : await api.createPost(payload);
       setForm(saved); setDirty(false); setNotice(saved.status === 'published' ? 'Bài viết đã được xuất bản.' : 'Đã lưu bài viết.');
       setPosts(old => [saved, ...old.filter(p => p.id !== saved.id)]);
     } catch (err) { setError((err as Error).message); }
@@ -226,9 +229,9 @@ export function PostsPage() {
         {form.contentType && <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300"><div className="flex items-center gap-2 font-semibold text-white">{form.contentType.includes('video') ? <Video size={16} /> : form.contentType === 'flash-sale' ? <Flame size={16} /> : <Sparkles size={16} />}{contentTypes[form.contentType] || 'Bài viết'}</div></div>}
         {field('author', 'Tên đơn vị đăng bài', 100)}
         <label className="grid gap-1.5 text-sm">
-          <span>Ngày đăng</span>
+          <span>Ngày đăng tùy chọn</span>
           <input type="datetime-local" className={inputClass} value={toDatetimeLocal(form.publishedAt)} onChange={e => update('publishedAt', e.target.value)} />
-          <span className="text-xs leading-5 text-slate-400">Có thể chỉnh ngày đăng để sắp xếp bản tin, sự kiện, chính sách hoặc khuyến mãi.</span>
+          <span className="text-xs leading-5 text-slate-400">Để trống thì khi xuất bản hệ thống tự lấy thời gian hiện tại. Chỉ chọn khi cần đổi ngày hiển thị/sắp xếp.</span>
         </label>
         <ImageField label="Ảnh bìa" value={form.cover} onChange={url => update('cover', url)} onBusyChange={uploadBusy} library={
           <select aria-label="Chọn từ kho ảnh" className={inputClass} value="" onChange={e => { const item = media.find(m => String(m.id) === e.target.value); if (item) { update('cover', item.url); update('coverAlt', item.altText || item.title); } }}><option value="">Chọn ảnh</option>{media.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>

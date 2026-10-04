@@ -3,6 +3,7 @@ import { useFrontendNotification } from "@/hooks";
 import { loadableUserInfoState, userInfoKeyState } from "@/state";
 import { UserInfo } from "@/types";
 import { getApiBaseUrl } from "@/utils/request";
+import CommerceIcon from "@/components/commerce-icon";
 import PinCodeInput from "@/components/pin-code-input";
 import { useAtomValue, useSetAtom } from "jotai";
 import { FormEvent, useState } from "react";
@@ -70,18 +71,23 @@ export default function LoginPinCard() {
   };
 
   return (
-    <div className="liquid-card rounded-[24px] p-4 space-y-3 text-slate-900">
-      <div>
-        <div className="commerce-eyebrow text-primary">Bảo mật đăng nhập</div>
-        <div className="commerce-title mt-0.5">
-          {currentUser?.hasPin ? "Mã PIN đã được bật" : "Đặt mã PIN đăng nhập"}
+    <div className="liquid-card rounded-[26px] p-4 space-y-3 text-slate-900 min-w-0 overflow-hidden">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl secondary-soft shadow-[0_12px_26px_rgba(239,106,140,0.18)]">
+          <CommerceIcon name="shield" size={22} />
         </div>
-        <div className="commerce-caption text-subtitle mt-1">
-          {currentUser?.hasPin
-            ? "Bạn có thể dùng mã PIN để đăng nhập nhanh trên thiết bị cá nhân."
-            : isLoggedIn
-            ? "Mã PIN dùng để đăng nhập nhanh sau khi bạn đã xác thực OTP lần đầu. Chỉ cần nhập một lần để thiết lập."
-            : "Đăng nhập bằng số điện thoại để thiết lập mã PIN cho tài khoản."}
+        <div className="min-w-0 flex-1">
+          <div className="commerce-eyebrow text-primary">Mã PIN đăng nhập</div>
+          <div className="commerce-title mt-0.5 break-words">
+            {currentUser?.hasPin ? "Đổi mã PIN bảo mật" : "Thiết lập mã PIN nhanh"}
+          </div>
+          <div className="commerce-caption text-subtitle mt-1 leading-5 break-words">
+            {currentUser?.hasPin
+              ? "Bạn đang dùng mã PIN để đăng nhập nhanh. Có thể đổi mã mới bất cứ lúc nào sau khi đã đăng nhập."
+              : isLoggedIn
+              ? "Tạo mã PIN 4-6 số một lần để lần sau đăng nhập nhanh hơn trên thiết bị cá nhân."
+              : "Đăng nhập bằng số điện thoại để mở khu vực thiết lập mã PIN."}
+          </div>
         </div>
       </div>
 
@@ -97,8 +103,11 @@ export default function LoginPinCard() {
         </form>
       ) : isLoggedIn ? (
         <div className="space-y-3">
-          <div className="rounded-2xl bg-emerald-50/80 border border-white/70 px-3 py-2 commerce-caption text-emerald-700">
-            Tài khoản này đã có mã PIN. Khu vực thiết lập ban đầu đã được ẩn để tránh thao tác nhầm.
+          <div className="rounded-2xl bg-emerald-50/80 border border-white/70 px-3 py-2">
+            <div className="text-xs font-black text-emerald-700">Đã bật đăng nhập bằng PIN</div>
+            <div className="commerce-caption text-emerald-700/82 mt-0.5">
+              Mã PIN hiện tại không hiển thị lại để bảo mật. Khi cần, hãy tạo mã PIN mới tại đây.
+            </div>
           </div>
           {!showChangePin ? (
             <Button
@@ -108,12 +117,12 @@ export default function LoginPinCard() {
               className="!rounded-2xl"
               onClick={() => setShowChangePin(true)}
             >
-              Đổi mã PIN
+              Mở khu vực đổi mã PIN
             </Button>
           ) : (
             <form className="space-y-3" onSubmit={(event) => savePin(event, changePin)}>
-              <div className="grid gap-2 text-sm">
-                <span className="font-semibold text-slate-800">Mã PIN mới</span>
+              <div className="grid gap-2 text-sm rounded-[22px] bg-white/56 border border-white/75 p-3">
+                <span className="font-semibold text-slate-800">Nhập mã PIN mới</span>
                 <PinCodeInput value={changePin} onChange={setChangePin} />
               </div>
               <div className="grid grid-cols-2 gap-2">

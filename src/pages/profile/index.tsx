@@ -5,6 +5,7 @@ import WebCapabilitiesCard from "./web-capabilities";
 import LoginDevices from "./login-devices";
 import LoginPinCard from "./login-pin";
 import InstallAppGuide from "./install-app-guide";
+import Register from "./register";
 import { useNavigate } from "react-router-dom";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -250,52 +251,63 @@ function AccountRoleCard() {
 }
 
 export default function ProfilePage() {
+  const userInfo = useAtomValue(loadableUserInfoState);
+  const isLoggedIn = userInfo.state === "hasData" && Boolean(userInfo.data?.phone);
+
   return (
-    <div className="min-h-full min-w-0 p-4 space-y-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-4 md:space-y-0">
-      <section className="space-y-3">
-        <div className="px-1">
-          <div className="commerce-eyebrow text-primary">Thông tin cá nhân</div>
-          <div className="commerce-caption text-subtitle">
-            Hồ sơ mua hàng, ảnh đại diện và điểm hoa hồng cá nhân.
-          </div>
+    <div className="min-h-full min-w-0 p-4 space-y-4">
+      {!isLoggedIn && userInfo.state !== "loading" && (
+        <div className="md:max-w-xl">
+          <Register />
         </div>
-        <UserInfo>
-          <Points />
-        </UserInfo>
-      </section>
+      )}
 
-      <section className="space-y-3">
-        <div className="px-1">
-          <div className="commerce-eyebrow text-primary">Bảo mật đăng nhập</div>
-          <div className="commerce-caption text-subtitle">
-            Quản lý mã PIN, thiết bị đăng nhập và thông báo.
+      <div className="min-w-0 space-y-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-4 md:space-y-0">
+        <section className="space-y-3 min-w-0">
+          <div className="px-1">
+            <div className="commerce-eyebrow text-primary">Thông tin cá nhân</div>
+            <div className="commerce-caption text-subtitle">
+              Hồ sơ mua hàng, ảnh đại diện và điểm hoa hồng cá nhân.
+            </div>
           </div>
-        </div>
-        <LoginPinCard />
-        <LoginDevices />
-        <WebCapabilitiesCard />
-      </section>
+          <UserInfo hideGuestCard={!isLoggedIn}>
+            <Points />
+          </UserInfo>
+        </section>
 
-      <section className="space-y-3">
-        <div className="px-1">
-          <div className="commerce-eyebrow text-primary">Địa chỉ & đơn hàng</div>
-          <div className="commerce-caption text-subtitle">
-            Lưu địa chỉ mặc định, theo dõi đơn và nhận hỗ trợ nhanh.
+        <section className="space-y-3 min-w-0">
+          <div className="px-1">
+            <div className="commerce-eyebrow text-primary">Bảo mật đăng nhập</div>
+            <div className="commerce-caption text-subtitle">
+              Quản lý mã PIN, thiết bị đăng nhập và thông báo.
+            </div>
           </div>
-        </div>
-        <ProfileActions />
-        <InstallAppGuide />
-      </section>
+          <LoginPinCard />
+          <LoginDevices />
+          <WebCapabilitiesCard />
+        </section>
 
-      <section className="space-y-3">
-        <div className="px-1">
-          <div className="commerce-eyebrow text-primary">Hội viên / đại lý</div>
-          <div className="commerce-caption text-subtitle">
-            Nhận diện tuyến và link tiếp thị cá nhân.
+        <section className="space-y-3 min-w-0">
+          <div className="px-1">
+            <div className="commerce-eyebrow text-primary">Địa chỉ & đơn hàng</div>
+            <div className="commerce-caption text-subtitle">
+              Lưu địa chỉ mặc định, theo dõi đơn và nhận hỗ trợ nhanh.
+            </div>
           </div>
-        </div>
-        <AccountRoleCard />
-      </section>
+          <ProfileActions />
+          <InstallAppGuide />
+        </section>
+
+        <section className="space-y-3 min-w-0">
+          <div className="px-1">
+            <div className="commerce-eyebrow text-primary">Hội viên / đại lý</div>
+            <div className="commerce-caption text-subtitle">
+              Nhận diện tuyến và link tiếp thị cá nhân.
+            </div>
+          </div>
+          <AccountRoleCard />
+        </section>
+      </div>
     </div>
   );
 }

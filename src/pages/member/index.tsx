@@ -68,7 +68,7 @@ const ACCOUNT_TABS: Array<{
   { key: "overview", label: "Tổng quan", icon: "grid" },
   { key: "orders", label: "Đơn hàng", icon: "receipt" },
   { key: "security", label: "Bảo mật", icon: "shield" },
-  { key: "affiliate", label: "Hội viên", icon: "id-card" },
+  { key: "affiliate", label: "Dashboard", icon: "id-card" },
   { key: "support", label: "Hỗ trợ", icon: "bell" },
 ];
 
@@ -460,84 +460,91 @@ export default function MemberPage() {
 
         {activeTab === "affiliate" && (
         <Box className="space-y-4">
-          <Box className="relative overflow-hidden rounded-[30px] p-4 brand-gradient text-primaryForeground shadow-[0_18px_48px_rgba(0,204,247,0.24)]">
-            <Box className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/18 blur-2xl" />
-            <Box className="relative z-10 flex items-start justify-between gap-3">
-              <Box className="min-w-0">
-                <Text className="text-xs font-black uppercase tracking-[0.08em] text-slate-700/72">
-                  Dashboard hội viên
-                </Text>
-                <Text className="mt-1 text-2xl font-black leading-8 text-primaryForeground break-words">
-                  {currentAffiliate ? currentAffiliate.name : "Kích hoạt đại lý Saximi"}
-                </Text>
-                <Text className="mt-1 text-xs font-semibold leading-5 text-slate-700/82">
-                  {currentAffiliate
-                    ? `${getAffiliateRoleLabel(currentAffiliate)} · ${affiliateCommissionLabel}`
-                    : "Đăng ký để mở link tiếp thị, QR cá nhân và ví hoa hồng."}
-                </Text>
-              </Box>
-              <Box className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-white/24 ring-1 ring-white/36 backdrop-blur-xl">
-                <CommerceIcon name={currentAffiliate ? "id-card" : "sparkle"} size={24} />
-              </Box>
-            </Box>
+          <Box className="px-1">
+            <Text className="text-xs font-black uppercase tracking-[0.08em] text-primary">
+              Dashboard hội viên
+            </Text>
+            <Text className="mt-1 text-2xl font-black leading-8 text-slate-950 break-words">
+              {currentAffiliate ? currentAffiliate.name : "Kích hoạt đại lý Saximi"}
+            </Text>
+            <Text className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+              {currentAffiliate
+                ? `${getAffiliateRoleLabel(currentAffiliate)} · ${affiliateCommissionLabel}`
+                : "Đăng ký để mở link tiếp thị, QR cá nhân và ví hoa hồng."}
+            </Text>
+          </Box>
 
-            <Box className="relative z-10 mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {affiliateDashboardStats.map((item) => (
-                <Box key={item.label} className="rounded-[20px] bg-white/90 px-3 py-2.5 text-slate-900 backdrop-blur-xl">
-                  <Box className="flex items-center justify-between gap-2">
-                    <Text className="text-[10px] font-black uppercase text-slate-400">
-                      {item.label}
-                    </Text>
-                    <CommerceIcon name={item.icon} size={14} className={item.tone} />
-                  </Box>
-                  <Text className={`mt-1 text-sm font-black leading-5 break-words ${item.tone}`}>
-                    {item.value}
+          <Box className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {affiliateDashboardStats.map((item) => (
+              <Box key={item.label} className="liquid-card rounded-[22px] px-3 py-3 text-slate-900">
+                <Box className="flex items-center justify-between gap-2">
+                  <Text className="text-[10px] font-black uppercase text-slate-400">
+                    {item.label}
                   </Text>
+                  <CommerceIcon name={item.icon} size={16} className={item.tone} />
+                </Box>
+                <Text className={`mt-1 text-sm font-black leading-5 break-words ${item.tone}`}>
+                  {item.value}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+
+          <Box className="grid gap-2 min-[430px]:grid-cols-3">
+            <button
+              type="button"
+              onClick={() =>
+                currentAffiliate
+                  ? navigate("/affiliate", { viewTransition: true })
+                  : isLoggedIn
+                    ? navigate("/affiliate/register", { viewTransition: true })
+                    : navigate("/login", { viewTransition: true })
+              }
+              className="rounded-[22px] brand-action px-3 py-3 text-left text-primaryForeground shadow-[0_12px_28px_rgba(0,204,247,0.2)]"
+            >
+              <Text className="text-xs font-black">
+                {currentAffiliate ? "Cổng quản lý" : "Đăng ký đại lý"}
+              </Text>
+              <Text className="mt-0.5 text-[11px] font-bold text-slate-700/82">
+                {currentAffiliate ? "Xem tuyến và rút tiền" : "Mở link/QR tiếp thị"}
+              </Text>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("orders")}
+              className="liquid-card rounded-[22px] px-3 py-3 text-left"
+            >
+              <Text className="text-xs font-black text-slate-900">Đơn phát sinh</Text>
+              <Text className="mt-0.5 text-[11px] font-bold text-slate-500">
+                {pendingCommissionOrders} đơn đang chờ hoa hồng
+              </Text>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/shipping-address", { viewTransition: true })}
+              className="liquid-card rounded-[22px] px-3 py-3 text-left"
+            >
+              <Text className="text-xs font-black text-slate-900">Tuyến nhận hàng</Text>
+              <Text className="mt-0.5 text-[11px] font-bold text-slate-500">
+                Cập nhật địa chỉ mặc định
+              </Text>
+            </button>
+          </Box>
+
+          {currentAffiliate && (
+            <Box className="grid gap-2 min-[430px]:grid-cols-3">
+              {[
+                ["Mã giới thiệu", currentAffiliate.referralCode],
+                ["Tên hoa hồng", affiliateCommissionLabel],
+                ["Điểm quy đổi", `${affiliateCommission.points.toLocaleString("vi-VN")} điểm`],
+              ].map(([label, value]) => (
+                <Box key={label} className="rounded-[18px] bg-white/58 px-3 py-2 ring-1 ring-white/70">
+                  <Text className="text-[10px] font-black uppercase text-slate-400">{label}</Text>
+                  <Text className="mt-0.5 text-xs font-black leading-5 text-slate-900 break-words">{value}</Text>
                 </Box>
               ))}
             </Box>
-
-            <Box className="relative z-10 mt-3 grid gap-2 min-[430px]:grid-cols-3">
-              <button
-                type="button"
-                onClick={() =>
-                  currentAffiliate
-                    ? navigate("/affiliate", { viewTransition: true })
-                    : isLoggedIn
-                      ? navigate("/affiliate/register", { viewTransition: true })
-                      : navigate("/login", { viewTransition: true })
-                }
-                className="rounded-[20px] bg-white px-3 py-3 text-left text-primary shadow-sm"
-              >
-                <Text className="text-xs font-black">
-                  {currentAffiliate ? "Cổng quản lý" : "Đăng ký đại lý"}
-                </Text>
-                <Text className="mt-0.5 text-[11px] font-bold text-slate-500">
-                  {currentAffiliate ? "Xem tuyến và rút tiền" : "Mở link/QR tiếp thị"}
-                </Text>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("orders")}
-                className="rounded-[20px] bg-white/24 px-3 py-3 text-left ring-1 ring-white/24 backdrop-blur-xl"
-              >
-                <Text className="text-xs font-black text-primaryForeground">Đơn phát sinh</Text>
-                <Text className="mt-0.5 text-[11px] font-bold text-slate-700/82">
-                  {pendingCommissionOrders} đơn đang chờ hoa hồng
-                </Text>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/shipping-address", { viewTransition: true })}
-                className="rounded-[20px] bg-white/24 px-3 py-3 text-left ring-1 ring-white/24 backdrop-blur-xl"
-              >
-                <Text className="text-xs font-black text-primaryForeground">Tuyến nhận hàng</Text>
-                <Text className="mt-0.5 text-[11px] font-bold text-slate-700/82">
-                  Cập nhật địa chỉ mặc định
-                </Text>
-              </button>
-            </Box>
-          </Box>
+          )}
 
           {currentAffiliate ? (
             <Box className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -580,21 +587,6 @@ export default function MemberPage() {
 
               <Box className="space-y-4">
                 <Points />
-                <Box className="liquid-card rounded-[26px] p-4">
-                  <Text className="font-black text-slate-900">Tổng quan hoa hồng</Text>
-                  <Box className="mt-3 grid gap-2">
-                    {[
-                      ["Tên hoa hồng", affiliateCommissionLabel],
-                      ["Hoa hồng tạm tính", formatPrice(affiliateCommission.totalCommission)],
-                      ["Điểm quy đổi", `${affiliateCommission.points.toLocaleString("vi-VN")} điểm`],
-                    ].map(([label, value]) => (
-                      <Box key={label} className="flex items-center justify-between gap-3 rounded-2xl bg-white/62 px-3 py-2 ring-1 ring-white/70">
-                        <Text className="text-xs font-bold text-slate-500">{label}</Text>
-                        <Text className="text-xs font-black text-slate-900 text-right">{value}</Text>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
               </Box>
             </Box>
           ) : (

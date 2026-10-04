@@ -513,6 +513,7 @@ publicApi.post('/auth/pin-status', (req: Request, res: Response) => {
   const user = Database.findUserByPhone(phone);
   res.json({
     phone,
+    exists: Boolean(user),
     hasPin: Boolean(user?.pinHash),
   });
 });

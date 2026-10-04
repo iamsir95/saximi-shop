@@ -37,6 +37,7 @@ export default function PhoneLoginPage() {
   const notify = useFrontendNotification();
   const [authMode, setAuthMode] = useState<"otp" | "pin">("otp");
   const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [pinStep, setPinStep] = useState<"phone" | "pin">("phone");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [pin, setPin] = useState("");
@@ -115,6 +116,44 @@ export default function PhoneLoginPage() {
       navigate("/profile", { replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "OTP không hợp lệ");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const checkPinPhone = async (event: FormEvent) => {
+    event.preventDefault();
+    const normalizedPhone = normalizePhone(phone);
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
+      toast.error("Vui lòng nhập số điện thoại Việt Nam hợp lệ.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await postJson<{
+        phone: string;
+        exists: boolean;
+        hasPin: boolean;
+      }>("/auth/pin-status", { phone: normalizedPhone });
+
+      setPhone(result.phone);
+      setPin("");
+      if (!result.exists) {
+        toast.error("Số điện thoại này chưa có tài khoản. Vui lòng đăng nhập OTP trước.");
+        setAuthMode("otp");
+        setStep("phone");
+        return;
+      }
+      if (!result.hasPin) {
+        toast.error("Tài khoản này chưa đặt mã PIN. Vui lòng đăng nhập OTP để thiết lập PIN.");
+        setAuthMode("otp");
+        setStep("phone");
+        return;
+      }
+      setPinStep("pin");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể kiểm tra số điện thoại");
     } finally {
       setIsSubmitting(false);
     }
@@ -228,14 +267,21 @@ export default function PhoneLoginPage() {
               <button
                 type="button"
                 className={authMode === "otp" ? "auth-mode-tab auth-mode-tab--active" : "auth-mode-tab"}
-                onClick={() => setAuthMode("otp")}
+                onClick={() => {
+                  setAuthMode("otp");
+                  setStep("phone");
+                }}
               >
                 OTP
               </button>
               <button
                 type="button"
                 className={authMode === "pin" ? "auth-mode-tab auth-mode-tab--active" : "auth-mode-tab"}
-                onClick={() => setAuthMode("pin")}
+                onClick={() => {
+                  setAuthMode("pin");
+                  setPinStep("phone");
+                  setPin("");
+                }}
               >
                 Mã PIN
               </button>
@@ -296,8 +342,8 @@ export default function PhoneLoginPage() {
             Đổi số điện thoại
           </button>
           </form>
-        ) : (
-          <form className="auth-mobile-form space-y-4" onSubmit={loginWithPin}>
+        ) : pinStep === "phone" ? (
+          <form className="auth-mobile-form space-y-4" onSubmit={checkPinPhone}>
             <label className="grid gap-2 text-sm">
               <span className="font-semibold text-slate-800">
                 Số điện thoại <span className="text-danger">*</span>
@@ -311,6 +357,25 @@ export default function PhoneLoginPage() {
                 required
               />
             </label>
+            <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
+              {isSubmitting ? "Đang kiểm tra..." : "Tiếp tục"}
+            </Button>
+            <button
+              type="button"
+              className="w-full rounded-2xl bg-white/36 py-3 commerce-caption font-bold text-slate-700 ring-1 ring-white/60 backdrop-blur-xl"
+              onClick={() => {
+                setAuthMode("otp");
+                setStep("phone");
+              }}
+            >
+              Đăng nhập bằng OTP
+            </button>
+          </form>
+        ) : (
+          <form className="auth-mobile-form space-y-4" onSubmit={loginWithPin}>
+            <div className="rounded-2xl bg-cyan-50/54 px-3 py-2 commerce-caption text-primary ring-1 ring-white/60 backdrop-blur-xl">
+              Nhập mã PIN của tài khoản <strong>{phone}</strong>
+            </div>
             <div className="grid gap-2 text-sm">
               <span className="font-semibold text-slate-800">Mã PIN</span>
               <PinCodeInput value={pin} onChange={setPin} />
@@ -327,6 +392,16 @@ export default function PhoneLoginPage() {
               }}
             >
               Quên PIN, dùng OTP
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-2xl bg-white/36 py-3 commerce-caption font-bold text-slate-700 ring-1 ring-white/60 backdrop-blur-xl"
+              onClick={() => {
+                setPinStep("phone");
+                setPin("");
+              }}
+            >
+              Đổi số điện thoại
             </button>
           </form>
         )}

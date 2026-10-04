@@ -270,6 +270,89 @@ export default function MemberPage() {
     },
   ];
 
+  const affiliateCards = currentAffiliate ? (
+    <Box className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      <Box className="space-y-4">
+        <PersonalMarketingLink profile={currentAffiliate} />
+        <Box className="liquid-card rounded-[26px] p-4 space-y-3">
+          <Box className="flex items-start justify-between gap-3">
+            <Box className="min-w-0">
+              <Text className="font-black text-slate-900">Người giới thiệu</Text>
+              <Text className="text-xs text-slate-500 mt-1 leading-5">
+                Tuyến hỗ trợ được gắn qua link tiếp thị cá nhân.
+              </Text>
+            </Box>
+            <span className="commerce-tag commerce-tag--info">
+              {currentAffiliate.referralCode}
+            </span>
+          </Box>
+
+          {referrerAffiliate ? (
+            <Box className="secondary-soft rounded-2xl p-3">
+              <Text className="text-[10px] font-bold text-primary uppercase">
+                {getAffiliateRoleLabel(referrerAffiliate)}
+              </Text>
+              <Text className="text-sm font-bold text-slate-900 mt-0.5">
+                {referrerAffiliate.name}
+              </Text>
+              <Text className="text-xs text-slate-500">
+                {referrerAffiliate.phone}
+              </Text>
+            </Box>
+          ) : (
+            <Box className="rounded-2xl bg-white/58 border border-white/70 p-3">
+              <Text className="text-xs text-slate-600 leading-5">
+                Tài khoản này chưa có người giới thiệu được ghi nhận.
+              </Text>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      <Box className="space-y-4">
+        <Points />
+      </Box>
+    </Box>
+  ) : (
+    <Box className="liquid-card rounded-[26px] p-4 space-y-3">
+      <Box className="flex items-start justify-between gap-3">
+        <Box className="min-w-0">
+          <Text className="font-black text-slate-900">Đăng ký đại lý</Text>
+          <Text className="mt-1 text-xs leading-5 text-slate-500">
+            Mở dashboard hội viên, link/QR giới thiệu riêng và ví hoa hồng cá nhân.
+          </Text>
+        </Box>
+        <span className="commerce-tag commerce-tag--info">Có thể đăng ký</span>
+      </Box>
+      <Box className="grid gap-2 md:grid-cols-2">
+        {agentBenefits.map((item) => (
+          <Box
+            key={item.text}
+            className="rounded-[18px] bg-white/62 border border-white/70 px-3 py-3 flex gap-3"
+          >
+            <Box className="w-8 h-8 rounded-2xl secondary-soft flex items-center justify-center shrink-0">
+              <CommerceIcon name={item.icon} size={18} />
+            </Box>
+            <Text className="text-xs text-slate-600 leading-5">
+              {item.text}
+            </Text>
+          </Box>
+        ))}
+      </Box>
+      <Button
+        onClick={() =>
+          isLoggedIn
+            ? navigate("/affiliate/register", { viewTransition: true })
+            : navigate("/login", { viewTransition: true })
+        }
+        className="!rounded-[20px] brand-action font-bold"
+        fullWidth
+      >
+        {isLoggedIn ? "Đăng ký đại lý" : "Đăng nhập để đăng ký"}
+      </Button>
+    </Box>
+  );
+
   const handleLogout = () => {
     localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_INFO);
     localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
@@ -510,6 +593,8 @@ export default function MemberPage() {
             </Box>
           )}
 
+          {affiliateCards}
+
           <Box className="grid grid-cols-3 gap-2">
             {serviceShortcuts.map((item) => (
               <button
@@ -548,88 +633,7 @@ export default function MemberPage() {
 
         {activeTab === "affiliate" && (
         <Box className="space-y-4">
-          {currentAffiliate ? (
-            <Box className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-              <Box className="space-y-4">
-                <PersonalMarketingLink profile={currentAffiliate} />
-                <Box className="liquid-card rounded-[26px] p-4 space-y-3">
-                  <Box className="flex items-start justify-between gap-3">
-                    <Box className="min-w-0">
-                      <Text className="font-black text-slate-900">Người giới thiệu</Text>
-                      <Text className="text-xs text-slate-500 mt-1 leading-5">
-                        Tuyến hỗ trợ được gắn qua link tiếp thị cá nhân.
-                      </Text>
-                    </Box>
-                    <span className="commerce-tag commerce-tag--info">
-                      {currentAffiliate.referralCode}
-                    </span>
-                  </Box>
-
-                  {referrerAffiliate ? (
-                    <Box className="secondary-soft rounded-2xl p-3">
-                      <Text className="text-[10px] font-bold text-primary uppercase">
-                        {getAffiliateRoleLabel(referrerAffiliate)}
-                      </Text>
-                      <Text className="text-sm font-bold text-slate-900 mt-0.5">
-                        {referrerAffiliate.name}
-                      </Text>
-                      <Text className="text-xs text-slate-500">
-                        {referrerAffiliate.phone}
-                      </Text>
-                    </Box>
-                  ) : (
-                    <Box className="rounded-2xl bg-white/58 border border-white/70 p-3">
-                      <Text className="text-xs text-slate-600 leading-5">
-                        Tài khoản này chưa có người giới thiệu được ghi nhận.
-                      </Text>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-
-              <Box className="space-y-4">
-                <Points />
-              </Box>
-            </Box>
-          ) : (
-            <Box className="liquid-card rounded-[26px] p-4 space-y-3">
-              <Box className="flex items-start justify-between gap-3">
-                <Box className="min-w-0">
-                  <Text className="font-black text-slate-900">Đăng ký đại lý</Text>
-                  <Text className="mt-1 text-xs leading-5 text-slate-500">
-                    Mở dashboard hội viên, link/QR giới thiệu riêng và ví hoa hồng cá nhân.
-                  </Text>
-                </Box>
-                <span className="commerce-tag commerce-tag--info">Có thể đăng ký</span>
-              </Box>
-              <Box className="grid gap-2 md:grid-cols-2">
-                {agentBenefits.map((item) => (
-                  <Box
-                    key={item.text}
-                    className="rounded-[18px] bg-white/62 border border-white/70 px-3 py-3 flex gap-3"
-                  >
-                    <Box className="w-8 h-8 rounded-2xl secondary-soft flex items-center justify-center shrink-0">
-                      <CommerceIcon name={item.icon} size={18} />
-                    </Box>
-                    <Text className="text-xs text-slate-600 leading-5">
-                      {item.text}
-                    </Text>
-                  </Box>
-                ))}
-              </Box>
-              <Button
-                onClick={() =>
-                  isLoggedIn
-                    ? navigate("/affiliate/register", { viewTransition: true })
-                    : navigate("/login", { viewTransition: true })
-                }
-                className="!rounded-[20px] brand-action font-bold"
-                fullWidth
-              >
-                {isLoggedIn ? "Đăng ký đại lý" : "Đăng nhập để đăng ký"}
-              </Button>
-            </Box>
-          )}
+          {affiliateCards}
         </Box>
         )}
 

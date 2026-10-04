@@ -20,6 +20,14 @@ const publicApi = express.Router();
 const DEFAULT_JWT_SECRET = 'zaui-market-secret-key-2026';
 const DEFAULT_ADMIN_PASSWORD = 'admin123';
 const adminLoginAttempts = new Map<string, { count: number; firstAttemptAt: number; blockedUntil?: number }>();
+const customerAuthDeviceAttempts = new Map<
+  string,
+  { count: number; firstAttemptAt: number; phones: Set<string>; blockedUntil?: number }
+>();
+const CUSTOMER_AUTH_WINDOW_MS = 10 * 60 * 1000;
+const CUSTOMER_AUTH_BLOCK_MS = 15 * 60 * 1000;
+const CUSTOMER_AUTH_MAX_ATTEMPTS_PER_WINDOW = 24;
+const CUSTOMER_AUTH_MAX_UNIQUE_PHONES_PER_WINDOW = 5;
 
 function getAdminPermissionForPath(pathname: string): string | undefined {
   const normalized = pathname.replace(/^\/api\/admin\/?/, '').split('/')[0];
@@ -73,6 +81,48 @@ function isValidVietnamPhone(phone: string) {
 
 function isValidLoginPin(pin: string) {
   return /^\d{4,6}$/.test(pin);
+}
+
+function getCustomerAuthDeviceKey(req: Request) {
+  const rawDeviceId = String(req.headers['x-saximi-device-id'] || req.body?.deviceId || '').trim();
+  const deviceId = /^[a-zA-Z0-9_-]{12,80}$/.test(rawDeviceId) ? rawDeviceId : '';
+  if (deviceId) return `device:${deviceId}`;
+
+  const userAgent = String(req.headers['user-agent'] || 'unknown').slice(0, 180);
+  return `fallback:${req.ip}:${userAgent}`;
+}
+
+function assertCustomerAuthAllowed(req: Request, phone: string) {
+  const now = Date.now();
+  const key = getCustomerAuthDeviceKey(req);
+  const existing = customerAuthDeviceAttempts.get(key);
+  const record =
+    !existing || now - existing.firstAttemptAt > CUSTOMER_AUTH_WINDOW_MS
+      ? { count: 0, firstAttemptAt: now, phones: new Set<string>() }
+      : existing;
+
+  if (record.blockedUntil && record.blockedUntil > now) {
+    const waitMinutes = Math.ceil((record.blockedUntil - now) / 60000);
+    throw new OtpError(`Thiết bị này thử quá nhiều số điện thoại. Vui lòng thử lại sau ${waitMinutes} phút.`, 429);
+  }
+
+  record.count += 1;
+  record.phones.add(phone);
+
+  const tooManyAttempts = record.count > CUSTOMER_AUTH_MAX_ATTEMPTS_PER_WINDOW;
+  const tooManyPhones = record.phones.size > CUSTOMER_AUTH_MAX_UNIQUE_PHONES_PER_WINDOW;
+  if (tooManyAttempts || tooManyPhones) {
+    record.blockedUntil = now + CUSTOMER_AUTH_BLOCK_MS;
+    customerAuthDeviceAttempts.set(key, record);
+    Logger.warn(`Blocked customer auth device ${key} after ${record.count} attempts across ${record.phones.size} phones`);
+    throw new OtpError('Thiết bị này thay đổi số điện thoại quá nhiều lần. Vui lòng thử lại sau 15 phút.', 429);
+  }
+
+  customerAuthDeviceAttempts.set(key, record);
+}
+
+function clearCustomerAuthAttempts(req: Request) {
+  customerAuthDeviceAttempts.delete(getCustomerAuthDeviceKey(req));
 }
 
 function createCustomerAuthResponse(user: ReturnType<typeof Database.upsertPhoneUser>, req: Request) {
@@ -482,6 +532,7 @@ publicApi.post('/auth/request-otp', (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
     }
 
+    assertCustomerAuthAllowed(req, phone);
     const result = OtpService.requestOtp(phone);
     const latestOutboxItem = OtpService.getOutbox().find((item) => item.id === result.delivery.outboxId);
     if (latestOutboxItem?.otpPreview) {
@@ -505,17 +556,26 @@ publicApi.post('/auth/request-otp', (req: Request, res: Response) => {
 });
 
 publicApi.post('/auth/pin-status', (req: Request, res: Response) => {
-  const phone = normalizePhone(req.body.phone);
-  if (!isValidVietnamPhone(phone)) {
-    return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
-  }
+  try {
+    const phone = normalizePhone(req.body.phone);
+    if (!isValidVietnamPhone(phone)) {
+      return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+    }
 
-  const user = Database.findUserByPhone(phone);
-  res.json({
-    phone,
-    exists: Boolean(user),
-    hasPin: Boolean(user?.pinHash),
-  });
+    assertCustomerAuthAllowed(req, phone);
+    const user = Database.findUserByPhone(phone);
+    res.json({
+      phone,
+      exists: Boolean(user),
+      hasPin: Boolean(user?.pinHash),
+    });
+  } catch (error) {
+    if (error instanceof OtpError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    Logger.error('Failed to check PIN status', error);
+    res.status(500).json({ message: 'Không thể kiểm tra mã PIN. Vui lòng thử lại sau.' });
+  }
 });
 
 publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
@@ -532,9 +592,11 @@ publicApi.post('/auth/verify-otp', (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Mã OTP cần có 6 chữ số' });
     }
 
+    assertCustomerAuthAllowed(req, phone);
     OtpService.verifyOtp(phone, otp);
     const user = Database.upsertPhoneUser({ phone, name, email });
     const auth = createCustomerAuthResponse(user, req);
+    clearCustomerAuthAttempts(req);
 
     Logger.info(`✅ [Auth] User ${user.phone} logged in`);
     res.json(auth);
@@ -559,12 +621,14 @@ publicApi.post('/auth/login-pin', (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Mã PIN cần có 4-6 chữ số' });
     }
 
+    assertCustomerAuthAllowed(req, phone);
     const user = Database.verifyUserPin(phone, pin);
     if (!user) {
       return res.status(401).json({ message: 'Số điện thoại hoặc mã PIN không đúng' });
     }
 
     const auth = createCustomerAuthResponse(user, req);
+    clearCustomerAuthAttempts(req);
     Logger.info(`✅ [Auth PIN] User ${user.phone} logged in`);
     res.json(auth);
   } catch (error) {

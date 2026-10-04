@@ -15,11 +15,26 @@ function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, "").replace(/^84/, "0");
 }
 
+function getAuthDeviceId() {
+  const storageKey = "saximiAuthDeviceId";
+  const existing = localStorage.getItem(storageKey);
+  if (existing) return existing;
+
+  const randomId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const deviceId = randomId.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+  localStorage.setItem(storageKey, deviceId);
+  return deviceId;
+}
+
 async function postJson<T>(path: string, payload: unknown): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "X-Saximi-Device-Id": getAuthDeviceId(),
     },
     body: JSON.stringify(payload),
   });

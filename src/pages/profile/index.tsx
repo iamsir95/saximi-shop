@@ -105,9 +105,9 @@ function AccountRoleCard() {
   };
 
   return (
-    <div className="liquid-card text-slate-900 rounded-[24px] p-4 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
+    <div className="liquid-card text-slate-900 rounded-[24px] p-3.5 sm:p-4 space-y-3 min-w-0 overflow-hidden">
+      <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:items-start min-[380px]:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
           <div
             className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center font-black text-sm shadow-lg ${
               activeAffiliate?.role === "PRESIDENT"
@@ -124,14 +124,14 @@ function AccountRoleCard() {
                 : "KH"}
           </div>
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="commerce-eyebrow text-slate-400">
               Nhận diện tài khoản
             </div>
-            <div className="commerce-title truncate">
+            <div className="commerce-title break-words leading-snug">
               {getAffiliateRoleLabel(activeAffiliate, portal)}
             </div>
-            <div className="commerce-caption text-subtitle mt-0.5">
+            <div className="commerce-caption text-subtitle mt-0.5 break-words">
               {getAffiliateRoleDescription(activeAffiliate, portal)}
             </div>
           </div>
@@ -140,7 +140,7 @@ function AccountRoleCard() {
         {isAffiliate && (
           <button
             onClick={() => navigate("/affiliate")}
-            className="commerce-caption liquid-button text-primary font-bold px-3 py-2 rounded-full whitespace-nowrap min-w-[76px] text-center"
+            className="commerce-caption liquid-button text-primary font-bold px-3 py-2 rounded-full whitespace-nowrap min-w-[76px] text-center self-start"
           >
             Quản lý
           </button>
@@ -154,7 +154,7 @@ function AccountRoleCard() {
               }
               navigate("/login", { viewTransition: true });
             }}
-            className="commerce-caption liquid-button text-primary font-bold px-3 py-2 rounded-full whitespace-nowrap min-w-[86px] text-center"
+            className="commerce-caption liquid-button text-primary font-bold px-3 py-2 rounded-full whitespace-nowrap min-w-[86px] text-center self-start"
           >
             {isLoggedIn ? "Đăng xuất" : "Đăng nhập"}
           </button>
@@ -162,7 +162,7 @@ function AccountRoleCard() {
       </div>
 
       {isLoggedIn && !isAffiliate && (
-        <div className="rounded-2xl bg-cyan-50/70 border border-white/70 px-3 py-2 commerce-caption text-primary">
+        <div className="rounded-2xl bg-cyan-50/70 border border-white/70 px-3 py-2 commerce-caption text-primary break-words">
           Đã đăng nhập bằng số điện thoại{" "}
           <strong>{currentUser?.phone}</strong>. Bạn có thể theo dõi đơn hàng
           và lưu địa chỉ giao hàng trên tài khoản này.
@@ -174,7 +174,7 @@ function AccountRoleCard() {
           <div className="commerce-eyebrow text-secondaryDark">
             Đang mua qua link giới thiệu
           </div>
-          <div className="commerce-caption text-slate-700 mt-0.5">
+          <div className="commerce-caption text-slate-700 mt-0.5 break-words">
             Tuyến hỗ trợ:{" "}
             <strong>
               {referrerAffiliate.levelName || getAffiliateRoleLabel(referrerAffiliate, portal)}{" "}
@@ -185,26 +185,26 @@ function AccountRoleCard() {
       )}
 
       {!isAffiliate && !referrerAffiliate && (
-        <div className="rounded-2xl bg-white/54 border border-white/70 px-3 py-2 commerce-caption text-slate-500">
+        <div className="rounded-2xl bg-white/54 border border-white/70 px-3 py-2 commerce-caption text-slate-500 break-words">
           Bạn đang dùng tài khoản hội viên mua hàng. Khi mở app bằng link Chi
           hội/Tổ phụ nữ, hệ thống sẽ tự gắn tuyến hỗ trợ cho đơn hàng.
         </div>
       )}
 
-      <div className="rounded-[22px] bg-white/42 border border-white/70 p-3">
+      <div className="rounded-[22px] bg-white/42 border border-white/70 p-3 min-w-0">
         <div className="commerce-eyebrow text-slate-400">
           Chi tiết nhận diện
         </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <div className="mt-2 grid min-w-0 gap-2 min-[430px]:grid-cols-2">
           {detailRows.map((row) => (
             <div
               key={row.label}
-              className="rounded-2xl bg-white/62 border border-white/70 px-3 py-2"
+              className="min-w-0 rounded-2xl bg-white/62 border border-white/70 px-3 py-2"
             >
               <div className="text-[10px] font-bold uppercase text-slate-400">
                 {row.label}
               </div>
-              <div className={`mt-0.5 text-xs font-black leading-5 truncate ${row.tone}`}>
+              <div className={`mt-0.5 text-xs font-black leading-5 break-words ${row.tone}`}>
                 {row.value}
               </div>
             </div>
@@ -240,7 +240,7 @@ function AccountRoleCard() {
           <div className="commerce-eyebrow text-secondaryDark">
             Đăng ký làm đại lý
           </div>
-          <div className="commerce-title mt-0.5">
+          <div className="commerce-title mt-0.5 break-words">
             Có link bán hàng riêng, tích điểm từ hoa hồng bán được
           </div>
         </button>
@@ -251,7 +251,7 @@ function AccountRoleCard() {
 
 export default function ProfilePage() {
   return (
-    <div className="min-h-full p-4 space-y-4 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0">
+    <div className="min-h-full min-w-0 p-4 space-y-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-4 md:space-y-0">
       <section className="space-y-3">
         <div className="px-1">
           <div className="commerce-eyebrow text-primary">Thông tin cá nhân</div>

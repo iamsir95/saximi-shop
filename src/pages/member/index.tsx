@@ -12,6 +12,9 @@ import { getApiBaseUrl, requestWithFallback } from "@/utils/request";
 import {
   findAffiliateByReferrer,
   findAffiliateForUser,
+  getAffiliateCommissionLabel,
+  getAffiliateCommissionPoints,
+  getAffiliateCommissionRate,
   getAffiliateRoleLabel,
 } from "@/utils/affiliate";
 import { useAtomValue, useSetAtom } from "jotai";
@@ -173,6 +176,49 @@ export default function MemberPage() {
   const accountSubtitle = isLoggedIn
     ? currentUser?.phone || "Đã xác thực tài khoản"
     : "Đăng nhập bằng số điện thoại để theo dõi đơn hàng";
+  const affiliateCommission = getAffiliateCommissionPoints(currentAffiliate, portalLoadable.state === "hasData" ? portalLoadable.data : undefined);
+  const affiliateCommissionRate = getAffiliateCommissionRate(
+    currentAffiliate,
+    portalLoadable.state === "hasData" ? portalLoadable.data : undefined
+  );
+  const affiliateCommissionLabel = getAffiliateCommissionLabel(
+    currentAffiliate,
+    portalLoadable.state === "hasData" ? portalLoadable.data : undefined
+  );
+  const personalCommissions = (portalLoadable.state === "hasData" ? portalLoadable.data?.commissions || [] : []).filter(
+    (commission) => commission.beneficiaryId === currentAffiliate?.userId
+  );
+  const pendingCommissionOrders = new Set(
+    personalCommissions
+      .filter((commission) => commission.status === "pending")
+      .map((commission) => commission.orderId)
+  ).size;
+  const affiliateDashboardStats = [
+    {
+      label: "Doanh số",
+      value: formatPrice(currentAffiliate?.totalSales || 0),
+      icon: "receipt" as CommerceIconName,
+      tone: "text-primary",
+    },
+    {
+      label: "Hoa hồng ví",
+      value: formatPrice(currentAffiliate?.walletBalance || 0),
+      icon: "wallet" as CommerceIconName,
+      tone: "text-secondaryDark",
+    },
+    {
+      label: "Đang chờ",
+      value: formatPrice(affiliateCommission.pendingCommission),
+      icon: "calendar" as CommerceIconName,
+      tone: "text-amber-600",
+    },
+    {
+      label: "Tỷ lệ",
+      value: `${affiliateCommissionRate || 0}%`,
+      icon: "percent" as CommerceIconName,
+      tone: "text-emerald-600",
+    },
+  ];
   const orderShortcuts: Array<{
     label: string;
     icon: CommerceIconName;
@@ -413,111 +459,183 @@ export default function MemberPage() {
         )}
 
         {activeTab === "affiliate" && (
-        <Box className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Box className="space-y-4">
-            <Box className="liquid-card rounded-[26px] p-4 space-y-3">
-              <Box className="flex items-start justify-between gap-3">
-                <Box className="min-w-0">
-                  <Text className="font-black text-slate-900">
-                    {currentAffiliate ? "Khu vực hội viên" : "Đăng ký đại lý"}
-                  </Text>
-                  <Text className="mt-1 text-xs leading-5 text-slate-500">
-                    {currentAffiliate
-                      ? "Quản lý link tiếp thị, tuyến giới thiệu và điểm hoa hồng."
-                      : "Mở link/QR giới thiệu riêng, ghi nhận doanh số và tích điểm hoa hồng."}
+        <Box className="space-y-4">
+          <Box className="relative overflow-hidden rounded-[30px] p-4 brand-gradient text-primaryForeground shadow-[0_18px_48px_rgba(0,204,247,0.24)]">
+            <Box className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/18 blur-2xl" />
+            <Box className="relative z-10 flex items-start justify-between gap-3">
+              <Box className="min-w-0">
+                <Text className="text-xs font-black uppercase tracking-[0.08em] text-slate-700/72">
+                  Dashboard hội viên
+                </Text>
+                <Text className="mt-1 text-2xl font-black leading-8 text-primaryForeground break-words">
+                  {currentAffiliate ? currentAffiliate.name : "Kích hoạt đại lý Saximi"}
+                </Text>
+                <Text className="mt-1 text-xs font-semibold leading-5 text-slate-700/82">
+                  {currentAffiliate
+                    ? `${getAffiliateRoleLabel(currentAffiliate)} · ${affiliateCommissionLabel}`
+                    : "Đăng ký để mở link tiếp thị, QR cá nhân và ví hoa hồng."}
+                </Text>
+              </Box>
+              <Box className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-white/24 ring-1 ring-white/36 backdrop-blur-xl">
+                <CommerceIcon name={currentAffiliate ? "id-card" : "sparkle"} size={24} />
+              </Box>
+            </Box>
+
+            <Box className="relative z-10 mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {affiliateDashboardStats.map((item) => (
+                <Box key={item.label} className="rounded-[20px] bg-white/90 px-3 py-2.5 text-slate-900 backdrop-blur-xl">
+                  <Box className="flex items-center justify-between gap-2">
+                    <Text className="text-[10px] font-black uppercase text-slate-400">
+                      {item.label}
+                    </Text>
+                    <CommerceIcon name={item.icon} size={14} className={item.tone} />
+                  </Box>
+                  <Text className={`mt-1 text-sm font-black leading-5 break-words ${item.tone}`}>
+                    {item.value}
                   </Text>
                 </Box>
-                <span className={currentAffiliate ? "commerce-tag commerce-tag--success" : "commerce-tag commerce-tag--info"}>
-                  {currentAffiliate ? getAffiliateRoleLabel(currentAffiliate) : "Có thể đăng ký"}
-                </span>
+              ))}
+            </Box>
+
+            <Box className="relative z-10 mt-3 grid gap-2 min-[430px]:grid-cols-3">
+              <button
+                type="button"
+                onClick={() =>
+                  currentAffiliate
+                    ? navigate("/affiliate", { viewTransition: true })
+                    : isLoggedIn
+                      ? navigate("/affiliate/register", { viewTransition: true })
+                      : navigate("/login", { viewTransition: true })
+                }
+                className="rounded-[20px] bg-white px-3 py-3 text-left text-primary shadow-sm"
+              >
+                <Text className="text-xs font-black">
+                  {currentAffiliate ? "Cổng quản lý" : "Đăng ký đại lý"}
+                </Text>
+                <Text className="mt-0.5 text-[11px] font-bold text-slate-500">
+                  {currentAffiliate ? "Xem tuyến và rút tiền" : "Mở link/QR tiếp thị"}
+                </Text>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("orders")}
+                className="rounded-[20px] bg-white/24 px-3 py-3 text-left ring-1 ring-white/24 backdrop-blur-xl"
+              >
+                <Text className="text-xs font-black text-primaryForeground">Đơn phát sinh</Text>
+                <Text className="mt-0.5 text-[11px] font-bold text-slate-700/82">
+                  {pendingCommissionOrders} đơn đang chờ hoa hồng
+                </Text>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/shipping-address", { viewTransition: true })}
+                className="rounded-[20px] bg-white/24 px-3 py-3 text-left ring-1 ring-white/24 backdrop-blur-xl"
+              >
+                <Text className="text-xs font-black text-primaryForeground">Tuyến nhận hàng</Text>
+                <Text className="mt-0.5 text-[11px] font-bold text-slate-700/82">
+                  Cập nhật địa chỉ mặc định
+                </Text>
+              </button>
+            </Box>
+          </Box>
+
+          {currentAffiliate ? (
+            <Box className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+              <Box className="space-y-4">
+                <PersonalMarketingLink profile={currentAffiliate} />
+                <Box className="liquid-card rounded-[26px] p-4 space-y-3">
+                  <Box className="flex items-start justify-between gap-3">
+                    <Box className="min-w-0">
+                      <Text className="font-black text-slate-900">Người giới thiệu</Text>
+                      <Text className="text-xs text-slate-500 mt-1 leading-5">
+                        Tuyến hỗ trợ được gắn qua link tiếp thị cá nhân.
+                      </Text>
+                    </Box>
+                    <span className="commerce-tag commerce-tag--info">
+                      {currentAffiliate.referralCode}
+                    </span>
+                  </Box>
+
+                  {referrerAffiliate ? (
+                    <Box className="secondary-soft rounded-2xl p-3">
+                      <Text className="text-[10px] font-bold text-primary uppercase">
+                        {getAffiliateRoleLabel(referrerAffiliate)}
+                      </Text>
+                      <Text className="text-sm font-bold text-slate-900 mt-0.5">
+                        {referrerAffiliate.name}
+                      </Text>
+                      <Text className="text-xs text-slate-500">
+                        {referrerAffiliate.phone}
+                      </Text>
+                    </Box>
+                  ) : (
+                    <Box className="rounded-2xl bg-white/58 border border-white/70 p-3">
+                      <Text className="text-xs text-slate-600 leading-5">
+                        Tài khoản này chưa có người giới thiệu được ghi nhận.
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
               </Box>
 
-              {currentAffiliate ? (
-                <Box className="space-y-3">
-                  <PersonalMarketingLink profile={currentAffiliate} />
-                  <Button
-                    onClick={() => navigate("/affiliate", { viewTransition: true })}
-                    className="!rounded-[20px] brand-action font-bold"
-                    fullWidth
-                  >
-                    Vào cổng quản lý
-                  </Button>
-                </Box>
-              ) : (
-                <Box className="space-y-3">
-                  <Box className="grid gap-2">
-                    {agentBenefits.slice(0, 3).map((item) => (
-                      <Box
-                        key={item.text}
-                        className="rounded-[18px] bg-white/62 border border-white/70 px-3 py-3 flex gap-3"
-                      >
-                        <Box className="w-8 h-8 rounded-2xl secondary-soft flex items-center justify-center shrink-0">
-                          <CommerceIcon name={item.icon} size={18} />
-                        </Box>
-                        <Text className="text-xs text-slate-600 leading-5">
-                          {item.text}
-                        </Text>
+              <Box className="space-y-4">
+                <Points />
+                <Box className="liquid-card rounded-[26px] p-4">
+                  <Text className="font-black text-slate-900">Tổng quan hoa hồng</Text>
+                  <Box className="mt-3 grid gap-2">
+                    {[
+                      ["Tên hoa hồng", affiliateCommissionLabel],
+                      ["Hoa hồng tạm tính", formatPrice(affiliateCommission.totalCommission)],
+                      ["Điểm quy đổi", `${affiliateCommission.points.toLocaleString("vi-VN")} điểm`],
+                    ].map(([label, value]) => (
+                      <Box key={label} className="flex items-center justify-between gap-3 rounded-2xl bg-white/62 px-3 py-2 ring-1 ring-white/70">
+                        <Text className="text-xs font-bold text-slate-500">{label}</Text>
+                        <Text className="text-xs font-black text-slate-900 text-right">{value}</Text>
                       </Box>
                     ))}
                   </Box>
-                  <Button
-                    onClick={() =>
-                      isLoggedIn
-                        ? navigate("/affiliate/register", { viewTransition: true })
-                        : navigate("/login", { viewTransition: true })
-                    }
-                    className="!rounded-[20px] brand-action font-bold"
-                    fullWidth
-                  >
-                    {isLoggedIn ? "Đăng ký đại lý" : "Đăng nhập để đăng ký"}
-                  </Button>
                 </Box>
-              )}
+              </Box>
             </Box>
-
+          ) : (
             <Box className="liquid-card rounded-[26px] p-4 space-y-3">
               <Box className="flex items-start justify-between gap-3">
                 <Box className="min-w-0">
-                  <Text className="font-black text-slate-900">Người giới thiệu</Text>
-                  <Text className="text-xs text-slate-500 mt-1 leading-5">
-                    Hiển thị tuyến hỗ trợ được gắn qua link tiếp thị cá nhân.
+                  <Text className="font-black text-slate-900">Đăng ký đại lý</Text>
+                  <Text className="mt-1 text-xs leading-5 text-slate-500">
+                    Mở dashboard hội viên, link/QR giới thiệu riêng và ví hoa hồng cá nhân.
                   </Text>
                 </Box>
-                {currentAffiliate && (
-                  <button
-                    onClick={() => navigate("/affiliate", { viewTransition: true })}
-                    className="liquid-button rounded-full px-3 py-1.5 text-xs font-bold text-primary whitespace-nowrap"
-                  >
-                    Quản lý
-                  </button>
-                )}
+                <span className="commerce-tag commerce-tag--info">Có thể đăng ký</span>
               </Box>
-
-              {referrerAffiliate ? (
-                <Box className="secondary-soft rounded-2xl p-3">
-                  <Text className="text-[10px] font-bold text-primary uppercase">
-                    {getAffiliateRoleLabel(referrerAffiliate)}
-                  </Text>
-                  <Text className="text-sm font-bold text-slate-900 mt-0.5">
-                    {referrerAffiliate.name}
-                  </Text>
-                  <Text className="text-xs text-slate-500">
-                    {referrerAffiliate.phone}
-                  </Text>
-                </Box>
-              ) : (
-                <Box className="rounded-2xl bg-white/58 border border-white/70 p-3">
-                  <Text className="text-xs text-slate-600 leading-5">
-                    Tài khoản này chưa có người giới thiệu được ghi nhận.
-                  </Text>
-                </Box>
-              )}
+              <Box className="grid gap-2 md:grid-cols-2">
+                {agentBenefits.map((item) => (
+                  <Box
+                    key={item.text}
+                    className="rounded-[18px] bg-white/62 border border-white/70 px-3 py-3 flex gap-3"
+                  >
+                    <Box className="w-8 h-8 rounded-2xl secondary-soft flex items-center justify-center shrink-0">
+                      <CommerceIcon name={item.icon} size={18} />
+                    </Box>
+                    <Text className="text-xs text-slate-600 leading-5">
+                      {item.text}
+                    </Text>
+                  </Box>
+                ))}
+              </Box>
+              <Button
+                onClick={() =>
+                  isLoggedIn
+                    ? navigate("/affiliate/register", { viewTransition: true })
+                    : navigate("/login", { viewTransition: true })
+                }
+                className="!rounded-[20px] brand-action font-bold"
+                fullWidth
+              >
+                {isLoggedIn ? "Đăng ký đại lý" : "Đăng nhập để đăng ký"}
+              </Button>
             </Box>
-          </Box>
-
-          <Box className="space-y-4">
-            <Points />
-          </Box>
+          )}
         </Box>
         )}
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Save, ExternalLink, Sparkles, Flame, Video, FileText, ShieldCheck, Code2 } from 'lucide-react';
+import { ArrowLeft, Save, ExternalLink, Sparkles, Flame, Video, FileText, ShieldCheck, Code2, Bell } from 'lucide-react';
 import { api } from '../api';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { MediaAsset, Product } from '../types';
@@ -9,8 +9,8 @@ import { PostWall } from '../components/PostWall';
 import { DynamicForm } from '../types';
 import { VideoUpload } from '../components/VideoUpload';
 
-export type Post = { voucherIds?: number[]; productIds?: number[]; deletedAt?: string; id?: string; title: string; slug: string; category: string; status: string; contentType?: string; videoUrl?: string; flashSaleEndsAt?: string | null; customCode?: string; excerpt: string; content: string; cover: string; coverAlt: string; author: string; seoTitle: string; seoDescription: string; publishedAt?: string | null; updatedAt?: string };
-const empty: Post = { title: '', slug: '', category: 'news', status: 'draft', contentType: 'article', excerpt: '', content: '', cover: '', coverAlt: '', author: 'Saximi Shop', seoTitle: '', seoDescription: '' };
+export type Post = { voucherIds?: number[]; productIds?: number[]; deletedAt?: string; id?: string; title: string; slug: string; category: string; status: string; contentType?: string; videoUrl?: string; flashSaleEndsAt?: string | null; customCode?: string; excerpt: string; content: string; cover: string; coverAlt: string; author: string; seoTitle: string; seoDescription: string; publishedAt?: string | null; updatedAt?: string; notifyCustomersOnPublish?: boolean };
+const empty: Post = { title: '', slug: '', category: 'news', status: 'draft', contentType: 'article', excerpt: '', content: '', cover: '', coverAlt: '', author: 'Saximi Shop', seoTitle: '', seoDescription: '', notifyCustomersOnPublish: false };
 const categories: Record<string, string> = { news: 'Thông tin cần biết', event: 'Sự kiện', promotion: 'Khuyến mãi', policy: 'Chính sách' };
 const states: Record<string, string> = { draft: 'Bản nháp', published: 'Đã xuất bản', archived: 'Đã lưu trữ' };
 const contentTypes: Record<string, string> = { article: 'Bài viết thường', policy: 'Chính sách', video: 'Video ngang', 'short-video': 'Short Video dọc', 'flash-sale': 'Flash Sale', 'custom-code': 'Custom Code an toàn' };
@@ -144,7 +144,7 @@ export function PostsPage() {
     });
     setDirty(true);
   };
-  const edit = (post: Post) => { setForm({ ...post }); setDirty(false); setError(''); setNotice(''); setTab('content'); };
+  const edit = (post: Post) => { setForm({ ...post, notifyCustomersOnPublish: false }); setDirty(false); setError(''); setNotice(''); setTab('content'); };
   const generatePostSeo = () => {
     if (!form) return;
     const categoryLabel = categories[form.category] || 'bản tin';
@@ -180,11 +180,12 @@ export function PostsPage() {
     if (uploads) { setError('Vui lòng đợi media tải lên hoàn tất.'); return; }
     setSaving(true); setError(''); setNotice('');
     try {
+      const notifyCustomersOnPublish = Boolean(form.notifyCustomersOnPublish && form.status === 'published');
       const payload = form.status === 'published' && !form.publishedAt
-        ? { ...form, publishedAt: new Date().toISOString() }
-        : form;
+        ? { ...form, notifyCustomersOnPublish, publishedAt: new Date().toISOString() }
+        : { ...form, notifyCustomersOnPublish };
       const saved = form.id ? await api.updatePost(form.id, payload) : await api.createPost(payload);
-      setForm(saved); setDirty(false); setNotice(saved.status === 'published' ? 'Bài viết đã được xuất bản.' : 'Đã lưu bài viết.');
+      setForm({ ...saved, notifyCustomersOnPublish: false }); setDirty(false); setNotice(saved.status === 'published' ? (notifyCustomersOnPublish ? 'Bài viết đã xuất bản. Hệ thống đang gửi thông báo cho khách hàng.' : 'Bài viết đã được xuất bản.') : 'Đã lưu bài viết.');
       setPosts(old => [saved, ...old.filter(p => p.id !== saved.id)]);
     } catch (err) { setError((err as Error).message); }
     finally { setSaving(false); }
@@ -225,6 +226,19 @@ export function PostsPage() {
       </div>
       <aside className="space-y-5 min-w-0">
         <label className="grid gap-1.5 text-sm">Trạng thái<select className={inputClass} value={form.status} onChange={e => update('status', e.target.value)}>{Object.entries(states).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
+        <label className={`flex items-start gap-3 rounded-xl border p-3 text-sm ${form.status === 'published' ? 'border-cyan-500/30 bg-cyan-400/10' : 'border-slate-700 bg-slate-900/70'}`}>
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 rounded border-slate-500 accent-cyan-400"
+            checked={Boolean(form.notifyCustomersOnPublish)}
+            disabled={form.status !== 'published'}
+            onChange={e => { setForm(old => old ? { ...old, notifyCustomersOnPublish: e.target.checked } : old); setDirty(true); }}
+          />
+          <span className="min-w-0">
+            <span className="flex items-center gap-2 font-semibold text-white"><Bell size={16} />Gửi thông báo khách hàng</span>
+            <span className="mt-1 block text-xs leading-5 text-slate-400">{form.status === 'published' ? 'Thông báo sẽ gửi một lần khi bấm Lưu bài viết.' : 'Chọn trạng thái Đã xuất bản để bật thông báo.'}</span>
+          </span>
+        </label>
         <label className="grid gap-1.5 text-sm">Chuyên mục<select className={inputClass} value={form.category} onChange={e => update('category', e.target.value)}>{Object.entries(categories).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
         {form.contentType && <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300"><div className="flex items-center gap-2 font-semibold text-white">{form.contentType.includes('video') ? <Video size={16} /> : form.contentType === 'flash-sale' ? <Flame size={16} /> : <Sparkles size={16} />}{contentTypes[form.contentType] || 'Bài viết'}</div></div>}
         {field('author', 'Tên đơn vị đăng bài', 100)}

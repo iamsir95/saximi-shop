@@ -1,6 +1,7 @@
 import { Express, RequestHandler } from 'express';
 import { PostStore, PostError, Post } from './posts.js';
 import type { Coupon, Product } from './db.js';
+import { WebPushService } from './services/web-push.service.js';
 
 const escape = (value: string) => value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const labels: Record<string, string> = { news: 'Thông tin cần biết', event: 'Sự kiện', promotion: 'Khuyến mãi', policy: 'Chính sách' };
@@ -48,6 +49,16 @@ export function mountPostRoutes(app: Express, authenticate: RequestHandler, site
     const expiry = /^\d{4}-\d{2}-\d{2}$/.test(c.expiryDate) ? `${c.expiryDate}T23:59:59+07:00` : c.expiryDate;
     return [{ ...c, available: c.isActive && Number.isFinite(Date.parse(expiry)) && Date.parse(expiry) >= Date.now() }];
   });
+  const shouldNotifyCustomers = (body: Record<string, unknown>) =>
+    body.notifyCustomersOnPublish === true || body.notifyCustomersOnPublish === 'true';
+  const maybeNotifyCustomers = (post: Post, body: Record<string, unknown>) => {
+    if (!shouldNotifyCustomers(body) || post.status !== 'published') return;
+    WebPushService.notifyCustomersPostPublished(post)
+      .then(result => {
+        if (result.total > 0) console.info(`Post notification sent for ${post.id}: ${result.sent}/${result.total}`);
+      })
+      .catch(error => console.error('Failed to send post notification', error));
+  };
   const savePost = (body: Record<string, unknown>, id?: string) => {
     if (Array.isArray(body?.voucherIds)) {
       const old = id ? store.all().find(p => p.id === id)?.voucherIds || [] : [];
@@ -57,7 +68,9 @@ export function mountPostRoutes(app: Express, authenticate: RequestHandler, site
       const old = id ? store.all().find(p => p.id === id)?.productIds || [] : [];
       if (body.productIds.some(v => !getProducts().some(product => product.id === v) && !old.includes(v))) throw new PostError('Sản phẩm Flash Sale được chọn không tồn tại.');
     }
-    return store.save(body, id);
+    const post = store.save(body, id);
+    maybeNotifyCustomers(post, body);
+    return post;
   };
   const relatedProducts = (post: { productIds?: number[] }) => (post.productIds || []).flatMap(id => {
     const product = getProducts().find(item => item.id === id);

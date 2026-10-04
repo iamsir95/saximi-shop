@@ -69,6 +69,20 @@ export class WebPushService {
     };
   }
 
+  public static async sendToCustomers(payload: PushPayload) {
+    const subscriptions = Database.getWebPushSubscriptions().filter((item) => item.audience === 'CUSTOMER');
+    if (subscriptions.length === 0) {
+      Logger.warn(`Skipped customer web push "${payload.title}" because no customer devices are subscribed.`);
+      return { sent: 0, total: 0 };
+    }
+
+    const results = await Promise.all(subscriptions.map((subscription) => this.send(subscription, payload)));
+    return {
+      sent: results.filter(Boolean).length,
+      total: subscriptions.length,
+    };
+  }
+
   public static async notifyAdminTest(message?: string) {
     return this.sendToAdmins({
       title: 'Kiểm tra thông báo Saximi',
@@ -118,6 +132,16 @@ export class WebPushService {
       body: `${customer} vừa gửi "${submission.formTitle}".`,
       url: '/admin?tab=forms',
       icon: '/icon.png',
+      badge: '/icon.png',
+    });
+  }
+
+  public static async notifyCustomersPostPublished(post: { title: string; excerpt?: string; slug: string; cover?: string }) {
+    return this.sendToCustomers({
+      title: post.title || 'Bài viết mới từ Saximi Shop',
+      body: post.excerpt || 'Saximi Shop vừa cập nhật thông tin mới dành cho bạn.',
+      url: `/news/${post.slug}`,
+      icon: post.cover || '/icon.png',
       badge: '/icon.png',
     });
   }

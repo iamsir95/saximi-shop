@@ -23,6 +23,7 @@ import { orderAccessHeaders } from "@/utils/order-access";
 import Points from "@/pages/profile/points";
 import FollowOA from "@/pages/profile/follow-oa";
 import WebCapabilitiesCard from "@/pages/profile/web-capabilities";
+import LoginPinCard from "@/pages/profile/login-pin";
 import CONFIG from "@/config";
 import { useFrontendNotification } from "@/hooks";
 
@@ -353,6 +354,18 @@ export default function MemberPage() {
               </Text>
             </button>
           ))}
+        </Box>
+
+        <Box className="space-y-2">
+          <Box className="px-1">
+            <Text className="text-xs font-black uppercase tracking-[0.08em] text-primary">
+              Bảo mật tài khoản
+            </Text>
+            <Text className="mt-0.5 text-xs leading-5 text-slate-500">
+              Thiết lập hoặc đặt lại mã PIN đăng nhập nhanh sau khi đã đăng nhập.
+            </Text>
+          </Box>
+          <LoginPinCard />
         </Box>
 
         <Box className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

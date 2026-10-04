@@ -55,10 +55,25 @@ function normalizePhone(value?: string) {
     .replace(/^84(?=\d{8,10}$)/, "0");
 }
 
+type AccountTab = "overview" | "orders" | "security" | "affiliate" | "support";
+
+const ACCOUNT_TABS: Array<{
+  key: AccountTab;
+  label: string;
+  icon: CommerceIconName;
+}> = [
+  { key: "overview", label: "Tổng quan", icon: "grid" },
+  { key: "orders", label: "Đơn hàng", icon: "receipt" },
+  { key: "security", label: "Bảo mật", icon: "shield" },
+  { key: "affiliate", label: "Hội viên", icon: "id-card" },
+  { key: "support", label: "Hỗ trợ", icon: "bell" },
+];
+
 export default function MemberPage() {
   const navigate = useNavigate();
   const refreshUserInfo = useSetAtom(userInfoKeyState);
   const notify = useFrontendNotification();
+  const [activeTab, setActiveTab] = useState<AccountTab>("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const userInfo = useAtomValue(loadableUserInfoState);
@@ -294,6 +309,30 @@ export default function MemberPage() {
           </Box>
         </Box>
 
+        <Box className="sticky top-2 z-20 -mx-1 overflow-x-auto pb-1">
+          <Box className="flex min-w-max gap-2 rounded-[24px] border border-white/70 bg-white/48 p-1 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur-2xl">
+            {ACCOUNT_TABS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex h-11 items-center gap-2 rounded-[19px] px-3 text-xs font-black transition ${
+                    isActive
+                      ? "brand-action text-primaryForeground shadow-[0_12px_28px_rgba(0,204,247,0.2)]"
+                      : "text-slate-600 hover:bg-white/62"
+                  }`}
+                >
+                  <CommerceIcon name={tab.icon} size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </Box>
+        </Box>
+
+        {activeTab === "orders" && (
         <Box className="liquid-card rounded-[26px] p-4 space-y-3">
           <Box className="flex items-center justify-between gap-3">
             <Text className="font-black text-slate-900">Đơn hàng của tôi</Text>
@@ -335,7 +374,9 @@ export default function MemberPage() {
             ))}
           </Box>
         </Box>
+        )}
 
+        {activeTab === "overview" && (
         <Box className="grid grid-cols-3 gap-2">
           {serviceShortcuts.map((item) => (
             <button
@@ -355,7 +396,9 @@ export default function MemberPage() {
             </button>
           ))}
         </Box>
+        )}
 
+        {activeTab === "security" && (
         <Box className="space-y-2">
           <Box className="px-1">
             <Text className="text-xs font-black uppercase tracking-[0.08em] text-primary">
@@ -367,7 +410,9 @@ export default function MemberPage() {
           </Box>
           <LoginPinCard />
         </Box>
+        )}
 
+        {activeTab === "affiliate" && (
         <Box className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Box className="space-y-4">
             <Box className="liquid-card rounded-[26px] p-4 space-y-3">
@@ -474,7 +519,9 @@ export default function MemberPage() {
             <Points />
           </Box>
         </Box>
+        )}
 
+        {activeTab === "orders" && (
         <Box className="liquid-card rounded-[26px] p-4 space-y-3">
           <Box className="flex items-center justify-between">
             <Text className="font-black text-slate-900">Đơn gần đây</Text>
@@ -526,11 +573,14 @@ export default function MemberPage() {
             </Box>
           )}
         </Box>
+        )}
 
+        {activeTab === "support" && (
         <Box className="grid gap-4 lg:grid-cols-2">
           <WebCapabilitiesCard />
           <FollowOA />
         </Box>
+        )}
       </Box>
     </Page>
   );

@@ -44,7 +44,7 @@ export default function CommerceHighlights() {
               {bestCoupon ? bestCoupon.code : "COD"}
             </div>
             <div className="text-[10px] text-subtitle">
-              {bestCoupon ? `voucher ${bestCoupon.discountPercent}%` : "thanh toán"}
+              {bestCoupon ? `mã giảm ${bestCoupon.discountPercent}%` : "thanh toán"}
             </div>
           </div>
         </div>

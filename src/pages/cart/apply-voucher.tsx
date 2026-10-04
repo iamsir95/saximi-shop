@@ -57,7 +57,7 @@ export default function ApplyVoucher() {
             <div className="flex min-w-0 items-center gap-2">
               <CommerceIcon name="ticket" size={20} className="text-primary" />
               <div className="text-sm font-semibold text-slate-800">
-                Chọn voucher
+                Chọn mã ưu đãi
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1">
@@ -86,16 +86,16 @@ export default function ApplyVoucher() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-lg font-black text-slate-900">
-                  Ưu đãi đơn hàng
+                  Mã ưu đãi đơn hàng
                 </div>
                 <div className="mt-1 text-sm font-semibold text-slate-500">
-                  Chọn voucher đang còn hiệu lực cho đơn hàng
+                  Chọn mã đang còn hiệu lực cho đơn hàng
                 </div>
               </div>
               <button
                 type="button"
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-xl font-black text-slate-500 ring-1 ring-white/80"
-                aria-label="Đóng chọn voucher"
+                aria-label="Đóng chọn mã ưu đãi"
                 onClick={() => setVisible(false)}
               >
                 ×
@@ -106,11 +106,11 @@ export default function ApplyVoucher() {
           <div className="min-h-0 flex-1 overflow-y-auto py-4 pr-1">
             {couponsLoadable.state === "loading" ? (
               <div className="rounded-[22px] bg-white/70 px-4 py-8 text-center text-sm font-semibold text-slate-500 ring-1 ring-white/80">
-                Đang tải voucher...
+                Đang tải mã ưu đãi...
               </div>
             ) : availableCoupons.length === 0 ? (
               <div className="rounded-[22px] bg-white/70 px-4 py-8 text-center text-sm font-semibold text-slate-500 ring-1 ring-white/80">
-                Hiện chưa có voucher khả dụng
+                Hiện chưa có mã ưu đãi phù hợp
               </div>
             ) : (
               <div className="space-y-3">
@@ -173,7 +173,7 @@ export default function ApplyVoucher() {
                   setVisible(false);
                 }}
               >
-                Bỏ áp dụng voucher
+                Bỏ mã ưu đãi
               </button>
             </div>
           )}

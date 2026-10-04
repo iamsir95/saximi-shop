@@ -347,16 +347,16 @@ export const AffiliatePortalPage: React.FC = () => {
           {/* QR Code Sharing Block */}
           <Box className="liquid-card p-5 rounded-[24px] text-center space-y-3">
             <Text className="font-bold text-slate-800 text-base">
-              Mã QR Độc Quyền Giới Thiệu Khách Mua Hàng
+              Mã QR giới thiệu khách mua hàng
             </Text>
             <Text className="text-xs text-slate-500">
-              Đưa mã QR này cho Khách quét để mở Mini App. Đơn hàng sẽ tự động ghi nhận {getAffiliateCommissionLabel(branchProfile, portal).toLowerCase()} cho bạn.
+              Đưa mã QR này cho khách quét để mở website Saximi. Đơn hàng sẽ tự động ghi nhận {getAffiliateCommissionLabel(branchProfile, portal).toLowerCase()} cho bạn.
             </Text>
 
             {branchProfile && (
               <MarketingQrCode
                 value={buildReferralLink(branchProfile.userId)}
-                title="QR tiếp thị chi hội"
+                title="QR giới thiệu chi hội"
                 caption="Khách quét QR sẽ mở đúng link website chính thức và ghi nhận doanh số cho chi hội này."
                 fileName={`saximi-qr-${branchProfile.userId}.png`}
                 className="text-left"
@@ -365,7 +365,7 @@ export const AffiliatePortalPage: React.FC = () => {
 
             <Box className="pt-2 flex justify-center gap-2">
               <Button onClick={handleCopyLink} size="small" variant="secondary" className="rounded-xl">
-                {copied ? "Đã chép Link!" : "Sao Chép Link Giới Thiệu"}
+                {copied ? "Đã sao chép" : "Sao chép link giới thiệu"}
               </Button>
             </Box>
           </Box>

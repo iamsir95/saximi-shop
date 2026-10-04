@@ -121,8 +121,8 @@ function PostContentWithForms({
 function PostFormatBadge({ post }: { post: Post }) {
   const map: Record<string, string> = {
     video: "Video",
-    "short-video": "Short Video",
-    "flash-sale": "Flash Sale",
+    "short-video": "Video ngắn",
+    "flash-sale": "Ưu đãi nhanh",
     "custom-code": "Nội dung đặc biệt",
     policy: "Chính sách",
   };
@@ -198,9 +198,9 @@ function FlashSaleBlock({ post }: { post: Post }) {
   if (post.contentType !== "flash-sale") return null;
   const ends = post.flashSaleEndsAt ? new Date(post.flashSaleEndsAt) : null;
   return (
-    <section className="news-flash-sale" aria-label="Flash Sale">
+    <section className="news-flash-sale" aria-label="Ưu đãi nhanh">
       <div>
-        <span>Flash Sale</span>
+        <span>Ưu đãi nhanh</span>
         <strong>{ends && !Number.isNaN(ends.getTime()) ? `Kết thúc ${ends.toLocaleString("vi-VN")}` : "Ưu đãi đang mở"}</strong>
       </div>
       {!!post.products?.length && (

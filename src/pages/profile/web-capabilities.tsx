@@ -32,7 +32,7 @@ export default function WebCapabilitiesCard() {
 
   const handleEnablePush = async () => {
     if (!canUsePush) {
-      toast.error("Trình duyệt này chưa hỗ trợ thông báo đẩy.");
+      toast.error("Trình duyệt này chưa hỗ trợ nhận thông báo.");
       return;
     }
 
@@ -46,7 +46,7 @@ export default function WebCapabilitiesCard() {
       if (result === "subscribed") {
         notify(
           {
-            title: "Đã bật thông báo đẩy",
+            title: "Đã bật nhận thông báo",
             message: "Thiết bị này sẽ nhận cập nhật quan trọng từ Saximi shop.",
             kind: "success",
             topic: "system",
@@ -63,7 +63,7 @@ export default function WebCapabilitiesCard() {
       } else if (result === "denied") {
         toast.error("Bạn đã chặn thông báo. Hãy mở lại trong cài đặt trình duyệt.");
       } else {
-        toast.error("Trình duyệt này chưa hỗ trợ thông báo đẩy.");
+        toast.error("Trình duyệt này chưa hỗ trợ nhận thông báo.");
       }
     } catch (error) {
       console.warn(error);
@@ -87,15 +87,15 @@ export default function WebCapabilitiesCard() {
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-black text-slate-900">
             {notificationPermission === "granted"
-              ? "Thông báo đẩy đã bật"
+              ? "Đã bật nhận thông báo"
               : isEnablingPush
                 ? "Đang bật thông báo..."
-                : "Bật thông báo đẩy"}
+                : "Bật nhận thông báo"}
           </span>
           <span className="mt-0.5 block text-xs leading-5 text-subtitle">
             {canUsePush
               ? "Nhận cập nhật đơn hàng và ưu đãi quan trọng."
-              : "Trình duyệt này chưa hỗ trợ thông báo đẩy."}
+              : "Trình duyệt này chưa hỗ trợ nhận thông báo."}
           </span>
         </span>
       </div>

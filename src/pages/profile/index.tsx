@@ -302,7 +302,7 @@ export default function ProfilePage() {
           <div className="px-1">
             <div className="commerce-eyebrow text-primary">Hội viên / đại lý</div>
             <div className="commerce-caption text-subtitle">
-              Nhận diện tuyến và link tiếp thị cá nhân.
+              Nhận diện tuyến và link giới thiệu cá nhân.
             </div>
           </div>
           <AccountRoleCard />

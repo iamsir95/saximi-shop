@@ -25,7 +25,7 @@ export default function LoginPinCard() {
   const savePin = async (event: FormEvent, nextPin = pin) => {
     event.preventDefault();
     if (!isLoggedIn) {
-      toast.error("Vui lòng đăng nhập bằng OTP trước khi đặt mã PIN.");
+      toast.error("Vui lòng đăng nhập bằng mã xác thực trước khi đặt mã PIN.");
       return;
     }
     if (!/^\d{4,6}$/.test(nextPin)) {
@@ -77,13 +77,13 @@ export default function LoginPinCard() {
           <CommerceIcon name="shield" size={22} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="commerce-eyebrow text-primary">Mã PIN đăng nhập</div>
+          <div className="commerce-eyebrow text-primary">Đăng nhập nhanh</div>
           <div className="commerce-title mt-0.5 break-words">
             {currentUser?.hasPin ? "Đổi mã PIN bảo mật" : "Thiết lập mã PIN nhanh"}
           </div>
           <div className="commerce-caption text-subtitle mt-1 leading-5 break-words">
             {currentUser?.hasPin
-              ? "Bạn đang dùng mã PIN để đăng nhập nhanh. Có thể đổi mã mới bất cứ lúc nào sau khi đã đăng nhập."
+              ? "Bạn đang dùng mã PIN để đăng nhập nhanh. Có thể đổi mã mới bất cứ lúc nào."
               : isLoggedIn
               ? "Tạo mã PIN 4-6 số một lần để lần sau đăng nhập nhanh hơn trên thiết bị cá nhân."
               : "Đăng nhập bằng số điện thoại để mở khu vực thiết lập mã PIN."}
@@ -94,7 +94,7 @@ export default function LoginPinCard() {
       {isLoggedIn && !currentUser?.hasPin ? (
         <form className="space-y-3" onSubmit={(event) => savePin(event)}>
           <div className="grid gap-2 text-sm">
-            <span className="font-semibold text-slate-800">Mã PIN đăng nhập</span>
+            <span className="font-semibold text-slate-800">Nhập mã PIN mới</span>
             <PinCodeInput value={pin} onChange={setPin} />
           </div>
           <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
@@ -104,7 +104,7 @@ export default function LoginPinCard() {
       ) : isLoggedIn ? (
         <div className="space-y-3">
           <div className="rounded-2xl bg-emerald-50/80 border border-white/70 px-3 py-2">
-            <div className="text-xs font-black text-emerald-700">Đã bật đăng nhập bằng PIN</div>
+            <div className="text-xs font-black text-emerald-700">Đã bật đăng nhập nhanh</div>
             <div className="commerce-caption text-emerald-700/82 mt-0.5">
               Mã PIN hiện tại không hiển thị lại để bảo mật. Khi cần, hãy tạo mã PIN mới tại đây.
             </div>
@@ -146,7 +146,7 @@ export default function LoginPinCard() {
         </div>
       ) : (
         <div className="rounded-2xl bg-white/54 border border-white/70 px-3 py-2 commerce-caption text-slate-500">
-          Khu vực này sẽ mở sau khi bạn đăng nhập bằng OTP.
+          Khu vực này sẽ mở sau khi bạn đăng nhập bằng mã xác thực.
         </div>
       )}
     </div>

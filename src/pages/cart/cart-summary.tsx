@@ -45,13 +45,13 @@ export default function CartSummary() {
             </tr>
             {selectedCoupon && isCouponApplied && (
               <tr>
-                <th>Voucher ({selectedCoupon.code})</th>
+                <th>Mã ưu đãi ({selectedCoupon.code})</th>
                 <td className="text-primary">-{formatPrice(discountAmount)}</td>
               </tr>
             )}
             {selectedCoupon && !isCouponApplied && (
               <tr>
-                <th>Voucher ({selectedCoupon.code})</th>
+                <th>Mã ưu đãi ({selectedCoupon.code})</th>
                 <td className="text-danger text-xs">
                   Chưa đủ {formatPrice(selectedCoupon.minOrderAmount)}
                 </td>

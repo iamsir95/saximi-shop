@@ -30,7 +30,7 @@ export default function PersonalMarketingLink({
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
     notify({
-      title: "Đã sao chép link tiếp thị",
+      title: "Đã sao chép link giới thiệu",
       message: "Bạn có thể gửi link này cho khách hàng để ghi nhận doanh số.",
       kind: "success",
       topic: "commission",
@@ -46,7 +46,7 @@ export default function PersonalMarketingLink({
 
     await navigator.share({
       title: "Saximi shop",
-      text: `Mua hàng Saximi shop qua link tiếp thị của ${profile.name}`,
+      text: `Mua hàng Saximi shop qua link giới thiệu của ${profile.name}`,
       url: marketingLink,
     });
   };
@@ -62,7 +62,7 @@ export default function PersonalMarketingLink({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="commerce-eyebrow text-primary">
-            Link tiếp thị cá nhân
+            Link giới thiệu cá nhân
           </div>
           <div className="commerce-title mt-0.5 break-words leading-snug">
             Gắn doanh số cho {profile.name}
@@ -81,7 +81,7 @@ export default function PersonalMarketingLink({
 
       <div className="min-w-0 rounded-2xl bg-white/62 border border-white/70 px-3 py-2">
         <div className="text-[10px] font-bold uppercase text-slate-400">
-          Mã tiếp thị
+          Mã giới thiệu
         </div>
         <div className="mt-0.5 break-words text-sm font-black text-slate-900">
           {profile.referralCode}

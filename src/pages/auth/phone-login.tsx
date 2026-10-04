@@ -87,13 +87,13 @@ export default function PhoneLoginPage() {
       setDemoOtp(result.demoOtp || "");
       setStep("otp");
       notify({
-        title: result.delivery?.status === "pending_manual" ? "Đang gửi OTP qua Zalo" : "Đã gửi mã OTP",
+        title: result.delivery?.status === "pending_manual" ? "Đang gửi mã xác thực qua Zalo" : "Đã gửi mã xác thực",
         message: result.message || `Mã xác thực đã được gửi đến ${result.phone}.`,
         kind: "success",
         topic: "account",
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Không gửi được OTP");
+      toast.error(error instanceof Error ? error.message : "Không gửi được mã xác thực");
     } finally {
       setIsSubmitting(false);
     }
@@ -130,7 +130,7 @@ export default function PhoneLoginPage() {
       }
       navigate("/profile", { replace: true });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "OTP không hợp lệ");
+      toast.error(error instanceof Error ? error.message : "Mã xác thực không hợp lệ");
     } finally {
       setIsSubmitting(false);
     }
@@ -155,13 +155,13 @@ export default function PhoneLoginPage() {
       setPhone(result.phone);
       setPin("");
       if (!result.exists) {
-        toast.error("Số điện thoại này chưa có tài khoản. Vui lòng đăng nhập OTP trước.");
+        toast.error("Số điện thoại này chưa có tài khoản. Vui lòng đăng nhập bằng mã xác thực trước.");
         setAuthMode("otp");
         setStep("phone");
         return;
       }
       if (!result.hasPin) {
-        toast.error("Tài khoản này chưa đặt mã PIN. Vui lòng đăng nhập OTP để thiết lập PIN.");
+        toast.error("Tài khoản này chưa đặt mã PIN. Vui lòng đăng nhập bằng mã xác thực để thiết lập mã PIN.");
         setAuthMode("otp");
         setStep("phone");
         return;
@@ -252,7 +252,7 @@ export default function PhoneLoginPage() {
           </div>
         </div>
         <div className="auth-mobile-desc commerce-caption text-subtitle">
-          Dùng số điện thoại để đăng nhập OTP lần đầu, sau đó có thể dùng mã PIN
+          Dùng số điện thoại để đăng nhập bằng mã xác thực lần đầu, sau đó có thể dùng mã PIN
           cho những lần truy cập tiếp theo.
         </div>
 
@@ -287,7 +287,7 @@ export default function PhoneLoginPage() {
                   setStep("phone");
                 }}
               >
-                OTP
+                Mã xác thực
               </button>
               <button
                 type="button"
@@ -318,7 +318,7 @@ export default function PhoneLoginPage() {
             />
           </label>
           <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
-            {isSubmitting ? "Đang gửi OTP..." : "Tiếp tục"}
+            {isSubmitting ? "Đang gửi mã..." : "Tiếp tục"}
           </Button>
           </form>
         ) : authMode === "otp" ? (
@@ -334,7 +334,7 @@ export default function PhoneLoginPage() {
           </div>
           <label className="grid gap-2 text-sm">
             <span className="font-semibold text-slate-800">
-              Mã OTP <span className="text-danger">*</span>
+              Mã xác thực <span className="text-danger">*</span>
             </span>
             <input
               className={inputClass}
@@ -383,7 +383,7 @@ export default function PhoneLoginPage() {
                 setStep("phone");
               }}
             >
-              Đăng nhập bằng OTP
+              Đăng nhập bằng mã xác thực
             </button>
           </form>
         ) : (
@@ -406,7 +406,7 @@ export default function PhoneLoginPage() {
                 setStep("phone");
               }}
             >
-              Quên PIN, dùng OTP
+              Quên mã PIN, dùng mã xác thực
             </button>
             <button
               type="button"

@@ -157,11 +157,11 @@ export default function MemberPage() {
     },
     {
       icon: "percent",
-      text: "Điểm = doanh số x phần trăm hoa hồng; 1.000 VND hoa hồng = 1 điểm.",
+      text: "Điểm được quy đổi từ hoa hồng bán hàng. 1.000đ hoa hồng = 1 điểm.",
     },
     {
       icon: "id-card",
-      text: "Sau khi đăng ký, dashboard hội viên/đại lý sẽ mở đầy đủ.",
+      text: "Sau khi đăng ký, tài khoản sẽ mở đầy đủ quyền hội viên/đại lý.",
     },
   ];
 
@@ -201,19 +201,19 @@ export default function MemberPage() {
       tone: "text-primary",
     },
     {
-      label: "Hoa hồng ví",
+      label: "Ví hoa hồng",
       value: formatPrice(currentAffiliate?.walletBalance || 0),
       icon: "wallet" as CommerceIconName,
       tone: "text-secondaryDark",
     },
     {
-      label: "Đang chờ",
+      label: "Chờ duyệt",
       value: formatPrice(affiliateCommission.pendingCommission),
       icon: "calendar" as CommerceIconName,
       tone: "text-amber-600",
     },
     {
-      label: "Tỷ lệ",
+      label: "Mức hoa hồng",
       value: `${affiliateCommissionRate || 0}%`,
       icon: "percent" as CommerceIconName,
       tone: "text-emerald-600",
@@ -263,7 +263,7 @@ export default function MemberPage() {
       tone: "text-primary",
     },
     {
-      label: "Cổng cán bộ",
+      label: "Khu hội viên",
       icon: "id-card",
       path: currentAffiliate ? "/affiliate" : "/affiliate/register",
       tone: "text-secondaryDark",
@@ -279,7 +279,7 @@ export default function MemberPage() {
             <Box className="min-w-0">
               <Text className="font-black text-slate-900">Người giới thiệu</Text>
               <Text className="text-xs text-slate-500 mt-1 leading-5">
-                Tuyến hỗ trợ được gắn qua link tiếp thị cá nhân.
+                Tuyến hỗ trợ được gắn qua link giới thiệu cá nhân.
               </Text>
             </Box>
             <span className="commerce-tag commerce-tag--info">
@@ -319,7 +319,7 @@ export default function MemberPage() {
         <Box className="min-w-0">
           <Text className="font-black text-slate-900">Đăng ký đại lý</Text>
           <Text className="mt-1 text-xs leading-5 text-slate-500">
-            Mở dashboard hội viên, link/QR giới thiệu riêng và ví hoa hồng cá nhân.
+            Mở khu hội viên, link/QR giới thiệu riêng và ví hoa hồng cá nhân.
           </Text>
         </Box>
         <span className="commerce-tag commerce-tag--info">Có thể đăng ký</span>
@@ -517,7 +517,7 @@ export default function MemberPage() {
             <Text className="mt-1 text-xs font-semibold leading-5 text-slate-500">
               {currentAffiliate
                 ? `${getAffiliateRoleLabel(currentAffiliate)} · ${affiliateCommissionLabel}`
-                : "Đăng ký để mở link tiếp thị, QR cá nhân và ví hoa hồng."}
+                : "Đăng ký để mở link giới thiệu, QR cá nhân và ví hoa hồng."}
             </Text>
           </Box>
 
@@ -553,7 +553,7 @@ export default function MemberPage() {
                 {currentAffiliate ? "Cổng quản lý" : "Đăng ký đại lý"}
               </Text>
               <Text className="mt-0.5 text-[11px] font-bold text-slate-700/82">
-                {currentAffiliate ? "Xem tuyến và rút tiền" : "Mở link/QR tiếp thị"}
+                {currentAffiliate ? "Xem tuyến, ví và rút tiền" : "Mở link/QR giới thiệu"}
               </Text>
             </button>
             <button
@@ -561,9 +561,9 @@ export default function MemberPage() {
               onClick={() => setActiveTab("orders")}
               className="liquid-card rounded-[22px] px-3 py-3 text-left"
             >
-              <Text className="text-xs font-black text-slate-900">Đơn phát sinh</Text>
+              <Text className="text-xs font-black text-slate-900">Đơn có hoa hồng</Text>
               <Text className="mt-0.5 text-[11px] font-bold text-slate-500">
-                {pendingCommissionOrders} đơn đang chờ hoa hồng
+                {pendingCommissionOrders} đơn đang chờ duyệt
               </Text>
             </button>
             <button
@@ -571,9 +571,9 @@ export default function MemberPage() {
               onClick={() => navigate("/shipping-address", { viewTransition: true })}
               className="liquid-card rounded-[22px] px-3 py-3 text-left"
             >
-              <Text className="text-xs font-black text-slate-900">Tuyến nhận hàng</Text>
+              <Text className="text-xs font-black text-slate-900">Địa chỉ mặc định</Text>
               <Text className="mt-0.5 text-[11px] font-bold text-slate-500">
-                Cập nhật địa chỉ mặc định
+                Chỉnh địa chỉ nhận hàng
               </Text>
             </button>
           </Box>
@@ -582,7 +582,7 @@ export default function MemberPage() {
             <Box className="grid gap-2 min-[430px]:grid-cols-3">
               {[
                 ["Mã giới thiệu", currentAffiliate.referralCode],
-                ["Tên hoa hồng", affiliateCommissionLabel],
+                ["Loại hoa hồng", affiliateCommissionLabel],
                 ["Điểm quy đổi", `${affiliateCommission.points.toLocaleString("vi-VN")} điểm`],
               ].map(([label, value]) => (
                 <Box key={label} className="rounded-[18px] bg-white/58 px-3 py-2 ring-1 ring-white/70">
@@ -656,7 +656,7 @@ export default function MemberPage() {
           ) : !isLoggedIn ? (
             <Text className="text-xs text-slate-500 leading-5">
               Đăng nhập bằng số điện thoại để xem đơn hàng và lưu trạng thái
-              hội viên trên website hoặc Zalo Mini App.
+              hội viên trên website hoặc Zalo.
             </Text>
           ) : memberOrders.length === 0 ? (
             <Text className="text-xs text-slate-500 leading-5">

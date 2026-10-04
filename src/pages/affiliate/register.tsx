@@ -85,7 +85,7 @@ export default function AffiliateRegisterPage() {
             </Text>
             <Text className="text-xs text-slate-500 leading-5">
               Tài khoản {existingAffiliate.phone} đang là{" "}
-              <strong>{existingAffiliate.levelName}</strong>. Vào cổng đại lý
+              <strong>{existingAffiliate.levelName}</strong>. Vào khu đại lý
               để lấy link giới thiệu, xem ví hoa hồng và điểm bán hàng.
             </Text>
             <PersonalMarketingLink profile={existingAffiliate} compact embedded />
@@ -93,7 +93,7 @@ export default function AffiliateRegisterPage() {
               onClick={() => navigate("/affiliate")}
               className="w-full rounded-2xl brand-action font-bold"
             >
-              Vào cổng đại lý
+              Vào khu đại lý
             </Button>
           </Box>
         ) : (
@@ -137,7 +137,7 @@ export default function AffiliateRegisterPage() {
             <Box className="rounded-2xl bg-white/58 border border-white/70 p-3">
               <Text className="text-xs text-slate-600 leading-5">
                 Mặc định hoa hồng trực tiếp là 8%. Điểm được tính theo doanh
-                số bán được x phần trăm hoa hồng; 1.000 VND hoa hồng = 1 điểm.
+                số bán được x phần trăm hoa hồng; 1.000đ hoa hồng = 1 điểm.
               </Text>
             </Box>
 

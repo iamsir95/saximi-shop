@@ -67,7 +67,7 @@ function PhoneMockup({ platform }: { platform: GuideTab }) {
 
 const guides: Record<GuideTab, { title: string; subtitle: string; steps: string[]; note: string }> = {
   android: {
-    title: "Android dùng Chrome",
+    title: "Android mở bằng Chrome",
     subtitle: "Dùng Chrome để đưa Saximi shop ra màn hình chính như một ứng dụng.",
     steps: [
       "Mở website Saximi shop bằng trình duyệt Chrome.",
@@ -78,7 +78,7 @@ const guides: Record<GuideTab, { title: string; subtitle: string; steps: string[
     note: "Nếu chưa thấy nút thêm, hãy tải lại trang bằng Chrome hoặc kiểm tra website đang mở bằng HTTPS.",
   },
   ios: {
-    title: "iPhone/iPad dùng Safari",
+    title: "iPhone/iPad mở bằng Safari",
     subtitle: "iOS cần mở bằng Safari để có nút thêm website ra màn hình chính.",
     steps: [
       "Mở website Saximi shop bằng Safari, không dùng trình duyệt trong Zalo/Facebook.",
@@ -86,7 +86,7 @@ const guides: Record<GuideTab, { title: string; subtitle: string; steps: string[
       "Kéo xuống và chọn Thêm vào Màn hình chính.",
       "Kiểm tra tên Saximi shop, bấm Thêm và dùng icon ngoài màn hình chính.",
     ],
-    note: "Trên iPhone, thông báo đẩy web thường hoạt động tốt nhất sau khi website đã được thêm ra màn hình chính.",
+    note: "Trên iPhone, tính năng nhận thông báo thường hoạt động tốt nhất sau khi website đã được thêm ra màn hình chính.",
   },
 };
 
@@ -117,7 +117,7 @@ export default function InstallAppGuide() {
                 : "text-slate-500"
             }`}
           >
-            {tab === "android" ? "Android / Chrome" : "iOS / Safari"}
+            {tab === "android" ? "Android" : "iPhone/iPad"}
           </button>
         ))}
       </div>

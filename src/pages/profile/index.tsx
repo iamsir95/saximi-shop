@@ -1,5 +1,4 @@
 import ProfileActions from "./actions";
-import FollowOA from "./follow-oa";
 import Points from "./points";
 import UserInfo from "./user-info";
 import WebCapabilitiesCard from "./web-capabilities";
@@ -292,11 +291,10 @@ export default function ProfilePage() {
         <div className="px-1">
           <div className="commerce-eyebrow text-primary">Hội viên / đại lý</div>
           <div className="commerce-caption text-subtitle">
-            Nhận diện tuyến, link tiếp thị và thông tin OA.
+            Nhận diện tuyến và link tiếp thị cá nhân.
           </div>
         </div>
         <AccountRoleCard />
-        <FollowOA />
       </section>
     </div>
   );

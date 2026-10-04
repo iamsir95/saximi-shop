@@ -1,24 +1,17 @@
-import { browserLocationState, loadableUserInfoState } from "@/state";
+import { loadableUserInfoState } from "@/state";
 import { isWebsiteRuntime } from "@/utils/platform";
 import {
-  getBrowserLocation,
   getNotificationSupport,
   setupWebPushNotifications,
 } from "@/utils/web-capabilities";
-import { useAtom, useAtomValue } from "jotai";
+import CommerceIcon from "@/components/commerce-icon";
+import { useAtomValue } from "jotai";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useFrontendNotification } from "@/hooks";
 
-function formatLocation(lat?: number, lng?: number) {
-  if (lat === undefined || lng === undefined) return "";
-  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-}
-
 export default function WebCapabilitiesCard() {
-  const [location, setLocation] = useAtom(browserLocationState);
   const userInfo = useAtomValue(loadableUserInfoState);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isEnablingPush, setIsEnablingPush] = useState(false);
   const notify = useFrontendNotification();
   const [notificationPermission, setNotificationPermission] = useState(
@@ -35,33 +28,7 @@ export default function WebCapabilitiesCard() {
 
   const currentUser =
     userInfo.state === "hasData" && userInfo.data ? userInfo.data : undefined;
-  const canUseLocation = "geolocation" in navigator;
-  const canUsePush = support.notification && support.serviceWorker;
-
-  const handleEnableLocation = async () => {
-    if (!canUseLocation) {
-      toast.error("Trình duyệt này chưa hỗ trợ lấy vị trí.");
-      return;
-    }
-
-    setIsGettingLocation(true);
-    try {
-      const nextLocation = await getBrowserLocation();
-      setLocation(nextLocation);
-      notify({
-        title: "Đã bật vị trí",
-        message: "Website sẽ dùng vị trí để gợi ý điểm nhận hàng gần bạn.",
-        kind: "success",
-        topic: "delivery",
-        actionPath: "/stations",
-      });
-    } catch (error) {
-      console.warn(error);
-      toast.error("Không lấy được vị trí. Vui lòng kiểm tra quyền trình duyệt.");
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
+  const canUsePush = support.notification && support.serviceWorker && support.pushManager;
 
   const handleEnablePush = async () => {
     if (!canUsePush) {
@@ -107,66 +74,31 @@ export default function WebCapabilitiesCard() {
   };
 
   return (
-    <div className="liquid-card rounded-[24px] p-4 space-y-3">
-      <div>
-        <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-          Website hybrid
-        </div>
-        <div className="text-sm font-bold text-slate-900">
-          Vị trí & thông báo trên trình duyệt
-        </div>
-        <div className="text-xs text-subtitle leading-5 mt-0.5">
-          Dùng cho website, Android browser, Chrome, Edge, Firefox và Safari có
-          hỗ trợ. Trên iPhone, thông báo đẩy web thường cần thêm website vào màn
-          hình chính.
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={handleEnableLocation}
-          disabled={isGettingLocation || !canUseLocation}
-          className="rounded-2xl bg-white/58 border border-white/70 px-3 py-3 text-left disabled:opacity-60"
-        >
-          <div className="text-[10px] font-bold uppercase tracking-wide text-primary">
-            Vị trí
-          </div>
-          <div className="text-xs font-bold text-slate-900 mt-1">
-            {location ? "Đã bật" : isGettingLocation ? "Đang lấy..." : "Bật vị trí"}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1 leading-4">
-            {location
-              ? formatLocation(location.lat, location.lng)
-              : canUseLocation
-                ? "Tính điểm nhận gần nhất"
-                : "Không hỗ trợ"}
-          </div>
-        </button>
-
-        <button
-          onClick={handleEnablePush}
-          disabled={isEnablingPush || !canUsePush}
-          className="rounded-2xl bg-white/58 border border-white/70 px-3 py-3 text-left disabled:opacity-60"
-        >
-          <div className="text-[10px] font-bold uppercase tracking-wide text-secondaryDark">
-            Thông báo
-          </div>
-          <div className="text-xs font-bold text-slate-900 mt-1">
+    <button
+      type="button"
+      onClick={handleEnablePush}
+      disabled={isEnablingPush || !canUsePush || notificationPermission === "granted"}
+      className="liquid-button w-full rounded-2xl px-4 py-3 text-left disabled:opacity-70"
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+          <CommerceIcon name="bell" size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-black text-slate-900">
             {notificationPermission === "granted"
-              ? "Đã bật"
+              ? "Thông báo đẩy đã bật"
               : isEnablingPush
-                ? "Đang bật..."
-                : "Bật thông báo"}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1 leading-4">
+                ? "Đang bật thông báo..."
+                : "Bật thông báo đẩy"}
+          </span>
+          <span className="mt-0.5 block text-xs leading-5 text-subtitle">
             {canUsePush
-              ? support.pushManager
-                ? "Hỗ trợ push"
-                : "Hỗ trợ thông báo"
-              : "Không hỗ trợ"}
-          </div>
-        </button>
+              ? "Nhận cập nhật đơn hàng và ưu đãi quan trọng."
+              : "Trình duyệt này chưa hỗ trợ thông báo đẩy."}
+          </span>
+        </span>
       </div>
-    </div>
+    </button>
   );
 }

@@ -41,7 +41,6 @@ export default function PhoneLoginPage() {
   const [otp, setOtp] = useState("");
   const [pin, setPin] = useState("");
   const [newPin, setNewPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [demoOtp, setDemoOtp] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -155,10 +154,6 @@ export default function PhoneLoginPage() {
       toast.error("Mã PIN cần có 4-6 chữ số.");
       return;
     }
-    if (newPin !== confirmPin) {
-      toast.error("Mã PIN nhập lại chưa khớp.");
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -210,15 +205,11 @@ export default function PhoneLoginPage() {
         {showPinSetup ? (
           <form className="auth-mobile-form space-y-4" onSubmit={savePin}>
             <div className="rounded-2xl bg-cyan-50/54 px-3 py-2 commerce-caption text-primary ring-1 ring-white/60 backdrop-blur-xl">
-              Tạo mã PIN 4-6 số để lần sau đăng nhập nhanh hơn trên thiết bị của bạn.
+              Tạo mã PIN 4-6 số một lần để lần sau đăng nhập nhanh hơn trên thiết bị của bạn.
             </div>
             <div className="grid gap-2 text-sm">
               <span className="font-semibold text-slate-800">Mã PIN mới</span>
               <PinCodeInput value={newPin} onChange={setNewPin} />
-            </div>
-            <div className="grid gap-2 text-sm">
-              <span className="font-semibold text-slate-800">Nhập lại mã PIN</span>
-              <PinCodeInput value={confirmPin} onChange={setConfirmPin} />
             </div>
             <Button htmlType="submit" fullWidth disabled={isSubmitting} className="!rounded-2xl">
               {isSubmitting ? "Đang lưu PIN..." : "Lưu mã PIN"}

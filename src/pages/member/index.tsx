@@ -68,7 +68,7 @@ const ACCOUNT_TABS: Array<{
   { key: "overview", label: "Tổng quan", icon: "grid" },
   { key: "orders", label: "Đơn hàng", icon: "receipt" },
   { key: "security", label: "Bảo mật", icon: "shield" },
-  { key: "affiliate", label: "Dashboard", icon: "id-card" },
+  { key: "affiliate", label: "Hội viên", icon: "id-card" },
   { key: "support", label: "Hỗ trợ", icon: "bell" },
 ];
 
@@ -423,46 +423,10 @@ export default function MemberPage() {
         )}
 
         {activeTab === "overview" && (
-        <Box className="grid grid-cols-3 gap-2">
-          {serviceShortcuts.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() =>
-                item.path === "/affiliate/register" && !isLoggedIn
-                  ? navigate("/login", { viewTransition: true })
-                  : navigate(item.path, { viewTransition: true })
-              }
-              className="liquid-card rounded-[22px] px-2 py-3 text-center active:scale-[0.98]"
-            >
-              <CommerceIcon name={item.icon} size={22} className={item.tone} />
-              <Text className="mt-2 text-[11px] font-bold leading-4 text-slate-700">
-                {item.label}
-              </Text>
-            </button>
-          ))}
-        </Box>
-        )}
-
-        {activeTab === "security" && (
-        <Box className="space-y-2">
-          <Box className="px-1">
-            <Text className="text-xs font-black uppercase tracking-[0.08em] text-primary">
-              Bảo mật tài khoản
-            </Text>
-            <Text className="mt-0.5 text-xs leading-5 text-slate-500">
-              Thiết lập hoặc đặt lại mã PIN đăng nhập nhanh sau khi đã đăng nhập.
-            </Text>
-          </Box>
-          <LoginPinCard />
-        </Box>
-        )}
-
-        {activeTab === "affiliate" && (
         <Box className="space-y-4">
           <Box className="px-1">
             <Text className="text-xs font-black uppercase tracking-[0.08em] text-primary">
-              Dashboard hội viên
+              Tổng quan hội viên
             </Text>
             <Text className="mt-1 text-2xl font-black leading-8 text-slate-950 break-words">
               {currentAffiliate ? currentAffiliate.name : "Kích hoạt đại lý Saximi"}
@@ -546,6 +510,44 @@ export default function MemberPage() {
             </Box>
           )}
 
+          <Box className="grid grid-cols-3 gap-2">
+            {serviceShortcuts.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() =>
+                  item.path === "/affiliate/register" && !isLoggedIn
+                    ? navigate("/login", { viewTransition: true })
+                    : navigate(item.path, { viewTransition: true })
+                }
+                className="liquid-card rounded-[22px] px-2 py-3 text-center active:scale-[0.98]"
+              >
+                <CommerceIcon name={item.icon} size={22} className={item.tone} />
+                <Text className="mt-2 text-[11px] font-bold leading-4 text-slate-700">
+                  {item.label}
+                </Text>
+              </button>
+            ))}
+          </Box>
+        </Box>
+        )}
+
+        {activeTab === "security" && (
+        <Box className="space-y-2">
+          <Box className="px-1">
+            <Text className="text-xs font-black uppercase tracking-[0.08em] text-primary">
+              Bảo mật tài khoản
+            </Text>
+            <Text className="mt-0.5 text-xs leading-5 text-slate-500">
+              Thiết lập hoặc đặt lại mã PIN đăng nhập nhanh sau khi đã đăng nhập.
+            </Text>
+          </Box>
+          <LoginPinCard />
+        </Box>
+        )}
+
+        {activeTab === "affiliate" && (
+        <Box className="space-y-4">
           {currentAffiliate ? (
             <Box className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
               <Box className="space-y-4">

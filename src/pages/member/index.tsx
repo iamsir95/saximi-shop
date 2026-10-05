@@ -370,25 +370,25 @@ export default function MemberPage() {
   return (
     <Page className="min-h-screen pb-24">
       <Box className="p-4 space-y-4">
-        <Box className="account-profile-hero liquid-card rounded-[30px] p-4 text-slate-900">
+        <Box className="account-profile-hero liquid-card rounded-[28px] p-3 text-slate-900">
           <Box className="absolute right-[-38px] top-[-44px] h-36 w-36 rounded-full bg-primary/18 blur-xl" />
           <Box className="absolute left-[-44px] bottom-[-52px] h-40 w-40 rounded-full bg-secondary/16 blur-2xl" />
-          <Box className="relative z-10 flex items-start gap-3">
+          <Box className="relative z-10 flex items-start gap-2.5">
             <button type="button" onClick={() => navigate(isLoggedIn ? "/profile/edit" : "/login")} className="flex shrink-0 flex-col items-center gap-1" aria-label="Đổi ảnh đại diện">
             <img
               src={accountAvatar}
               alt={accountName}
-              className="h-16 w-16 rounded-[24px] object-cover ring-2 ring-white/80 shadow-lg"
+              className="h-14 w-14 rounded-[20px] object-cover ring-2 ring-white/80 shadow-lg"
             />
             <span className="text-xs font-black text-primary">{isLoggedIn ? "Đổi ảnh" : "Đăng nhập"}</span>
             </button>
             <Box className="min-w-0 flex-1">
               <Box className="flex items-start justify-between gap-2">
                 <Box className="min-w-0">
-                  <Text className="text-[22px] font-black leading-7 truncate text-slate-950">
+                  <Text className="text-xl font-black leading-6 truncate text-slate-950">
                     {accountName}
                   </Text>
-                  <Text className="mt-0.5 text-sm font-bold leading-5 text-slate-600 truncate">
+                  <Text className="mt-0.5 text-[13px] font-bold leading-5 text-slate-600 truncate">
                     {accountSubtitle}
                   </Text>
                 </Box>
@@ -398,13 +398,13 @@ export default function MemberPage() {
                       ? navigate("/profile/edit", { viewTransition: true })
                       : navigate("/login", { viewTransition: true })
                   }
-                  className="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white/54 text-primary ring-1 ring-white/70 backdrop-blur-xl"
+                  className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-white/54 text-primary ring-1 ring-white/70 backdrop-blur-xl"
                 >
-                  <CommerceIcon name={isLoggedIn ? "edit" : "phone"} size={20} />
+                  <CommerceIcon name={isLoggedIn ? "edit" : "phone"} size={19} />
                 </button>
               </Box>
 
-              <Box className="mt-3 flex flex-wrap items-center gap-2.5">
+              <Box className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="commerce-tag commerce-tag--info account-profile-tag">
                   {accountRole}
                 </span>
@@ -424,14 +424,14 @@ export default function MemberPage() {
             </Box>
           </Box>
 
-          <Box className="relative z-10 mt-4 grid grid-cols-3 gap-2">
+          <Box className="relative z-10 mt-3 grid grid-cols-3 gap-1.5">
             <Box className="account-profile-stat">
               <Text className="text-xs font-black text-slate-500">Đang xử lý</Text>
-              <Text className="mt-0.5 text-[22px] font-black text-primary">{activeOrders}</Text>
+              <Text className="mt-0.5 text-xl font-black text-primary">{activeOrders}</Text>
             </Box>
             <Box className="account-profile-stat">
               <Text className="text-xs font-black text-slate-500">Hoàn tất</Text>
-              <Text className="mt-0.5 text-[22px] font-black text-primary">{completedOrders}</Text>
+              <Text className="mt-0.5 text-xl font-black text-primary">{completedOrders}</Text>
             </Box>
             <Box className="account-profile-stat">
               <Text className="text-xs font-black text-slate-500">Tổng mua</Text>

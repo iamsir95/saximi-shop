@@ -371,8 +371,6 @@ export default function MemberPage() {
     <Page className="min-h-screen pb-24">
       <Box className="p-4 space-y-4">
         <Box className="account-profile-hero liquid-card rounded-[28px] p-3 text-slate-900">
-          <Box className="absolute right-[-38px] top-[-44px] h-36 w-36 rounded-full bg-primary/18 blur-xl" />
-          <Box className="absolute left-[-44px] bottom-[-52px] h-40 w-40 rounded-full bg-secondary/16 blur-2xl" />
           <Box className="relative z-10 flex items-start gap-2.5">
             <button type="button" onClick={() => navigate(isLoggedIn ? "/profile/edit" : "/login")} className="flex shrink-0 flex-col items-center gap-1" aria-label="Đổi ảnh đại diện">
             <img

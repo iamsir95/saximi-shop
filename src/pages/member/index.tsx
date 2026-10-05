@@ -370,24 +370,25 @@ export default function MemberPage() {
   return (
     <Page className="min-h-screen pb-24">
       <Box className="p-4 space-y-4">
-        <Box className="relative overflow-hidden rounded-[30px] brand-gradient p-4 text-primaryForeground shadow-[0_18px_48px_rgba(0,204,247,0.24)]">
-          <Box className="absolute right-[-38px] top-[-44px] h-36 w-36 rounded-full bg-white/20 blur-xl" />
+        <Box className="account-profile-hero liquid-card rounded-[30px] p-4 text-slate-900">
+          <Box className="absolute right-[-38px] top-[-44px] h-36 w-36 rounded-full bg-primary/18 blur-xl" />
+          <Box className="absolute left-[-44px] bottom-[-52px] h-40 w-40 rounded-full bg-secondary/16 blur-2xl" />
           <Box className="relative z-10 flex items-start gap-3">
             <button type="button" onClick={() => navigate(isLoggedIn ? "/profile/edit" : "/login")} className="flex shrink-0 flex-col items-center gap-1" aria-label="Đổi ảnh đại diện">
             <img
               src={accountAvatar}
               alt={accountName}
-              className="h-16 w-16 rounded-[24px] object-cover ring-2 ring-white/70 shadow-lg"
+              className="h-16 w-16 rounded-[24px] object-cover ring-2 ring-white/80 shadow-lg"
             />
-            <span className="text-xs font-semibold">{isLoggedIn ? "Đổi ảnh" : "Đăng nhập"}</span>
+            <span className="text-xs font-black text-primary">{isLoggedIn ? "Đổi ảnh" : "Đăng nhập"}</span>
             </button>
             <Box className="min-w-0 flex-1">
               <Box className="flex items-start justify-between gap-2">
                 <Box className="min-w-0">
-                  <Text className="text-xl font-black leading-6 truncate text-primaryForeground">
+                  <Text className="text-[22px] font-black leading-7 truncate text-slate-950">
                     {accountName}
                   </Text>
-                  <Text className="mt-0.5 text-xs font-bold leading-5 text-slate-700/76 truncate">
+                  <Text className="mt-0.5 text-sm font-bold leading-5 text-slate-600 truncate">
                     {accountSubtitle}
                   </Text>
                 </Box>
@@ -397,24 +398,24 @@ export default function MemberPage() {
                       ? navigate("/profile/edit", { viewTransition: true })
                       : navigate("/login", { viewTransition: true })
                   }
-                  className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-white/26 text-primaryForeground ring-1 ring-white/40 backdrop-blur-xl"
+                  className="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white/54 text-primary ring-1 ring-white/70 backdrop-blur-xl"
                 >
-                  <CommerceIcon name={isLoggedIn ? "edit" : "phone"} size={18} />
+                  <CommerceIcon name={isLoggedIn ? "edit" : "phone"} size={20} />
                 </button>
               </Box>
 
-              <Box className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="commerce-tag commerce-tag--info">
+              <Box className="mt-3 flex flex-wrap items-center gap-2.5">
+                <span className="commerce-tag commerce-tag--info account-profile-tag">
                   {accountRole}
                 </span>
-                <span className="commerce-tag commerce-tag--muted">
+                <span className="commerce-tag commerce-tag--muted account-profile-tag">
                   {memberCode}
                 </span>
                 {isLoggedIn && (
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="commerce-tag commerce-tag--danger"
+                    className="commerce-tag commerce-tag--danger account-profile-tag"
                   >
                     Đăng xuất
                   </button>
@@ -424,17 +425,17 @@ export default function MemberPage() {
           </Box>
 
           <Box className="relative z-10 mt-4 grid grid-cols-3 gap-2">
-            <Box className="rounded-[20px] bg-white/24 px-3 py-2 backdrop-blur-xl">
-              <Text className="text-[11px] font-bold text-slate-700/72">Đang xử lý</Text>
-              <Text className="mt-0.5 text-xl font-black text-primaryForeground">{activeOrders}</Text>
+            <Box className="account-profile-stat">
+              <Text className="text-xs font-black text-slate-500">Đang xử lý</Text>
+              <Text className="mt-0.5 text-[22px] font-black text-primary">{activeOrders}</Text>
             </Box>
-            <Box className="rounded-[20px] bg-white/24 px-3 py-2 backdrop-blur-xl">
-              <Text className="text-[11px] font-bold text-slate-700/72">Hoàn tất</Text>
-              <Text className="mt-0.5 text-xl font-black text-primaryForeground">{completedOrders}</Text>
+            <Box className="account-profile-stat">
+              <Text className="text-xs font-black text-slate-500">Hoàn tất</Text>
+              <Text className="mt-0.5 text-[22px] font-black text-primary">{completedOrders}</Text>
             </Box>
-            <Box className="rounded-[20px] bg-white/24 px-3 py-2 backdrop-blur-xl">
-              <Text className="text-[11px] font-bold text-slate-700/72">Tổng mua</Text>
-              <Text className="mt-1 text-sm font-black text-primaryForeground truncate">{formatPrice(totalSpent)}</Text>
+            <Box className="account-profile-stat">
+              <Text className="text-xs font-black text-slate-500">Tổng mua</Text>
+              <Text className="mt-1 text-base font-black text-primary truncate">{formatPrice(totalSpent)}</Text>
             </Box>
           </Box>
         </Box>

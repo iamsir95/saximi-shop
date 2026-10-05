@@ -63,13 +63,14 @@ type AccountTab = "overview" | "orders" | "security" | "affiliate" | "support";
 const ACCOUNT_TABS: Array<{
   key: AccountTab;
   label: string;
+  shortLabel: string;
   icon: CommerceIconName;
 }> = [
-  { key: "overview", label: "Tổng quan", icon: "grid" },
-  { key: "orders", label: "Đơn hàng", icon: "receipt" },
-  { key: "security", label: "Bảo mật", icon: "shield" },
-  { key: "affiliate", label: "Hội viên", icon: "id-card" },
-  { key: "support", label: "Hỗ trợ", icon: "bell" },
+  { key: "overview", label: "Tổng quan", shortLabel: "Tổng", icon: "grid" },
+  { key: "orders", label: "Đơn hàng", shortLabel: "Đơn", icon: "receipt" },
+  { key: "security", label: "Bảo mật", shortLabel: "PIN", icon: "shield" },
+  { key: "affiliate", label: "Hội viên", shortLabel: "Hội viên", icon: "id-card" },
+  { key: "support", label: "Hỗ trợ", shortLabel: "Hỗ trợ", icon: "bell" },
 ];
 
 export default function MemberPage() {
@@ -438,8 +439,8 @@ export default function MemberPage() {
           </Box>
         </Box>
 
-        <Box className="sticky top-2 z-20 -mx-1 overflow-x-auto pb-1">
-          <Box className="flex min-w-max gap-2 rounded-[24px] border border-white/70 bg-white/48 p-1 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur-2xl">
+        <Box className="sticky top-2 z-20 -mx-1 pb-1 md:overflow-x-auto">
+          <Box className="grid w-full grid-cols-5 gap-1 rounded-[22px] border border-white/70 bg-white/56 p-1 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur-2xl md:flex md:w-auto md:min-w-max md:gap-2 md:rounded-[24px]">
             {ACCOUNT_TABS.map((tab) => {
               const isActive = activeTab === tab.key;
               return (
@@ -447,14 +448,16 @@ export default function MemberPage() {
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex h-11 items-center gap-2 rounded-[19px] px-3 text-xs font-black transition ${
+                  className={`flex h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[16px] px-1 text-[10px] font-black leading-none transition md:h-11 md:flex-row md:gap-2 md:rounded-[19px] md:px-3 md:text-xs ${
                     isActive
                       ? "brand-action text-primaryForeground shadow-[0_12px_28px_rgba(0,204,247,0.2)]"
                       : "text-slate-600 hover:bg-white/62"
                   }`}
+                  aria-label={tab.label}
                 >
-                  <CommerceIcon name={tab.icon} size={16} />
-                  <span>{tab.label}</span>
+                  <CommerceIcon name={tab.icon} size={18} className="shrink-0 md:h-4 md:w-4" />
+                  <span className="max-w-full truncate md:hidden">{tab.shortLabel}</span>
+                  <span className="hidden md:inline">{tab.label}</span>
                 </button>
               );
             })}

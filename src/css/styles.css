@@ -789,6 +789,9 @@ video {
 .grid {
   display: grid;
 }
+.hidden {
+  display: none;
+}
 .aspect-\[2\.6\/1\] {
   aspect-ratio: 2.6/1;
 }
@@ -1005,11 +1008,6 @@ video {
 .min-w-\[86px\] {
   min-width: 86px;
 }
-.min-w-max {
-  min-width: -webkit-max-content;
-  min-width: -moz-max-content;
-  min-width: max-content;
-}
 .max-w-6xl {
   max-width: 72rem;
 }
@@ -1091,6 +1089,9 @@ video {
 .grid-cols-4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+.grid-cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
 .grid-cols-\[1fr_auto_auto\] {
   grid-template-columns: 1fr auto auto;
 }
@@ -1120,6 +1121,12 @@ video {
 }
 .justify-between {
   justify-content: space-between;
+}
+.gap-0 {
+  gap: 0px;
+}
+.gap-0\.5 {
+  gap: 0.125rem;
 }
 .gap-1 {
   gap: 0.25rem;
@@ -1275,11 +1282,11 @@ video {
 .rounded-2xl {
   border-radius: 1rem;
 }
+.rounded-\[16px\] {
+  border-radius: 16px;
+}
 .rounded-\[18px\] {
   border-radius: 18px;
-}
-.rounded-\[19px\] {
-  border-radius: 19px;
 }
 .rounded-\[20px\] {
   border-radius: 20px;
@@ -1861,6 +1868,9 @@ video {
 }
 .leading-8 {
   line-height: 2rem;
+}
+.leading-none {
+  line-height: 1;
 }
 .leading-snug {
   line-height: 1.375;
@@ -2512,8 +2522,42 @@ video {
     margin-right: -1rem;
   }
 
+  .md\:inline {
+    display: inline;
+  }
+
+  .md\:flex {
+    display: flex;
+  }
+
   .md\:grid {
     display: grid;
+  }
+
+  .md\:hidden {
+    display: none;
+  }
+
+  .md\:h-11 {
+    height: 2.75rem;
+  }
+
+  .md\:h-4 {
+    height: 1rem;
+  }
+
+  .md\:w-4 {
+    width: 1rem;
+  }
+
+  .md\:w-auto {
+    width: auto;
+  }
+
+  .md\:min-w-max {
+    min-width: -webkit-max-content;
+    min-width: -moz-max-content;
+    min-width: max-content;
   }
 
   .md\:max-w-xl {
@@ -2544,12 +2588,20 @@ video {
     grid-template-columns: minmax(0,1fr) minmax(0,1fr);
   }
 
+  .md\:flex-row {
+    flex-direction: row;
+  }
+
   .md\:items-start {
     align-items: flex-start;
   }
 
   .md\:justify-end {
     justify-content: flex-end;
+  }
+
+  .md\:gap-2 {
+    gap: 0.5rem;
   }
 
   .md\:gap-4 {
@@ -2562,13 +2614,35 @@ video {
     margin-bottom: calc(0px * var(--tw-space-y-reverse));
   }
 
+  .md\:overflow-x-auto {
+    overflow-x: auto;
+  }
+
+  .md\:rounded-\[19px\] {
+    border-radius: 19px;
+  }
+
+  .md\:rounded-\[24px\] {
+    border-radius: 24px;
+  }
+
   .md\:p-4 {
     padding: 1rem;
+  }
+
+  .md\:px-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .md\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+  }
+
+  .md\:text-xs {
+    font-size: 13px;
+    line-height: 18px;
   }
 }
 

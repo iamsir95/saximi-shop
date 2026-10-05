@@ -9,6 +9,7 @@ type PullToRefreshProps = {
 const PULL_LIMIT = 92;
 const REFRESH_THRESHOLD = 64;
 const START_THRESHOLD = 12;
+const TOP_TOLERANCE = 2;
 const reloadPage = () => window.location.reload();
 
 export default function PullToRefresh({
@@ -18,6 +19,7 @@ export default function PullToRefresh({
   const startYRef = useRef(0);
   const startXRef = useRef(0);
   const pullDistanceRef = useRef(0);
+  const isTrackingRef = useRef(false);
   const isPullingRef = useRef(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -29,49 +31,80 @@ export default function PullToRefresh({
       return;
     }
 
-    const canPull = () => target.scrollTop <= 0 && !isRefreshing;
+    const isAtTop = () => target.scrollTop <= TOP_TOLERANCE;
+    const resetPull = () => {
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+    };
 
     const onTouchStart = (event: TouchEvent) => {
-      if (event.touches.length !== 1 || !canPull()) {
+      if (event.touches.length !== 1 || isRefreshing) {
         return;
       }
 
       startYRef.current = event.touches[0].clientY;
       startXRef.current = event.touches[0].clientX;
-      isPullingRef.current = true;
+      isTrackingRef.current = true;
+      isPullingRef.current = false;
+      resetPull();
     };
 
     const onTouchMove = (event: TouchEvent) => {
-      if (!isPullingRef.current || event.touches.length !== 1) {
+      if (!isTrackingRef.current || event.touches.length !== 1 || isRefreshing) {
         return;
       }
 
-      const distance = event.touches[0].clientY - startYRef.current;
-      const horizontalDistance = Math.abs(event.touches[0].clientX - startXRef.current);
+      const touch = event.touches[0];
+      const distance = touch.clientY - startYRef.current;
+      const horizontalDistance = Math.abs(touch.clientX - startXRef.current);
 
-      if (distance <= START_THRESHOLD || horizontalDistance > distance || !canPull()) {
-        pullDistanceRef.current = 0;
-        setPullDistance(0);
+      if (horizontalDistance > Math.max(START_THRESHOLD, Math.abs(distance))) {
+        isTrackingRef.current = false;
+        isPullingRef.current = false;
+        resetPull();
+        return;
+      }
+
+      if (!isPullingRef.current) {
+        if (!isAtTop() || distance <= 0) {
+          startYRef.current = touch.clientY;
+          startXRef.current = touch.clientX;
+          resetPull();
+          return;
+        }
+
+        isPullingRef.current = true;
+      }
+
+      if (!isAtTop()) {
+        isPullingRef.current = false;
+        resetPull();
+        return;
+      }
+
+      const pullDistance = touch.clientY - startYRef.current;
+      if (pullDistance <= START_THRESHOLD) {
+        resetPull();
         return;
       }
 
       event.preventDefault();
-      const nextDistance = Math.min(PULL_LIMIT, distance * 0.45);
+      const nextDistance = Math.min(PULL_LIMIT, pullDistance * 0.45);
       pullDistanceRef.current = nextDistance;
       setPullDistance(nextDistance);
     };
 
     const onTouchEnd = async () => {
-      if (!isPullingRef.current) {
+      if (!isTrackingRef.current) {
         return;
       }
 
-      const shouldRefresh = pullDistanceRef.current >= REFRESH_THRESHOLD;
+      const shouldRefresh = isPullingRef.current && isAtTop() && pullDistanceRef.current >= REFRESH_THRESHOLD;
+      isTrackingRef.current = false;
       isPullingRef.current = false;
 
       if (!shouldRefresh) {
-        pullDistanceRef.current = 0;
-        setPullDistance(0);
+        resetPull();
         return;
       }
 
